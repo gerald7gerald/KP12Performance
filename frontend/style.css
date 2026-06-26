@@ -1079,3 +1079,241 @@ a {
         min-height: 70vh;
     }
 }
+/* =====================================================
+SHOP PAGE
+===================================================== */
+
+.coming-page{
+    background:var(--bg);
+    min-height:100vh;
+    overflow:hidden;
+    position:relative;
+}
+
+.coming-wrapper{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    padding:120px 30px;
+    position:relative;
+    z-index:5;
+}
+
+.coming-status{
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    font-family:var(--font-mono);
+
+    color:var(--text-muted);
+
+    letter-spacing:.15em;
+
+    font-size:12px;
+
+    margin-bottom:40px;
+
+    animation:fadeUp .8s ease;
+}
+
+.coming-status span{
+
+    width:8px;
+    height:8px;
+
+    border-radius:50%;
+
+    background:var(--athletics);
+
+    animation:pulseDot 2s infinite;
+}
+
+.coming-title{
+
+    font-family:var(--font-display);
+
+    text-transform:uppercase;
+
+    line-height:.9;
+
+    font-size:clamp(70px,15vw,180px);
+
+    animation:fadeUp 1s;
+}
+
+.coming-sub{
+
+    margin-top:35px;
+
+    color:var(--text-muted);
+
+    font-size:18px;
+
+    line-height:1.8;
+
+    max-width:650px;
+
+    animation:fadeUp 1.2s;
+}
+
+.coming-btn{
+
+    margin-top:60px;
+
+    border:1px solid #333;
+
+    padding:18px 34px;
+
+    font-family:var(--font-mono);
+
+    letter-spacing:.12em;
+
+    transition:.35s;
+}
+
+.coming-btn:hover{
+
+    background:var(--athletics);
+
+    color:black;
+
+    border-color:var(--athletics);
+
+    transform:translateY(-4px);
+}
+
+.shop-word{
+
+    position:absolute;
+
+    left:50%;
+
+    top:55%;
+
+    transform:translate(-50%,-50%);
+
+    font-family:var(--font-display);
+
+    font-size:30vw;
+
+    opacity:.03;
+
+    pointer-events:none;
+
+    user-select:none;
+}
+
+/* Background Grid */
+
+.bg-grid{
+
+    position:absolute;
+
+    inset:0;
+
+    background-image:
+
+    linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+
+    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+
+    background-size:70px 70px;
+
+    animation:gridMove 14s linear infinite;
+}
+
+.bg-glow{
+
+    position:absolute;
+
+    width:500px;
+
+    height:500px;
+
+    border-radius:50%;
+
+    filter:blur(140px);
+
+    opacity:.10;
+}
+
+.glow-green{
+
+    background:var(--athletics);
+
+    left:-180px;
+
+    top:-180px;
+
+    animation:floatGreen 10s ease-in-out infinite;
+}
+
+.glow-orange{
+
+    background:var(--training);
+
+    right:-180px;
+
+    bottom:-180px;
+
+    animation:floatOrange 12s ease-in-out infinite;
+}
+
+@keyframes pulseDot{
+
+0%,100%{
+
+transform:scale(1);
+
+}
+
+50%{
+
+transform:scale(2);
+
+opacity:.4;
+
+}
+
+}
+
+@keyframes floatGreen{
+
+50%{
+
+transform:translate(70px,60px);
+
+}
+
+}
+
+@keyframes floatOrange{
+
+50%{
+
+transform:translate(-60px,-40px);
+
+}
+
+}
+
+@keyframes gridMove{
+
+from{
+
+transform:translateY(0);
+
+}
+
+to{
+
+transform:translateY(70px);
+
+}
+
+}
