@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             JSON.parse(stored); // just confirms it's valid
             authLink.textContent = "My Account";
-            authLink.setAttribute("href", "account.html");
+            authLink.setAttribute("href", "acc.html");
         } catch (err) {
             // Corrupted data — treat as logged out
             localStorage.removeItem("kp12_user");
