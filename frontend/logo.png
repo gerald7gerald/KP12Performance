@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>spb-attachments</BucketName><RequestId>5HF44Y470XSV1MKS</RequestId><HostId>DiVvhj4Msf7ZFE93X+9ZFYZg7h9nFQJobd6eLYdVr8dWvz9JwgB/6fBacegwawNjs+lHdSC1W7gAl2sSXYiHQmC6wkc5iHsI</HostId></Error>
