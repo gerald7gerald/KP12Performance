@@ -11,8 +11,8 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Tell Express to look inside your frontend folder for static assets (CSS, images, js)
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Force Express to strictly resolve your static frontend assets directory relative to this script
+app.use(express.static(path.resolve(__dirname, '..', 'frontend')));
 
 // Set up PostgreSQL database connection pool
 const pool = new Pool({
@@ -36,9 +36,9 @@ pool.query(createTableQuery)
   .then(() => console.log("Users table verified/created successfully!"))
   .catch((err) => console.error("Error creating users table:", err));
 
-// Serve your main index.html file when someone goes directly to your custom root domain
+// Serve your main index.html file cleanly using an absolute system resolution path
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+  res.sendFile(path.resolve(__dirname, '..', 'frontend', 'index.html'));
 });
 
 // A standard test route so we know the backend works!
