@@ -8,11 +8,11 @@ if (reviewBtn) {
 
         if (user) {
 
-            window.location.href = "reviews.html";
+            window.location.href = "review.html";
 
         } else {
 
-            localStorage.setItem("redirectAfterLogin", "reviews.html");
+            localStorage.setItem("redirectAfterLogin", "review.html");
 
             alert("Please sign in or create an account before leaving a review.");
 
