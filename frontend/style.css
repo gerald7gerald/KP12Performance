@@ -589,6 +589,18 @@ a {
     outline-offset: 2px;
 }
 
+.auth-error {
+    display: none;
+    margin-top: 18px;
+    padding: 12px 14px;
+    background: rgba(255, 86, 48, 0.1);
+    border: 1px solid rgba(255, 86, 48, 0.35);
+    color: var(--training);
+    font-size: 13px;
+    line-height: 1.4;
+    border-radius: 2px;
+}
+
 .auth-switch {
     margin-top: 28px;
     font-size: 14px;
