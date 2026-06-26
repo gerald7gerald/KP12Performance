@@ -42,7 +42,7 @@ app.get('/api/data', async (req, res) => {
   }
 });
 
-// --- NEW AUTHENTICATION ROUTES ---
+// --- AUTHENTICATION ROUTES ---
 
 // API Endpoint: SIGNUP
 app.post('/api/auth/signup', async (req, res) => {
@@ -96,7 +96,19 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Start the server
+// API Endpoint: ADMIN VIEW USERS
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    // Grabs only the safety details, ignoring the scrambled password column entirely
+    const result = await pool.query("SELECT id, username, email FROM users ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error fetching users" });
+  }
+});
+
+// --- START THE SERVER (STAYS AT THE VERY BOTTOM) ---
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
