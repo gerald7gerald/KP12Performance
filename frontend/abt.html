@@ -121,5 +121,15 @@
     <script src="script.js"></script>
     <script src="nav.js"></script>
     <script src="abt.js"></script>
+    <script>
+        // Safety net: if about.js fails to load or the observer never
+        // fires for some reason, force every section visible after a
+        // short delay so content never gets stuck invisible.
+        setTimeout(() => {
+            document.querySelectorAll(".reveal:not(.in-view)").forEach((el) => {
+                el.classList.add("in-view");
+            });
+        }, 1800);
+    </script>
 </body>
 </html>

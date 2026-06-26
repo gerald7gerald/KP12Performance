@@ -41,6 +41,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.resolve(__dirname, '..', 'frontend', 'index.html'));
 });
 
+// >>> ADDED THIS ROUTE: Explicitly hands over the about page when requested <<<
+app.get('/abt.html', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '..', 'frontend', 'abt.html'));
+});
+
 // A standard test route so we know the backend works!
 app.get('/api/data', async (req, res) => {
   try {
