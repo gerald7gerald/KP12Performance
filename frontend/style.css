@@ -73,16 +73,14 @@ a {
 }
 
 .nav-brand {
-    font-family: var(--font-mono);
-    font-size: 14px;
-    letter-spacing: 0.12em;
-    font-weight: 500;
-    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
 }
 
-.nav-brand span {
-    color: var(--text-muted);
-    margin-left: 6px;
+.nav-logo {
+    height: 34px;
+    width: auto;
+    display: block;
 }
 
 .nav-links {
@@ -479,15 +477,14 @@ a {
     position: absolute;
     top: 28px;
     left: 6vw;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    letter-spacing: 0.12em;
-    user-select: none;
+    display: inline-flex;
+    align-items: center;
 }
 
-.auth-brand span {
-    color: var(--text-muted);
-    margin-left: 6px;
+.auth-logo {
+    height: 40px;
+    width: auto;
+    display: block;
 }
 
 .auth-form-wrap {
