@@ -415,3 +415,233 @@ a {
         padding: 40px 28px;
     }
 }
+
+/* ---------- AUTH PAGES (signup / login) ---------- */
+.auth-page {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Left: visual panel.
+   Placeholder texture for now — swap in a real photo by replacing
+   the background rule below with something like:
+
+   .auth-visual {
+       background:
+           linear-gradient(180deg, rgba(13,14,16,0.25), rgba(13,14,16,0.9)),
+           url('images/athlete-hero.jpg') center / cover no-repeat;
+   }
+*/
+.auth-visual {
+    flex: 1.1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    background:
+        radial-gradient(circle at 28% 20%, rgba(184, 255, 63, 0.16), transparent 50%),
+        radial-gradient(circle at 82% 78%, rgba(255, 86, 48, 0.14), transparent 55%),
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0px, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent 26px),
+        var(--bg-panel);
+}
+
+.auth-visual-overlay {
+    position: relative;
+    z-index: 2;
+    padding: 60px;
+}
+
+.auth-visual-overlay .eyebrow {
+    color: var(--athletics);
+    margin-bottom: 20px;
+}
+
+.auth-visual-title {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5.2vw, 58px);
+    line-height: 1.04;
+    text-transform: uppercase;
+    max-width: 420px;
+}
+
+/* Right: form panel */
+.auth-panel {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 6vw;
+    background: var(--bg);
+}
+
+.auth-brand {
+    position: absolute;
+    top: 28px;
+    left: 6vw;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    user-select: none;
+}
+
+.auth-brand span {
+    color: var(--text-muted);
+    margin-left: 6px;
+}
+
+.auth-form-wrap {
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+}
+
+.auth-form-wrap .eyebrow {
+    margin-bottom: 16px;
+}
+
+.auth-title {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 6vw, 56px);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+
+.auth-sub {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 36px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.field label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    user-select: none;
+}
+
+.auth-form input {
+    background: var(--bg-panel);
+    border: 1px solid #2A2D31;
+    color: var(--text);
+    padding: 14px 16px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    border-radius: 2px;
+    transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.auth-form input::placeholder {
+    color: #5A5D63;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: var(--athletics);
+    background: #191B1E;
+}
+
+.auth-form input:focus-visible {
+    outline: 2px solid var(--athletics);
+    outline-offset: 2px;
+}
+
+.auth-form button[type="submit"] {
+    margin-top: 8px;
+    background: var(--athletics);
+    color: var(--athletics-dark);
+    border: none;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    transition: filter 0.25s ease, transform 0.15s ease;
+}
+
+.auth-form button[type="submit"]:hover {
+    filter: brightness(1.08);
+}
+
+.auth-form button[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+.auth-form button[type="submit"]:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+}
+
+.auth-switch {
+    margin-top: 28px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.auth-switch a {
+    color: var(--text);
+    border-bottom: 1px solid var(--text-muted);
+    transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.auth-switch a:hover {
+    color: var(--athletics);
+    border-color: var(--athletics);
+}
+
+/* ---------- AUTH RESPONSIVE ---------- */
+@media (max-width: 900px) {
+    .auth-page {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .auth-visual {
+        flex: none;
+        min-height: 30vh;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .auth-visual-overlay {
+        padding: 36px 7vw;
+        text-align: center;
+    }
+
+    .auth-visual-title {
+        max-width: none;
+    }
+
+    .auth-brand {
+        position: static;
+        display: block;
+        margin-bottom: 36px;
+    }
+
+    .auth-panel {
+        padding: 40px 7vw 64px;
+    }
+}
+
+@media (max-width: 420px) {
+    .auth-visual {
+        min-height: 22vh;
+    }
+}

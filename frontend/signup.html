@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="auth-page">
+
+        <div class="auth-visual">
+            <div class="auth-visual-overlay">
+                <p class="eyebrow">[ JOIN THE PROGRAM ]</p>
+                <h2 class="auth-visual-title">TRAIN WITH<br>PURPOSE.</h2>
+            </div>
+        </div>
+
+        <div class="auth-panel">
+            <a href="index.html" class="auth-brand">KP12<span>PERFORMANCE</span></a>
+
+            <div class="auth-form-wrap">
+                <p class="eyebrow">[ CREATE ACCOUNT ]</p>
+                <h1 class="auth-title">Sign Up</h1>
+                <p class="auth-sub">Set up an account to book sessions and track your progress.</p>
+
+                <form id="signup-form" class="auth-form">
+                    <div class="field">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" placeholder="Username" required>
+                    </div>
+                    <div class="field">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" placeholder="you@example.com" required>
+                    </div>
+                    <div class="field">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit">Create Account</button>
+                </form>
+
+                <p class="auth-switch">Already have an account? <a href="login.html">Login here</a></p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="auth.js"></script>
+</body>
+</html>
