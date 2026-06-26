@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="nav">
+        <a href="index.html" class="nav-brand">KP12<span>PERFORMANCE</span></a>
+        <ul class="nav-links">
+            <li><a href="scheduling.html">Scheduling</a></li>
+            <li><a href="account.html" id="auth-nav-link">My Account</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="shop.html">Shop</a></li>
+        </ul>
+    </header>
+
+    <section class="account-page">
+        <div class="account-card">
+            <p class="eyebrow">[ MY ACCOUNT ]</p>
+            <h1 id="account-username">Welcome back.</h1>
+            <p class="account-email" id="account-email"></p>
+            <button id="logout-btn" class="logout-btn">Log Out</button>
+        </div>
+    </section>
+
+    <script src="nav.js"></script>
+    <script src="account.js"></script>
+</body>
+</html>

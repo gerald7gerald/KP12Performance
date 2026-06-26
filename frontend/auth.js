@@ -45,7 +45,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Signed up successfully — send them back to the homepage
+                // Signed up successfully — store locally so the nav shows
+                // "My Account" right away, then send them to the homepage
+                localStorage.setItem("kp12_user", JSON.stringify({ username, email }));
                 window.location.href = "index.html";
             } catch (err) {
                 console.error(err);
@@ -82,7 +84,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Logged in successfully — send them back to the homepage
+                // Logged in successfully — store locally so the nav shows
+                // "My Account" right away, then send them to the homepage
+                if (data.user) {
+                    localStorage.setItem("kp12_user", JSON.stringify(data.user));
+                }
                 window.location.href = "index.html";
             } catch (err) {
                 console.error(err);
