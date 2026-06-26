@@ -1317,3 +1317,102 @@ transform:translateY(70px);
 }
 
 }
+/* ---------------- REVIEWS ---------------- */
+
+.reviews-preview{
+
+    padding:120px 6vw;
+
+    text-align:center;
+
+    border-top:1px solid #232529;
+}
+
+.review-card{
+
+    margin:50px auto;
+
+    max-width:700px;
+
+    background:var(--bg-panel);
+
+    border:1px solid #232529;
+
+    padding:50px;
+
+    transition:.35s;
+}
+
+.review-card:hover{
+
+    transform:translateY(-6px);
+
+    border-color:var(--athletics);
+}
+
+.stars{
+
+    color:var(--athletics);
+
+    font-size:30px;
+
+    margin-bottom:25px;
+
+    letter-spacing:8px;
+}
+
+.review-text{
+
+    color:var(--text);
+
+    font-size:22px;
+
+    line-height:1.7;
+
+    margin-bottom:24px;
+}
+
+.review-author{
+
+    color:var(--text-muted);
+
+    font-family:var(--font-mono);
+
+    font-size:13px;
+
+    letter-spacing:.1em;
+}
+
+.review-button{
+
+    margin-top:25px;
+
+    padding:18px 42px;
+
+    background:transparent;
+
+    border:1px solid var(--athletics);
+
+    color:var(--athletics);
+
+    cursor:pointer;
+
+    font-family:var(--font-mono);
+
+    font-size:13px;
+
+    letter-spacing:.14em;
+
+    text-transform:uppercase;
+
+    transition:.35s;
+}
+
+.review-button:hover{
+
+    background:var(--athletics);
+
+    color:#000;
+
+    transform:translateY(-3px);
+}
