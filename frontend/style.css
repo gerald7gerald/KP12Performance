@@ -34,6 +34,24 @@ a {
     text-decoration: none;
 }
 
+/* Prevent double-click/long-press text selection on UI elements
+   (headlines, nav, labels, buttons) while leaving paragraph copy
+   normally selectable for accessibility/usability. */
+.nav-brand,
+.nav-links a,
+.eyebrow,
+.hero-title,
+.path,
+.path-tag,
+.path-title,
+.path-cta,
+.seam span,
+.status-label {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -48,6 +66,10 @@ a {
     width: 100%;
     padding: 28px 5vw;
     z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
 }
 
 .nav-brand {
@@ -55,11 +77,66 @@ a {
     font-size: 14px;
     letter-spacing: 0.12em;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .nav-brand span {
     color: var(--text-muted);
     margin-left: 6px;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: clamp(18px, 3vw, 36px);
+    list-style: none;
+}
+
+.nav-links a {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    position: relative;
+    padding-bottom: 6px;
+    transition: color 0.3s ease;
+}
+
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: 0;
+    height: 1px;
+    background: var(--text);
+    transition: right 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: var(--text);
+}
+
+.nav-links a:hover::after {
+    right: 0;
+}
+
+@media (max-width: 700px) {
+    .nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .nav-links {
+        flex-wrap: wrap;
+        gap: 16px 20px;
+    }
+
+    .hero {
+        padding-top: 110px;
+    }
 }
 
 /* ---------- HERO ---------- */
