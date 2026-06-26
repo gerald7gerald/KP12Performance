@@ -4,18 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="auth-container">
-        <h2>Login</h2>
-        <form id="login-form">
-            <input type="email" id="login-email" placeholder="Email" required>
-            <input type="password" id="login-password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-        <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
+
+    <div class="auth-page">
+
+        <div class="auth-visual">
+            <div class="auth-visual-overlay">
+                <p class="eyebrow">[ WELCOME BACK ]</p>
+                <h2 class="auth-visual-title">BACK FOR<br>MORE.</h2>
+            </div>
+        </div>
+
+        <div class="auth-panel">
+            <a href="index.html" class="auth-brand">KP12<span>PERFORMANCE</span></a>
+
+            <div class="auth-form-wrap">
+                <p class="eyebrow">[ LOG IN ]</p>
+                <h1 class="auth-title">Login</h1>
+                <p class="auth-sub">Sign back in to manage your sessions and track your progress.</p>
+
+                <form id="login-form" class="auth-form">
+                    <div class="field">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" placeholder="you@example.com" required>
+                    </div>
+                    <div class="field">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit">Log In</button>
+                </form>
+                <p class="auth-error" id="login-error"></p>
+
+                <p class="auth-switch">Don't have an account? <a href="signup.html">Sign up here</a></p>
+            </div>
+        </div>
+
     </div>
+
     <script src="auth.js"></script>
 </body>
 </html>
