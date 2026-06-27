@@ -25,17 +25,17 @@
     </header>
 
     <section class="hero">
-        <p class="eyebrow">[ PERFORMANCE PROGRAM ]</p>
-        <h1 class="hero-title">BUILT FOR<br>WHAT'S&nbsp;NEXT.</h1>
-        <p class="hero-sub">Two lanes, one standard.</p>
-        <div class="scroll-cue" aria-hidden="true">
+        <p class="eyebrow fade-up" style="--d:0s">[ PERFORMANCE PROGRAM ]</p>
+        <h1 class="hero-title fade-up" style="--d:0.1s">BUILT FOR<br>WHAT'S&nbsp;NEXT.</h1>
+        <p class="hero-sub fade-up" style="--d:0.22s">Three lanes, one standard. Find where you train.</p>
+        <div class="scroll-cue fade-up" style="--d:0.34s" aria-hidden="true">
             <span></span>
         </div>
     </section>
 
-    <section class="paths" id="paths" aria-label="Choose your path">
+    <section class="paths paths-3" id="paths" aria-label="Choose your path">
 
-        <a href="ath.html" class="path path-athletics">
+        <a href="ath.html" class="path path-athletics fade-up" style="--d:0.1s">
             <div class="path-inner">
                 <span class="path-tag">[ ATHLETICS ]</span>
                 <h2 class="path-title">ATHLETICS</h2>
@@ -44,11 +44,9 @@
             </div>
         </a>
 
-        <div class="seam" aria-hidden="true">
-            <span>CHOOSE&nbsp;YOUR&nbsp;LANE</span>
-        </div>
+        <div class="seam seam-1" aria-hidden="true"></div>
 
-        <a href="tra.html" class="path path-training">
+        <a href="tra.html" class="path path-training fade-up" style="--d:0.2s">
             <div class="path-inner">
                 <span class="path-tag">[ TRAINING ]</span>
                 <h2 class="path-title">TRAINING</h2>
@@ -57,39 +55,48 @@
             </div>
         </a>
 
+        <div class="seam seam-2" aria-hidden="true"></div>
+
+        <a href="nut.html" class="path path-nutrition fade-up" style="--d:0.3s">
+            <div class="path-inner">
+                <span class="path-tag">[ NUTRITION ]</span>
+                <h2 class="path-title">NUTRITION</h2>
+                <p class="path-desc">Fueling strategies and meal guidance that support performance and recovery, not just willpower.</p>
+                <span class="path-cta">Enter Nutrition <span class="arrow">→</span></span>
+            </div>
+        </a>
+
     </section>
 
     <section class="reviews-preview">
 
-    <p class="eyebrow">[ COMMUNITY ]</p>
+        <p class="eyebrow fade-up" style="--d:0s">[ COMMUNITY ]</p>
 
-    <h2 class="section-title">
-        WHAT PEOPLE<br>ARE SAYING
-    </h2>
+        <h2 class="section-title fade-up" style="--d:0.1s">
+            WHAT PEOPLE<br>ARE SAYING
+        </h2>
 
-    <div class="review-card">
+        <div class="review-card fade-up" style="--d:0.2s">
 
-        <div class="stars">
-            ★★★★★
+            <div class="stars">
+                ★★★★★
+            </div>
+
+            <p class="review-text">
+                "Be the first athlete to leave a review and share your experience with KP12 Performance."
+            </p>
+
+            <p class="review-author">
+                — Your Name Here
+            </p>
+
         </div>
 
-        <p class="review-text">
-            "Be the first athlete to leave a review and share your experience with KP12 Performance."
-        </p>
+        <button id="reviewBtn" class="review-button fade-up" style="--d:0.3s">
+            Leave a Review
+        </button>
 
-        <p class="review-author">
-            — Your Name Here
-        </p>
-
-    </div>
-
-    <button id="reviewBtn" class="review-button">
-        Leave a Review
-    </button>
-
-</section>
-
-    
+    </section>
 
     <script src="script.js"></script>
     <script src="nav.js"></script>

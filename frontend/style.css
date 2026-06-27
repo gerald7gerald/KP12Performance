@@ -7,6 +7,8 @@
     --athletics-dark: #0D0E10;
     --training: #FF5630;
     --training-dark: #0D0E10;
+    --nutrition: #FFC247;
+    --nutrition-dark: #0D0E10;
     --font-display: 'Anton', sans-serif;
     --font-body: 'Work Sans', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
@@ -217,19 +219,35 @@ a {
     transition: background 0.45s ease;
 }
 
-.path-athletics {
-    clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
-    margin-right: -8vw;
-    padding-right: 8vw;
+/* Three-lane diagonal seams. Clip-path percentages are relative to each
+   element's own box, so this scales correctly regardless of how many
+   lanes there are. The overlap (margin/padding) just needs to be a bit
+   wider than each lane's actual diagonal run to avoid a gap at the seam. */
+.paths-3 {
+    --seam-overlap: 5vw;
 }
 
-.path-training {
+.paths-3 .path-athletics {
+    clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+    margin-right: calc(-1 * var(--seam-overlap));
+    padding-right: var(--seam-overlap);
+}
+
+.paths-3 .path-training {
+    clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%);
+    margin-right: calc(-1 * var(--seam-overlap));
+    padding-right: var(--seam-overlap);
+    margin-left: calc(-1 * var(--seam-overlap));
+    padding-left: var(--seam-overlap);
+}
+
+.paths-3 .path-nutrition {
     clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .path-inner {
-    max-width: 380px;
-    padding: 48px 40px;
+    max-width: 360px;
+    padding: 48px 36px;
     position: relative;
     z-index: 2;
 }
@@ -245,7 +263,7 @@ a {
 
 .path-title {
     font-family: var(--font-display);
-    font-size: clamp(40px, 6vw, 64px);
+    font-size: clamp(34px, 5vw, 56px);
     line-height: 1;
     margin-bottom: 18px;
     transition: color 0.45s ease;
@@ -253,7 +271,7 @@ a {
 
 .path-desc {
     color: var(--text-muted);
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.5;
     margin-bottom: 32px;
     transition: color 0.45s ease;
@@ -321,30 +339,44 @@ a {
     color: #3a1208;
 }
 
-/* Seam between the two lanes */
+/* Nutrition identity */
+.path-nutrition .path-tag,
+.path-nutrition .path-title,
+.path-nutrition .path-cta {
+    color: var(--nutrition);
+}
+
+.path-nutrition:hover {
+    background: var(--nutrition);
+}
+
+.path-nutrition:hover .path-tag,
+.path-nutrition:hover .path-title,
+.path-nutrition:hover .path-cta {
+    color: var(--nutrition-dark);
+}
+
+.path-nutrition:hover .path-desc {
+    color: #3a2c08;
+}
+
+/* Seams between the lanes */
 .seam {
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 50%;
     width: 2px;
     background: linear-gradient(to bottom, transparent, #3a3d42 20%, #3a3d42 80%, transparent);
     z-index: 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     pointer-events: none;
 }
 
-.seam span {
-    writing-mode: vertical-rl;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    color: var(--text-muted);
-    background: var(--bg);
-    padding: 14px 6px;
-    border: 1px solid #3a3d42;
+.seam-1 {
+    left: 33.333%;
+}
+
+.seam-2 {
+    left: 66.666%;
 }
 
 /* Keyboard focus visibility */
@@ -380,27 +412,21 @@ a {
         min-height: auto;
     }
 
-    .path-athletics,
-    .path-training {
+    .paths-3 .path-athletics,
+    .paths-3 .path-training,
+    .paths-3 .path-nutrition {
         clip-path: none;
-        margin-right: 0;
-        padding-right: 0;
-        min-height: 60vh;
+        margin: 0;
+        padding: 0;
+        min-height: 48vh;
+    }
+
+    .paths .path:not(:first-child) {
+        border-top: 1px solid #232529;
     }
 
     .seam {
-        left: 0;
-        right: 0;
-        top: 50%;
-        bottom: auto;
-        width: auto;
-        height: 2px;
-        background: linear-gradient(to right, transparent, #3a3d42 20%, #3a3d42 80%, transparent);
-    }
-
-    .seam span {
-        writing-mode: horizontal-tb;
-        padding: 6px 14px;
+        display: none;
     }
 
     .hero {
@@ -411,6 +437,39 @@ a {
 @media (max-width: 480px) {
     .path-inner {
         padding: 40px 28px;
+    }
+}
+
+/* ---------- ENTRANCE ANIMATION ---------- */
+/* Pure CSS, runs once on load — no scroll-trigger/JS dependency, so it
+   can never get stuck hidden if a script fails to load.
+   Defined with both "from" and "to" states (rather than just "to") so
+   it also works on elements that use `animation: fadeUp ...` directly
+   without the .fade-up class — like the Shop coming-soon page does. */
+.fade-up {
+    animation: fadeUp 0.7s ease both;
+    animation-delay: var(--d, 0s);
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fade-up,
+    .coming-status,
+    .coming-title,
+    .coming-sub {
+        animation: none;
+        opacity: 1;
+        transform: none;
     }
 }
 
@@ -1079,6 +1138,7 @@ a {
         min-height: 70vh;
     }
 }
+
 /* =====================================================
 SHOP PAGE
 ===================================================== */
