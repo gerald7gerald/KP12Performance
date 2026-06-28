@@ -949,20 +949,19 @@ a {
     align-items: flex-start;
 }
 
-.bio-avatar {
-    flex: 0 0 auto;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: var(--bg-panel);
-    border: 1px solid #232529;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-display);
-    font-size: 32px;
-    color: var(--athletics);
-    user-select: none;
+.bio-photo {
+    flex: 0 0 320px;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-top: 3px solid var(--athletics);
+}
+
+.bio-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 25%;
+    display: block;
 }
 
 .bio-text {
@@ -974,6 +973,13 @@ a {
     font-size: 16px;
     line-height: 1.65;
     max-width: 560px;
+}
+
+.bio-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 24px;
 }
 
 /* ---------- TEAM ---------- */
@@ -1126,6 +1132,12 @@ a {
     .bio {
         flex-direction: column;
         gap: 28px;
+    }
+
+    .bio-photo {
+        flex: none;
+        width: 100%;
+        max-width: 320px;
     }
 }
 
