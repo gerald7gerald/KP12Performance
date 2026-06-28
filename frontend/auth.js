@@ -1,5 +1,6 @@
 // ---- Backend config ----
-const API_BASE_URL = "https://kp12performance.onrender.com";
+// Removed the hardcoded onrender URL so it uses your actual domain cleanly
+const API_BASE_URL = ""; 
 
 function showError(id, message) {
     const el = document.getElementById(id);
@@ -45,8 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Signed up successfully — store locally
-                localStorage.setItem("kp12_user", JSON.stringify({ username, email }));
+                // Removed localStorage step — Backend cookies take over now!
 
                 // If they were trying to leave a review, send them there
                 const redirect = localStorage.getItem("redirectAfterLogin");
@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     window.location.href = redirect;
                 } else {
                     window.location.href = "index.html";
-}
+                }
             } catch (err) {
                 console.error(err);
                 showError("signup-error", "Couldn't reach the server. Please try again in a moment.");
@@ -92,10 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Logged in successfully — store locally
-                if (data.user) {
-                    localStorage.setItem("kp12_user", JSON.stringify(data.user));
-                }
+                // Removed localStorage step — Backend cookies take over now!
 
                 // If they were trying to leave a review, send them there
                 const redirect = localStorage.getItem("redirectAfterLogin");
