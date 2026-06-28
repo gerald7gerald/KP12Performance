@@ -103,11 +103,29 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: "Invalid email or password." });
     }
 
+    // >>> UPDATED LOGIC: Issues an HTTP-only login cookie to the browser <<<
+    res.cookie('userId', user.id, {
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
+      maxAge: 24 * 60 * 60 * 1000 // Lasts 1 day
+    });
+
     res.json({ message: "Logged in successfully!", user: { id: user.id, username: user.username } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error during login." });
   }
+});
+
+// >>> ADDED THIS ROUTE: Checks cookie status to let frontend know if user is logged in <<<
+app.get('/api/auth/status', (req, res) => {
+  const cookies = req.headers.cookie;
+  
+  if (cookies && cookies.includes('userId=')) {
+    return res.json({ loggedIn: true });
+  }
+  
+  res.json({ loggedIn: false });
 });
 
 // API Endpoint: ADMIN VIEW USERS
