@@ -1102,6 +1102,31 @@ a {
     color: var(--text-muted);
 }
 
+.partner-logo-card {
+    flex: 1;
+    min-width: 160px;
+    height: 80px;
+    background: #F5F4F0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 22px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.partner-logo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.partner-logo-card img {
+    max-height: 38px;
+    max-width: 100%;
+    width: auto;
+    display: block;
+}
+
 /* ---------- MISSION BAND ---------- */
 .mission {
     background: var(--bg-panel);
