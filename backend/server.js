@@ -36,6 +36,22 @@ pool.query(createTableQuery)
   .then(() => console.log("Users table verified/created successfully!"))
   .catch((err) => console.error("Error creating users table:", err));
 
+// Reviews table — stores submitted reviews so they persist across visits
+const createReviewsTableQuery = `
+  CREATE TABLE IF NOT EXISTS reviews (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    training_type VARCHAR(50) NOT NULL,
+    comment TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+`;
+
+pool.query(createReviewsTableQuery)
+  .then(() => console.log("Reviews table verified/created successfully!"))
+  .catch((err) => console.error("Error creating reviews table:", err));
+
 // Small helper so signup and login both issue the cookie the same way
 function setLoginCookie(res, userId) {
   res.cookie('userId', userId, {
@@ -198,6 +214,56 @@ app.get('/api/admin/users', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error fetching users" });
+  }
+});
+
+// --- REVIEWS ---
+
+// API Endpoint: SUBMIT A REVIEW (must be logged in)
+app.post('/api/reviews', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Please sign in to leave a review." });
+  }
+
+  const { trainingType, comment, rating } = req.body;
+
+  if (!trainingType || !comment || !rating) {
+    return res.status(400).json({ error: "Please fill out every field before submitting." });
+  }
+
+  const ratingNum = parseInt(rating, 10);
+  if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+    return res.status(400).json({ error: "Rating must be between 1 and 5." });
+  }
+
+  try {
+    await pool.query(
+      "INSERT INTO reviews (user_id, training_type, comment, rating) VALUES ($1, $2, $3, $4)",
+      [userId, trainingType, comment, ratingNum]
+    );
+    res.status(201).json({ message: "Review submitted successfully!" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error submitting review." });
+  }
+});
+
+// API Endpoint: GET RECENT REVIEWS (public — anyone can read these)
+app.get('/api/reviews', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT reviews.id, reviews.training_type, reviews.comment, reviews.rating, reviews.created_at,
+              users.username
+       FROM reviews
+       JOIN users ON reviews.user_id = users.id
+       ORDER BY reviews.created_at DESC
+       LIMIT 20`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error fetching reviews." });
   }
 });
 

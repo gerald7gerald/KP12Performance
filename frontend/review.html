@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave a Review | KP12 Performance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png">
+</head>
+<body>
+
+    <header class="nav">
+        <a href="index.html" class="nav-brand">
+            <img src="logo.png" alt="KP12 Performance" class="nav-logo">
+        </a>
+        <ul class="nav-links">
+            <li><a href="https://app.letsponey.com/h/kp12-performance" target="_blank">Scheduling</a></li>
+            <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
+            <li><a href="abt.html">About Us</a></li>
+            <li><a href="shop.html">Shop</a></li>
+        </ul>
+    </header>
+
+    <section class="review-page">
+
+        <div class="review-page-header fade-up" style="--d:0s">
+            <p class="eyebrow">[ LEAVE A REVIEW ]</p>
+            <h1 class="review-page-title">HOW DID<br>WE DO?</h1>
+            <p class="review-page-sub">Tell us about your experience — it helps other athletes find the right program.</p>
+        </div>
+
+        <form id="review-form" class="review-form fade-up" style="--d:0.1s">
+
+            <div class="field">
+                <label for="training-type">What type of training did you have?</label>
+                <select id="training-type" required>
+                    <option value="" disabled selected>Select a program</option>
+                    <option value="Sports Performance Training">Sports Performance Training</option>
+                    <option value="Swim Lessons">Swim Lessons</option>
+                    <option value="Private Training">Private Training</option>
+                    <option value="Swim Clinics/Team">Swim Clinics/Team</option>
+                </select>
+            </div>
+
+            <div id="review-details" class="review-details">
+
+                <div class="field">
+                    <label for="review-comment">How did we do?</label>
+                    <textarea id="review-comment" rows="4" placeholder="Tell us about your experience..." required></textarea>
+                </div>
+
+                <div class="field">
+                    <label>Rate your experience</label>
+                    <div id="star-rating" class="star-rating" role="radiogroup" aria-label="Rating out of 5 stars">
+                        <button type="button" class="star-btn" data-value="1" aria-label="1 star">★</button>
+                        <button type="button" class="star-btn" data-value="2" aria-label="2 stars">★</button>
+                        <button type="button" class="star-btn" data-value="3" aria-label="3 stars">★</button>
+                        <button type="button" class="star-btn" data-value="4" aria-label="4 stars">★</button>
+                        <button type="button" class="star-btn" data-value="5" aria-label="5 stars">★</button>
+                    </div>
+                    <input type="hidden" id="rating-value" value="">
+                </div>
+
+            </div>
+
+            <p class="review-form-error" id="review-form-error"></p>
+
+            <button type="submit" id="review-submit-btn" class="review-submit-btn" disabled>Submit Review</button>
+
+        </form>
+
+        <div id="review-success" class="review-success">
+            <p class="eyebrow">[ THANK YOU ]</p>
+            <h2>Review submitted.</h2>
+            <p>Appreciate you taking the time — taking you back home shortly.</p>
+        </div>
+
+        <div class="review-list-section">
+            <p class="eyebrow fade-up" style="--d:0s">[ RECENT REVIEWS ]</p>
+            <h2 class="section-title fade-up" style="--d:0.1s">From Our Athletes</h2>
+            <div id="review-list" class="review-list">
+                <p class="review-list-empty">Loading reviews…</p>
+            </div>
+        </div>
+
+    </section>
+
+    <footer class="status-bar">
+        <span class="status-label">[ SYSTEM ]</span>
+        <div id="data-container">Loading data from backend...</div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="nav.js"></script>
+    <script src="review-form.js"></script>
+</body>
+</html>

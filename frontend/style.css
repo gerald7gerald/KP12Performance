@@ -1572,3 +1572,269 @@ transform:translateY(70px);
 
     transform:translateY(-3px);
 }
+
+/* ---------- REVIEW PAGE ---------- */
+.review-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 160px 6vw 100px;
+}
+
+.review-page-header {
+    text-align: center;
+    margin-bottom: 56px;
+}
+
+.review-page-header .eyebrow {
+    color: var(--athletics);
+}
+
+.review-page-title {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 6vw, 64px);
+    line-height: 1.02;
+    text-transform: uppercase;
+    margin: 14px 0 20px;
+}
+
+.review-page-sub {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.6;
+    max-width: 460px;
+    margin: 0 auto;
+}
+
+.review-form {
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    transition: opacity 0.3s ease;
+}
+
+.review-form.is-hidden {
+    display: none;
+}
+
+.review-form .field label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 10px;
+}
+
+.review-form select,
+.review-form textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid #2A2D31;
+    color: var(--text);
+    padding: 14px 16px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    border-radius: 2px;
+    transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.review-form select:focus,
+.review-form textarea:focus {
+    outline: none;
+    border-color: var(--athletics);
+    background: #191B1E;
+}
+
+.review-form textarea {
+    resize: vertical;
+    font-family: var(--font-body);
+}
+
+.review-details {
+    display: none;
+    flex-direction: column;
+    gap: 28px;
+    animation: fadeUp 0.5s ease;
+}
+
+.review-details.is-visible {
+    display: flex;
+}
+
+.star-rating {
+    display: flex;
+    gap: 8px;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    font-size: 32px;
+    line-height: 1;
+    color: #3a3d42;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.star-btn:hover {
+    transform: scale(1.12);
+}
+
+.star-btn.is-filled {
+    color: var(--athletics);
+}
+
+.star-btn:focus-visible {
+    outline: 2px solid var(--athletics);
+    outline-offset: 2px;
+}
+
+.review-form-error {
+    display: none;
+    padding: 12px 14px;
+    background: rgba(255, 86, 48, 0.1);
+    border: 1px solid rgba(255, 86, 48, 0.35);
+    color: var(--training);
+    font-size: 13px;
+    line-height: 1.4;
+    border-radius: 2px;
+}
+
+.review-submit-btn {
+    background: var(--athletics);
+    color: var(--athletics-dark);
+    border: none;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: filter 0.25s ease, transform 0.15s ease, opacity 0.25s ease;
+}
+
+.review-submit-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
+
+.review-submit-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.review-submit-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.review-success {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.review-success.is-visible {
+    display: block;
+}
+
+.review-success .eyebrow {
+    color: var(--athletics);
+    margin-bottom: 16px;
+}
+
+.review-success h2 {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4vw, 36px);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.review-success p {
+    color: var(--text-muted);
+    font-size: 15px;
+}
+
+.review-list-section {
+    margin-top: 90px;
+    border-top: 1px solid #232529;
+    padding-top: 56px;
+}
+
+.review-list-section .eyebrow {
+    color: var(--athletics);
+    text-align: center;
+}
+
+.review-list-section .section-title {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.review-list-item {
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    padding: 28px 32px;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.review-list-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--athletics);
+}
+
+.review-list-stars {
+    color: var(--athletics);
+    font-size: 16px;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+}
+
+.review-list-comment {
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.review-list-meta {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+}
+
+.review-list-type {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.review-list-empty {
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .review-page {
+        padding: 140px 6vw 80px;
+    }
+
+    .review-form {
+        padding: 28px 24px;
+    }
+
+    .review-list-item {
+        padding: 24px 22px;
+    }
+}
