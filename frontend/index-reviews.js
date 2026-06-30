@@ -55,16 +55,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             startAutoSlide();
         }
 
-        // 5. Connect alternative arrow click listeners
-        document.getElementById("nextReviewBtn")?.addEventListener("click", () => {
-            showSlide(currentSlide + 1);
-            resetTimer();
-        });
-
-        document.getElementById("prevReviewBtn")?.addEventListener("click", () => {
-            showSlide(currentSlide - 1);
-            resetTimer();
-        });
+        
 
         // Initialize display layouts
         showSlide(0);
