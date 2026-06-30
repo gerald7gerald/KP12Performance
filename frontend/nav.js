@@ -27,3 +27,23 @@ document.addEventListener("DOMContentLoaded", () => {
         authLink.setAttribute("href", "signup.html");
     }
 });
+
+// ---- Fixed nav: add a background once the page has scrolled,
+// so the nav stays legible over whatever content passes underneath it ----
+document.addEventListener("DOMContentLoaded", () => {
+    const nav = document.querySelector(".nav");
+    if (!nav) return;
+
+    const SCROLL_THRESHOLD = 24;
+
+    const updateNavBackground = () => {
+        if (window.scrollY > SCROLL_THRESHOLD) {
+            nav.classList.add("nav-scrolled");
+        } else {
+            nav.classList.remove("nav-scrolled");
+        }
+    };
+
+    updateNavBackground(); // handle page loads that aren't scrolled to top
+    window.addEventListener("scroll", updateNavBackground, { passive: true });
+});
