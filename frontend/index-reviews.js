@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             else currentSlide = index;
 
             // Shift them horizontally out of view based on active index
-            slides.forEach((slide, i) => {
+            slides.forEach((slide) => {
                 slide.style.transform = `translateX(${-100 * currentSlide}%)`;
             });
         }
@@ -50,14 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }, 5000); // Transitions to the next slide every 5 seconds
         }
 
-        function resetTimer() {
-            clearInterval(slideInterval);
-            startAutoSlide();
-        }
-
-        
-
-        // Initialize display layouts
+        // Initialize display layouts and start the autocyclic track loop
         showSlide(0);
         startAutoSlide();
 
