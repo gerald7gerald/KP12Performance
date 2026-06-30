@@ -35,13 +35,20 @@ const createTableQuery = `
 pool.query(createTableQuery)
   .then(() => {
     console.log("Users table verified/created successfully!");
-    
-    // --- TEMPORARY ADMIN SETUP: RUNS FREE ON DEPLOY ---
-    pool.query("UPDATE users SET is_admin = TRUE WHERE email = 'geraldcgarcia7@gmail.com';")
-      .then(() => console.log("SUCCESS: geraldcgarcia7@gmail.com is now flagged as an Admin!"))
-      .catch((err) => console.error("Admin setup error (This is normal if 'is_admin' column isn't built yet):", err));
+
+    // The is_admin column must exist BEFORE the auto-flag UPDATE below
+    // runs — chaining these in sequence (rather than firing them as
+    // separate, unordered pool.query() calls) guarantees that order.
+    return pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;`);
   })
-  .catch((err) => console.error("Error creating users table:", err));
+  .then(() => {
+    console.log("is_admin column verified/created successfully!");
+
+    // --- AUTO ADMIN SETUP: flags this account as admin on every deploy ---
+    return pool.query("UPDATE users SET is_admin = TRUE WHERE email = 'geraldcgarcia7@gmail.com';");
+  })
+  .then(() => console.log("SUCCESS: geraldcgarcia7@gmail.com is now flagged as an Admin!"))
+  .catch((err) => console.error("Error during users table / admin setup:", err));
 
 // Reviews table — stores submitted reviews so they persist across visits
 const createReviewsTableQuery = `
@@ -161,9 +168,9 @@ app.get('/api/auth/status', (req, res) => {
   res.json({ loggedIn: false });
 });
 
-// >>> NEW: Returns the logged-in user's basic info (username/email) so the
-// account page can display it — replaces the old localStorage approach,
-// since the login cookie is httpOnly and invisible to frontend JS <<<
+// Returns the logged-in user's basic info (username/email/is_admin) so the
+// account page and review page can use it — replaces the old localStorage
+// approach, since the login cookie is httpOnly and invisible to frontend JS
 app.get('/api/auth/me', async (req, res) => {
   const userId = getUserIdFromCookies(req);
 
@@ -173,7 +180,7 @@ app.get('/api/auth/me', async (req, res) => {
 
   try {
     const result = await pool.query(
-      "SELECT id, username, email FROM users WHERE id = $1",
+      "SELECT id, username, email, is_admin FROM users WHERE id = $1",
       [userId]
     );
 
@@ -188,9 +195,9 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
-// >>> NEW: Logs the user out by clearing the cookie server-side.
+// Logs the user out by clearing the cookie server-side.
 // Frontend JS can't delete an httpOnly cookie itself, so this route is
-// required for logout to actually work <<<
+// required for logout to actually work
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie('userId');
   res.json({ message: "Logged out successfully." });
@@ -265,6 +272,43 @@ app.get('/api/reviews', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error fetching reviews." });
+  }
+});
+
+// Middleware: only lets the request through if the logged-in user has
+// is_admin = TRUE in the database. Used to gate review deletion so this
+// can't be done by just anyone who happens to be logged in.
+async function requireAdmin(req, res, next) {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Please sign in." });
+  }
+
+  try {
+    const result = await pool.query("SELECT is_admin FROM users WHERE id = $1", [userId]);
+    if (result.rows.length === 0 || !result.rows[0].is_admin) {
+      return res.status(403).json({ error: "Admin access required." });
+    }
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error checking admin status." });
+  }
+}
+
+// API Endpoint: DELETE A REVIEW (admin only)
+app.delete('/api/reviews/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query("DELETE FROM reviews WHERE id = $1 RETURNING id", [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Review not found." });
+    }
+    res.json({ message: "Review deleted." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error deleting review." });
   }
 });
 
