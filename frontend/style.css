@@ -160,6 +160,49 @@ a {
     text-align: center;
     padding: 0 6vw;
     position: relative;
+    overflow: hidden;
+}
+
+/* Background slideshow — sits behind all hero text/content */
+.hero-slideshow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.hero-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center 30%;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+}
+
+.hero-slide.is-active {
+    opacity: 1;
+}
+
+.hero-slideshow-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(13, 14, 16, 0.55) 0%, rgba(13, 14, 16, 0.65) 50%, rgba(13, 14, 16, 0.92) 100%);
+}
+
+/* Lift existing hero text/content above the slideshow layer */
+.hero .eyebrow,
+.hero .hero-title,
+.hero .hero-sub,
+.hero .scroll-cue {
+    position: relative;
+    z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-slide {
+        transition: none;
+    }
 }
 
 .eyebrow {
@@ -1091,6 +1134,11 @@ a {
     border: 1px solid #2a2d31;
     padding: 5px 10px;
     border-radius: 2px;
+}
+
+.reviews-preview .section-title {
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* ---------- PARTNERS ---------- */
