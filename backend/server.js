@@ -33,7 +33,14 @@ const createTableQuery = `
 `;
 
 pool.query(createTableQuery)
-  .then(() => console.log("Users table verified/created successfully!"))
+  .then(() => {
+    console.log("Users table verified/created successfully!");
+    
+    // --- TEMPORARY ADMIN SETUP: RUNS FREE ON DEPLOY ---
+    pool.query("UPDATE users SET is_admin = TRUE WHERE email = 'geraldcgarcia7@gmail.com';")
+      .then(() => console.log("SUCCESS: geraldcgarcia7@gmail.com is now flagged as an Admin!"))
+      .catch((err) => console.error("Admin setup error (This is normal if 'is_admin' column isn't built yet):", err));
+  })
   .catch((err) => console.error("Error creating users table:", err));
 
 // Reviews table — stores submitted reviews so they persist across visits
@@ -190,11 +197,6 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // Small helper to pull the raw userId value out of the cookie header.
-// NOTE: this cookie is just a plain, unsigned value right now — anyone
-// could open dev tools and manually set document.cookie="userId=1" to
-// access another account. Fine while you're building, but before this
-// handles real user data, swap to signed cookies (cookie-parser with a
-// secret) or a proper session library (e.g. express-session).
 function getUserIdFromCookies(req) {
   const cookies = req.headers.cookie;
   if (!cookies) return null;
@@ -208,7 +210,6 @@ function getUserIdFromCookies(req) {
 // API Endpoint: ADMIN VIEW USERS
 app.get('/api/admin/users', async (req, res) => {
   try {
-    // Grabs only the safety details, ignoring the scrambled password column entirely
     const result = await pool.query("SELECT id, username, email FROM users ORDER BY id ASC");
     res.json(result.rows);
   } catch (err) {
