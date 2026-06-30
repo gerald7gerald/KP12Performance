@@ -63,7 +63,6 @@
 
         <a href="nut.html" class="path path-nutrition fade-up" style="--d:0.3s">
             <div class="path-inner">
-                
                 <h2 class="path-title">NUTRITION</h2>
                 <p class="path-desc">Fueling strategies and meal guidance that support performance and recovery, not just willpower.</p>
                 <span class="path-cta">Enter Nutrition <span class="arrow">→</span></span>
@@ -80,20 +79,24 @@
             WHAT PEOPLE<br>ARE SAYING
         </h2>
 
-        <div class="review-card fade-up" style="--d:0.2s">
-
-            <div class="stars">
-                ★★★★★
+        <div class="review-slideshow-window fade-up" style="--d:0.2s; position: relative; max-width: 600px; margin: 0 auto 2rem; overflow: hidden;">
+            
+            <div id="index-reviews-container" style="display: flex; transition: transform 0.5s ease-in-out; width: 100%;">
+                <div class="review-card-slide" style="min-width: 100%; box-sizing: border-box; padding: 30px; text-align: center; background: var(--bg-panel, #15171A); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div class="stars" style="color: #FFC247; margin-bottom: 10px;">★★★★★</div>
+                    <p class="review-text" style="font-family: 'Work Sans', sans-serif; font-style: italic; font-size: 1.1rem; line-height: 1.6;">
+                        "Loading community athlete reviews..."
+                    </p>
+                    <p class="review-author" style="font-family: 'JetBrains Mono', monospace; margin-top: 15px; color: var(--text-muted, #8C8F96);">
+                        — KP12 Team
+                    </p>
+                </div>
             </div>
 
-            <p class="review-text">
-                "Be the first athlete to leave a review and share your experience with KP12 Performance."
-            </p>
-
-            <p class="review-author">
-                — Your Name Here
-            </p>
-
+            <div class="slideshow-controls" style="display: flex; justify-content: space-between; position: absolute; top: 50%; width: 100%; transform: translateY(-50%); pointer-events: none;">
+                <button id="prevReviewBtn" class="slide-arrow" style="background: rgba(0,0,0,0.6); color: white; border: none; padding: 12px 16px; font-size: 1.2rem; cursor: pointer; pointer-events: auto; transition: 0.2s;">←</button>
+                <button id="nextReviewBtn" class="slide-arrow" style="background: rgba(0,0,0,0.6); color: white; border: none; padding: 12px 16px; font-size: 1.2rem; cursor: pointer; pointer-events: auto; transition: 0.2s;">→</button>
+            </div>
         </div>
 
         <button id="reviewBtn" class="review-button fade-up" style="--d:0.3s">
@@ -106,5 +109,7 @@
     <script src="nav.js"></script>
     <script src="review.js"></script>
     <script src="hero-slideshow.js"></script>
+    
+    <script src="index-reviews.js"></script>
 </body>
 </html>
