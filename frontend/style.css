@@ -1793,11 +1793,36 @@ transform:translateY(70px);
     border-color: var(--athletics);
 }
 
+.review-list-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
 .review-list-stars {
     color: var(--athletics);
     font-size: 16px;
     letter-spacing: 3px;
-    margin-bottom: 12px;
+}
+
+.review-delete-btn {
+    background: transparent;
+    border: 1px solid var(--training);
+    color: var(--training);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.review-delete-btn:hover {
+    background: var(--training);
+    color: var(--training-dark);
 }
 
 .review-list-comment {
