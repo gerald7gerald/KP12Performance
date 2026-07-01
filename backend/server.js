@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
-const bcrypt = require('bcrypt'); // Added for encrypting passwords
-const path = require('path');     // Added to locate your frontend folder files
+const bcrypt = require('bcrypt');
+const path = require('path');
+const crypto = require('crypto'); // Built-in Node module — no install needed
+const { Resend } = require('resend'); // npm install resend
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -65,6 +69,22 @@ const createReviewsTableQuery = `
 pool.query(createReviewsTableQuery)
   .then(() => console.log("Reviews table verified/created successfully!"))
   .catch((err) => console.error("Error creating reviews table:", err));
+
+// Password reset tokens — each row is a single-use token that expires in 1 hour
+const createPasswordResetsQuery = `
+  CREATE TABLE IF NOT EXISTS password_resets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+`;
+
+pool.query(createPasswordResetsQuery)
+  .then(() => console.log("Password resets table verified/created successfully!"))
+  .catch((err) => console.error("Error creating password_resets table:", err));
 
 // Small helper so signup and login both issue the cookie the same way
 function setLoginCookie(res, userId) {
@@ -309,6 +329,131 @@ app.delete('/api/reviews/:id', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error deleting review." });
+  }
+});
+
+// API Endpoint: FORGOT PASSWORD
+// Generates a secure reset token, saves it, and emails the user a link.
+// Always returns a 200 even if the email isn't found — this prevents
+// attackers from figuring out which emails are registered.
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Please provide your email address." });
+  }
+
+  try {
+    const result = await pool.query("SELECT id, username FROM users WHERE email = $1", [email]);
+
+    if (result.rows.length > 0) {
+      const user = result.rows[0];
+
+      // Generate a cryptographically random token
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+      // Invalidate any existing unused tokens for this user before creating a new one
+      await pool.query(
+        "UPDATE password_resets SET used = TRUE WHERE user_id = $1 AND used = FALSE",
+        [user.id]
+      );
+
+      // Store the new token
+      await pool.query(
+        "INSERT INTO password_resets (user_id, token, expires_at) VALUES ($1, $2, $3)",
+        [user.id, token, expiresAt]
+      );
+
+      const resetLink = `https://kp12performance.com/reset-password.html?token=${token}`;
+
+      // Send the email via Resend
+      await resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: email,
+        subject: 'Reset your KP12 Performance password',
+        html: `
+          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:520px;margin:0 auto;padding:48px 40px;border:1px solid #232529;">
+            <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#8C8F96;margin-bottom:16px;">[ PASSWORD RESET ]</p>
+            <h1 style="font-size:28px;font-weight:700;text-transform:uppercase;margin:0 0 20px;">Hey ${user.username},</h1>
+            <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin-bottom:32px;">
+              We received a request to reset your KP12 Performance password. Click the button below to choose a new one. This link expires in <strong style="color:#F5F4F0;">1 hour</strong>.
+            </p>
+            <a href="${resetLink}" style="display:inline-block;background:#B8FF3F;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:16px 32px;margin-bottom:32px;">
+              Reset Password
+            </a>
+            <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">
+              If you didn't request this, you can safely ignore this email — your password won't change.<br><br>
+              Or copy this link into your browser:<br>
+              <a href="${resetLink}" style="color:#B8FF3F;word-break:break-all;">${resetLink}</a>
+            </p>
+          </div>
+        `
+      });
+    }
+
+    // Always respond with success to avoid revealing whether the email exists
+    res.json({ message: "If that email is registered, a reset link is on its way." });
+
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+});
+
+// API Endpoint: RESET PASSWORD
+// Validates the token and updates the user's password.
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+    return res.status(400).json({ error: "Token and new password are required." });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters." });
+  }
+
+  try {
+    // Find a valid, unused, non-expired token
+    const result = await pool.query(
+      `SELECT * FROM password_resets
+       WHERE token = $1
+         AND used = FALSE
+         AND expires_at > NOW()`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "This reset link is invalid or has expired. Please request a new one." });
+    }
+
+    const resetRow = result.rows[0];
+
+    // Hash the new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Update the user's password
+    await pool.query(
+      "UPDATE users SET password = $1 WHERE id = $2",
+      [hashedPassword, resetRow.user_id]
+    );
+
+    // Mark the token as used so it can't be reused
+    await pool.query(
+      "UPDATE password_resets SET used = TRUE WHERE id = $1",
+      [resetRow.id]
+    );
+
+    // Log them in automatically after resetting
+    setLoginCookie(res, resetRow.user_id);
+
+    res.json({ message: "Password reset successfully! Redirecting you now..." });
+
+  } catch (err) {
+    console.error("Reset password error:", err);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
   }
 });
 

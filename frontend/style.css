@@ -711,6 +711,18 @@ a {
     border-radius: 2px;
 }
 
+.auth-success {
+    display: none;
+    margin-top: 18px;
+    padding: 12px 14px;
+    background: rgba(184, 255, 63, 0.08);
+    border: 1px solid rgba(184, 255, 63, 0.35);
+    color: var(--athletics);
+    font-size: 13px;
+    line-height: 1.4;
+    border-radius: 2px;
+}
+
 .auth-switch {
     margin-top: 28px;
     font-size: 14px;
