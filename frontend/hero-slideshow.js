@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
 
-    let current = 0;
+    let current = 1;
     const INTERVAL_MS = 5000;
 
     setInterval(() => {
