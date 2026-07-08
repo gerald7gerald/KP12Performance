@@ -50,6 +50,16 @@
                 <div class="tra-service-inner">
                     <p class="tra-service-desc">Private training to enhance athletic potential. Develop sport-specific needs by training for strength, speed, coordination, injury prevention, and mobility. Sport-specific training includes training of energy systems, and the program incorporates modern-day exercise science equipment to track performance progress.</p>
                     <p class="tra-service-note">Nutritional advice and recovery can also be included if needed.</p>
+                    <div class="tra-pricing">
+                        <div class="tra-price-card">
+                            <span class="tra-price-sessions">4 Sessions</span>
+                            <span class="tra-price-amount">$175</span>
+                        </div>
+                        <div class="tra-price-card tra-price-card--highlight">
+                            <span class="tra-price-sessions">8 Sessions</span>
+                            <span class="tra-price-amount">$350</span>
+                        </div>
+                    </div>
                     <div class="tra-service-chips">
                         <span class="stat-chip">STRENGTH</span>
                         <span class="stat-chip">SPEED</span>
@@ -74,6 +84,16 @@
             <div class="tra-service-body">
                 <div class="tra-service-inner">
                     <p class="tra-service-desc">Individualized training to meet exactly what you need. From being introduced to the weight room for the first time to needing accountability and motivation to hit your goals — everything you want and need is here. Sessions include warm-ups, exercises, and recovery.</p>
+                    <div class="tra-pricing">
+                        <div class="tra-price-card">
+                            <span class="tra-price-sessions">6 Sessions</span>
+                            <span class="tra-price-amount">$250</span>
+                        </div>
+                        <div class="tra-price-card tra-price-card--highlight">
+                            <span class="tra-price-sessions">9 Sessions</span>
+                            <span class="tra-price-amount">$400</span>
+                        </div>
+                    </div>
                     <div class="tra-service-chips">
                         <span class="stat-chip">INDIVIDUALIZED</span>
                         <span class="stat-chip">ACCOUNTABILITY</span>
@@ -96,6 +116,12 @@
             <div class="tra-service-body">
                 <div class="tra-service-inner">
                     <p class="tra-service-desc">Proper training at a young age enhances motor development and motor control. Improving these foundational skills improves both quality of life and athletic performance down the road — building the habits and movement patterns that last a lifetime.</p>
+                    <div class="tra-pricing">
+                        <div class="tra-price-card">
+                            <span class="tra-price-sessions">4 Sessions</span>
+                            <span class="tra-price-amount">$100</span>
+                        </div>
+                    </div>
                     <div class="tra-service-chips">
                         <span class="stat-chip">MOTOR DEVELOPMENT</span>
                         <span class="stat-chip">MOTOR CONTROL</span>
@@ -118,6 +144,12 @@
             <div class="tra-service-body">
                 <div class="tra-service-inner">
                     <p class="tra-service-desc">Training built around your life — not the other way around. Programs are designed to improve strength, endurance, and overall health for adults who want to feel better, move better, and perform at their best no matter their starting point.</p>
+                    <div class="tra-pricing">
+                        <div class="tra-price-card">
+                            <span class="tra-price-sessions">4 Sessions</span>
+                            <span class="tra-price-amount">$225</span>
+                        </div>
+                    </div>
                     <div class="tra-service-chips">
                         <span class="stat-chip">STRENGTH</span>
                         <span class="stat-chip">ENDURANCE</span>
@@ -140,6 +172,12 @@
             <div class="tra-service-body">
                 <div class="tra-service-inner">
                     <p class="tra-service-desc">Online training on your schedule. Individuals complete workouts at their own time with whatever equipment is available to them. Workouts are provided based on what is accessible — fully customized to your situation, wherever you are.</p>
+                    <div class="tra-pricing">
+                        <div class="tra-price-card">
+                            <span class="tra-price-sessions">9 Sessions</span>
+                            <span class="tra-price-amount">$250</span>
+                        </div>
+                    </div>
                     <div class="tra-service-chips">
                         <span class="stat-chip">FULLY ONLINE</span>
                         <span class="stat-chip">ANY EQUIPMENT</span>
@@ -151,6 +189,7 @@
             </div>
         </div>
 
+        
 
     </section>
 
@@ -170,7 +209,6 @@
     <script src="script.js"></script>
     <script src="nav.js"></script>
     <script>
-        // Scroll-reveal
         const revealEls = document.querySelectorAll(".reveal");
         if ("IntersectionObserver" in window) {
             const obs = new IntersectionObserver((entries) => {
@@ -182,11 +220,8 @@
         } else {
             revealEls.forEach(el => el.classList.add("in-view"));
         }
-        setTimeout(() => {
-            revealEls.forEach(el => el.classList.add("in-view"));
-        }, 1800);
+        setTimeout(() => { revealEls.forEach(el => el.classList.add("in-view")); }, 1800);
 
-        // Accordion — only one open at a time
         function toggleService(header) {
             const item = header.closest(".tra-service-item");
             const isOpen = item.classList.contains("is-open");
