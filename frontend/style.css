@@ -1875,3 +1875,239 @@ transform:translateY(70px);
         padding: 24px 22px;
     }
 }
+
+/* ---------- TRAINING PAGE ---------- */
+.tra-hero {
+    position: relative;
+    min-height: 72vh;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(255, 86, 48, 0.18), transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(255, 86, 48, 0.08), transparent 55%),
+        repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 30px),
+        var(--bg-panel);
+}
+
+.tra-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(13,14,16,0.95) 100%);
+}
+
+.tra-hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 0 6vw 80px;
+    max-width: 760px;
+}
+
+.tra-hero-content .eyebrow {
+    color: var(--training);
+    margin-bottom: 18px;
+}
+
+.tra-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 7vw, 80px);
+    line-height: 1.02;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+}
+
+.tra-hero-sub {
+    color: var(--text-muted);
+    font-size: clamp(15px, 1.4vw, 17px);
+    line-height: 1.6;
+    max-width: 520px;
+}
+
+/* Services accordion list */
+.tra-services {
+    padding: 80px 6vw;
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.tra-service-item {
+    border-top: 1px solid #232529;
+}
+
+.tra-service-item:last-child {
+    border-bottom: 1px solid #232529;
+}
+
+.tra-service-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 28px 0;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.25s ease;
+}
+
+.tra-service-header:hover .tra-service-title {
+    color: var(--training);
+}
+
+.tra-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--training);
+    display: block;
+    margin-bottom: 8px;
+}
+
+.tra-service-title {
+    font-family: var(--font-display);
+    font-size: clamp(22px, 3vw, 30px);
+    text-transform: uppercase;
+    line-height: 1.1;
+    transition: color 0.25s ease;
+}
+
+.tra-chevron {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    color: var(--training);
+    flex-shrink: 0;
+    transition: transform 0.35s ease;
+    line-height: 1;
+}
+
+.tra-service-item.is-open .tra-chevron {
+    transform: rotate(45deg);
+}
+
+/* Accordion body */
+.tra-service-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.4s ease;
+    overflow: hidden;
+}
+
+.tra-service-item.is-open .tra-service-body {
+    grid-template-rows: 1fr;
+}
+
+.tra-service-body > * {
+    min-height: 0;
+}
+
+.tra-service-desc {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.65;
+    max-width: 660px;
+    padding-bottom: 14px;
+}
+
+.tra-service-note {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--training);
+    opacity: 0.8;
+    margin-bottom: 18px;
+}
+
+.tra-service-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.tra-book-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--training);
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--training);
+    margin-bottom: 32px;
+    transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.tra-book-btn:hover {
+    color: var(--text);
+    border-color: var(--text);
+}
+
+.tra-book-btn--large {
+    font-size: 14px;
+    padding: 16px 32px;
+    border: 1px solid var(--training);
+    background: transparent;
+    margin-bottom: 0;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.tra-book-btn--large:hover {
+    background: var(--training);
+    color: var(--training-dark);
+    border-color: var(--training);
+}
+
+/* CTA band */
+.tra-cta {
+    background: var(--bg-panel);
+    border-top: 1px solid #232529;
+    border-bottom: 1px solid #232529;
+    padding: 100px 6vw;
+    text-align: center;
+}
+
+.tra-cta .eyebrow {
+    color: var(--training);
+    margin-bottom: 20px;
+}
+
+.tra-cta-title {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 6vw, 64px);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.tra-cta-sub {
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto 40px;
+}
+
+@media (max-width: 700px) {
+    .tra-hero {
+        min-height: 60vh;
+    }
+
+    .tra-hero-content {
+        padding: 0 7vw 60px;
+    }
+
+    .tra-services {
+        padding: 60px 7vw;
+    }
+
+    .tra-service-header {
+        padding: 22px 0;
+    }
+
+    .tra-cta {
+        padding: 80px 7vw;
+    }
+}
