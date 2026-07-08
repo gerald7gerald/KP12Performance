@@ -1876,7 +1876,6 @@ transform:translateY(70px);
     }
 }
 
-/* ---------- TRAINING PAGE ---------- */
 .tra-hero {
     position: relative;
     min-height: 72vh;
@@ -1986,7 +1985,9 @@ transform:translateY(70px);
     transform: rotate(45deg);
 }
 
-/* Accordion body */
+/* Accordion body — collapsed by default using CSS grid trick.
+   Requires a SINGLE direct child (.tra-service-inner) to work correctly.
+   Multiple direct children break the 0fr collapse. */
 .tra-service-body {
     display: grid;
     grid-template-rows: 0fr;
@@ -1998,8 +1999,11 @@ transform:translateY(70px);
     grid-template-rows: 1fr;
 }
 
-.tra-service-body > * {
+/* The single required inner wrapper — min-height: 0 is what makes
+   the collapse actually work */
+.tra-service-inner {
     min-height: 0;
+    overflow: hidden;
 }
 
 .tra-service-desc {
