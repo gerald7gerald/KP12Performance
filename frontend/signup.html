@@ -31,6 +31,8 @@
                 <p class="auth-sub">Set up an account to book sessions and track your progress.</p>
 
                 <form id="signup-form" class="auth-form">
+
+                    <!-- Basic info -->
                     <div class="field">
                         <label for="signup-username">Username</label>
                         <input type="text" id="signup-username" placeholder="Username" required>
@@ -49,11 +51,11 @@
                     </div>
                     <div class="auth-form-row">
                         <div class="field">
-                            <label for="signup-age">Age</label>
+                            <label for="signup-age">Your Age</label>
                             <input type="number" id="signup-age" placeholder="Age" min="5" max="100">
                         </div>
                         <div class="field">
-                            <label for="signup-gender">Gender</label>
+                            <label for="signup-gender">Your Gender</label>
                             <select id="signup-gender">
                                 <option value="" disabled selected>Select</option>
                                 <option value="Male">Male</option>
@@ -63,11 +65,73 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Role selection -->
+                    <div class="field">
+                        <label>Are you the athlete or a parent/guardian?</label>
+                        <div class="role-toggle">
+                            <button type="button" class="role-btn role-btn--active" data-role="athlete">
+                                I'm the Athlete
+                            </button>
+                            <button type="button" class="role-btn" data-role="parent_guardian">
+                                Parent / Guardian
+                            </button>
+                        </div>
+                        <input type="hidden" id="signup-role" value="athlete">
+                    </div>
+
+                    <!-- Athlete details (only shown for parent/guardian) -->
+                    <div id="athlete-fields" class="athlete-fields" style="display:none;">
+                        <p class="athlete-fields-label">[ ATHLETE DETAILS ]</p>
+                        <div class="field">
+                            <label for="athlete-name">Athlete's Full Name</label>
+                            <input type="text" id="athlete-name" placeholder="Full name">
+                        </div>
+                        <div class="auth-form-row">
+                            <div class="field">
+                                <label for="athlete-age">Athlete's Age</label>
+                                <input type="number" id="athlete-age" placeholder="Age" min="1" max="30">
+                            </div>
+                            <div class="field">
+                                <label for="athlete-gender">Athlete's Gender</label>
+                                <select id="athlete-gender">
+                                    <option value="" disabled selected>Select</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Non-binary">Non-binary</option>
+                                    <option value="Prefer not to say">Prefer not to say</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- How did you hear about us -->
+                    <div class="field">
+                        <label for="signup-referral">How did you hear about us?</label>
+                        <select id="signup-referral">
+                            <option value="" disabled selected>Select an option</option>
+                            <option value="Social Media">Social Media (TikTok, YouTube, Instagram)</option>
+                            <option value="Google/Yelp">Google / Yelp Ad</option>
+                            <option value="School">School</option>
+                            <option value="Friend/Family">Friend / Family</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Conditional referral detail fields -->
+                    <div id="referral-friend" class="field" style="display:none;">
+                        <label for="referral-friend-name">Friend or family member's full name</label>
+                        <input type="text" id="referral-friend-name" placeholder="Full name">
+                    </div>
+                    <div id="referral-other" class="field" style="display:none;">
+                        <label for="referral-other-text">Please describe</label>
+                        <input type="text" id="referral-other-text" placeholder="Tell us how you found us">
+                    </div>
+
                     <button type="submit">Create Account</button>
                 </form>
 
                 <p class="auth-error" id="signup-error"></p>
-
                 <p class="auth-switch">Already have an account? <a href="login.html">Login here</a></p>
             </div>
         </div>
@@ -75,5 +139,27 @@
     </div>
 
     <script src="auth.js"></script>
+    <script>
+    // Role toggle
+    document.querySelectorAll(".role-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".role-btn").forEach(b => b.classList.remove("role-btn--active"));
+            btn.classList.add("role-btn--active");
+            const role = btn.dataset.role;
+            document.getElementById("signup-role").value = role;
+            document.getElementById("athlete-fields").style.display =
+                role === "parent_guardian" ? "flex" : "none";
+        });
+    });
+
+    // Referral conditional fields
+    document.getElementById("signup-referral").addEventListener("change", function () {
+        document.getElementById("referral-friend").style.display =
+            this.value === "Friend/Family" ? "flex" : "none";
+        document.getElementById("referral-other").style.display =
+            this.value === "Other" ? "flex" : "none";
+    });
+    </script>
+
 </body>
 </html>

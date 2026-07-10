@@ -46,6 +46,18 @@ pool.query(createTableQuery)
   })
   .then(() => {
     console.log("Profile columns (phone, age, gender) verified/created successfully!");
+    return pool.query(`
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS role VARCHAR(30),
+        ADD COLUMN IF NOT EXISTS athlete_name VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS athlete_age INTEGER,
+        ADD COLUMN IF NOT EXISTS athlete_gender VARCHAR(30),
+        ADD COLUMN IF NOT EXISTS referral_source VARCHAR(60),
+        ADD COLUMN IF NOT EXISTS referral_detail TEXT;
+    `);
+  })
+  .then(() => {
+    console.log("Extended profile columns verified/created successfully!");
     return pool.query("UPDATE users SET is_admin = TRUE WHERE email = 'geraldcgarcia7@gmail.com';");
   })
   .then(() => console.log("SUCCESS: geraldcgarcia7@gmail.com is now flagged as an Admin!"))
@@ -135,9 +147,15 @@ app.get('/api/data', async (req, res) => {
 
 // --- AUTH ROUTES ---
 
-// SIGNUP — saves phone, age, gender
+// SIGNUP
 app.post('/api/auth/signup', async (req, res) => {
-  const { username, email, password, phone, age, gender } = req.body;
+  const {
+    username, email, password,
+    phone, age, gender,
+    role, athleteName, athleteAge, athleteGender,
+    referralSource, referralDetail
+  } = req.body;
+
   try {
     const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     if (userCheck.rows.length > 0) {
@@ -146,8 +164,24 @@ app.post('/api/auth/signup', async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const insertResult = await pool.query(
-      "INSERT INTO users (username, email, password, phone, age, gender) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
-      [username, email, hashedPassword, phone || null, age ? parseInt(age) : null, gender || null]
+      `INSERT INTO users
+        (username, email, password, phone, age, gender,
+         role, athlete_name, athlete_age, athlete_gender,
+         referral_source, referral_detail)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       RETURNING id`,
+      [
+        username, email, hashedPassword,
+        phone || null,
+        age ? parseInt(age) : null,
+        gender || null,
+        role || null,
+        athleteName || null,
+        athleteAge ? parseInt(athleteAge) : null,
+        athleteGender || null,
+        referralSource || null,
+        referralDetail || null
+      ]
     );
     setLoginCookie(res, insertResult.rows[0].id);
     res.status(201).json({ message: "User registered successfully!" });
@@ -187,7 +221,7 @@ app.get('/api/auth/status', (req, res) => {
   res.json({ loggedIn: false });
 });
 
-// ME — full profile including phone/age/gender/is_admin
+// ME
 app.get('/api/auth/me', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Not logged in." });
@@ -204,7 +238,7 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
-// UPDATE PROFILE — lets users edit phone, age, gender after signup
+// UPDATE PROFILE
 app.patch('/api/auth/profile', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Please sign in." });
@@ -232,7 +266,11 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, username, email, phone, age, gender, is_admin FROM users ORDER BY id ASC"
+      `SELECT id, username, email, phone, age, gender,
+              role, athlete_name, athlete_age, athlete_gender,
+              referral_source, referral_detail,
+              is_admin
+       FROM users ORDER BY id ASC`
     );
     res.json(result.rows);
   } catch (err) {
@@ -306,14 +344,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       const user = result.rows[0];
       const token = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-      await pool.query(
-        "UPDATE password_resets SET used = TRUE WHERE user_id = $1 AND used = FALSE",
-        [user.id]
-      );
-      await pool.query(
-        "INSERT INTO password_resets (user_id, token, expires_at) VALUES ($1, $2, $3)",
-        [user.id, token, expiresAt]
-      );
+      await pool.query("UPDATE password_resets SET used = TRUE WHERE user_id = $1 AND used = FALSE", [user.id]);
+      await pool.query("INSERT INTO password_resets (user_id, token, expires_at) VALUES ($1, $2, $3)", [user.id, token, expiresAt]);
       const resetLink = `https://kp12performance.com/reset-password.html?token=${token}`;
       await resend.emails.send({
         from: 'support@kp12performance.com',
@@ -324,17 +356,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
             <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;">
             <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#8C8F96;margin-bottom:16px;">[ PASSWORD RESET ]</p>
             <h1 style="font-size:28px;font-weight:700;text-transform:uppercase;margin:0 0 20px;">Hey ${user.username},</h1>
-            <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin-bottom:32px;">
-              We received a request to reset your KP12 Performance password. Click the button below to choose a new one. This link expires in <strong style="color:#F5F4F0;">1 hour</strong>.
-            </p>
-            <a href="${resetLink}" style="display:inline-block;background:#B8FF3F;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:16px 32px;margin-bottom:32px;">
-              Reset Password
-            </a>
-            <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">
-              If you didn't request this, you can safely ignore this email — your password won't change.<br><br>
-              Or copy this link into your browser:<br>
-              <a href="${resetLink}" style="color:#B8FF3F;word-break:break-all;">${resetLink}</a>
-            </p>
+            <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin-bottom:32px;">We received a request to reset your KP12 Performance password. Click the button below to choose a new one. This link expires in <strong style="color:#F5F4F0;">1 hour</strong>.</p>
+            <a href="${resetLink}" style="display:inline-block;background:#B8FF3F;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:16px 32px;margin-bottom:32px;">Reset Password</a>
+            <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">If you didn't request this, you can safely ignore this email — your password won't change.<br><br>Or copy this link: <a href="${resetLink}" style="color:#B8FF3F;word-break:break-all;">${resetLink}</a></p>
           </div>
         `
       });
@@ -348,12 +372,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
 app.post('/api/auth/reset-password', async (req, res) => {
   const { token, password } = req.body;
-  if (!token || !password) {
-    return res.status(400).json({ error: "Token and new password are required." });
-  }
-  if (password.length < 8) {
-    return res.status(400).json({ error: "Password must be at least 8 characters." });
-  }
+  if (!token || !password) return res.status(400).json({ error: "Token and new password are required." });
+  if (password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters." });
   try {
     const result = await pool.query(
       `SELECT * FROM password_resets WHERE token = $1 AND used = FALSE AND expires_at > NOW()`,
@@ -363,8 +383,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
       return res.status(400).json({ error: "This reset link is invalid or has expired. Please request a new one." });
     }
     const resetRow = result.rows[0];
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, 10);
     await pool.query("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, resetRow.user_id]);
     await pool.query("UPDATE password_resets SET used = TRUE WHERE id = $1", [resetRow.id]);
     setLoginCookie(res, resetRow.user_id);

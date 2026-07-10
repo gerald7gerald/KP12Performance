@@ -1,5 +1,3 @@
-// ---- Backend config ----
-// Empty string = same origin (frontend and backend served from same domain)
 const API_BASE_URL = "";
 
 function showError(id, message) {
@@ -28,12 +26,24 @@ document.addEventListener("DOMContentLoaded", () => {
             const username = document.getElementById("signup-username").value.trim();
             const email    = document.getElementById("signup-email").value.trim();
             const password = document.getElementById("signup-password").value;
+            const phone    = document.getElementById("signup-phone")?.value.trim()   || "";
+            const age      = document.getElementById("signup-age")?.value             || "";
+            const gender   = document.getElementById("signup-gender")?.value          || "";
 
-            // New profile fields — optional, won't break if the elements
-            // don't exist on a page (?.value guards against that)
-            const phone  = document.getElementById("signup-phone")?.value.trim()  || "";
-            const age    = document.getElementById("signup-age")?.value            || "";
-            const gender = document.getElementById("signup-gender")?.value         || "";
+            // Role & athlete details
+            const role          = document.getElementById("signup-role")?.value       || "athlete";
+            const athleteName   = document.getElementById("athlete-name")?.value.trim() || "";
+            const athleteAge    = document.getElementById("athlete-age")?.value        || "";
+            const athleteGender = document.getElementById("athlete-gender")?.value     || "";
+
+            // Referral
+            const referralSource = document.getElementById("signup-referral")?.value  || "";
+            let   referralDetail = "";
+            if (referralSource === "Friend/Family") {
+                referralDetail = document.getElementById("referral-friend-name")?.value.trim() || "";
+            } else if (referralSource === "Other") {
+                referralDetail = document.getElementById("referral-other-text")?.value.trim()  || "";
+            }
 
             const submitBtn = signupForm.querySelector("button[type='submit']");
             submitBtn.disabled = true;
@@ -42,7 +52,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, email, password, phone, age, gender })
+                    body: JSON.stringify({
+                        username, email, password,
+                        phone, age, gender,
+                        role, athleteName, athleteAge, athleteGender,
+                        referralSource, referralDetail
+                    })
                 });
                 const data = await res.json();
 
@@ -52,9 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Backend cookie takes over — no localStorage needed.
-                // If they were trying to do something before signing up,
-                // send them back there; otherwise go home.
                 const redirect = localStorage.getItem("redirectAfterLogin");
                 if (redirect) {
                     localStorage.removeItem("redirectAfterLogin");
@@ -97,7 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Backend cookie takes over — no localStorage needed.
                 const redirect = localStorage.getItem("redirectAfterLogin");
                 if (redirect) {
                     localStorage.removeItem("redirectAfterLogin");
@@ -113,4 +124,4 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-});
+}); 

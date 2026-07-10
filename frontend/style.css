@@ -439,7 +439,7 @@ a {
     outline-offset: -6px;
 }
 
-    
+
 
 .status-label {
     letter-spacing: 0.14em;
@@ -2574,4 +2574,158 @@ transform:translateY(70px);
     .social-link span {
         display: none; /* show icon only on small screens */
     }
+}
+/* ---------- SITE FOOTER ---------- */
+/* Hide the old status bar everywhere */
+.status-bar {
+    display: none;
+}
+
+.site-footer {
+    background: var(--bg-panel);
+    border-top: 1px solid #232529;
+    padding: 40px 5vw 32px;
+}
+
+.site-footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.site-footer-brand {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.site-footer-logo {
+    height: 32px;
+    width: auto;
+    display: block;
+    opacity: 0.85;
+    transition: opacity 0.25s ease;
+}
+
+.site-footer-logo:hover {
+    opacity: 1;
+}
+
+.site-footer-socials {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.25s ease;
+}
+
+.social-link:hover {
+    color: var(--text);
+}
+
+.social-link svg {
+    flex-shrink: 0;
+}
+
+.site-footer-copy {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    opacity: 0.6;
+    padding-top: 24px;
+    border-top: 1px solid #1d1f23;
+    margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+    .site-footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .site-footer-socials {
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .social-link span {
+        display: none; /* show icon only on small screens */
+    }
+}
+
+/* ---------- SIGNUP — ROLE TOGGLE & ATHLETE FIELDS ---------- */
+.role-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.role-btn {
+    background: var(--bg-panel);
+    border: 1px solid #2A2D31;
+    color: var(--text-muted);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+
+.role-btn:hover {
+    border-color: var(--athletics);
+    color: var(--athletics);
+}
+
+.role-btn--active {
+    border-color: var(--athletics);
+    color: var(--athletics-dark);
+    background: var(--athletics);
+}
+
+.athlete-fields {
+    flex-direction: column;
+    gap: 16px;
+    background: rgba(184, 255, 63, 0.04);
+    border: 1px solid rgba(184, 255, 63, 0.2);
+    padding: 20px;
+    border-radius: 2px;
+}
+
+.athlete-fields-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--athletics);
+    margin-bottom: 4px;
+}
+
+/* Employee table — role badge */
+.emp-role-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    background: rgba(184, 255, 63, 0.1);
+    border: 1px solid rgba(184, 255, 63, 0.35);
+    color: var(--athletics);
+    padding: 3px 8px;
+    border-radius: 2px;
 }
