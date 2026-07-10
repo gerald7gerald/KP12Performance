@@ -20,7 +20,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// --- STARTUP: create/migrate all tables in sequence ---
+// --- STARTUP: create/migrate all tables ---
 const createTableQuery = `
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -58,7 +58,7 @@ pool.query(createTableQuery)
   .then(() => console.log("SUCCESS: geraldcgarcia7@gmail.com is flagged as Admin!"))
   .catch((err) => console.error("Error during users table setup:", err));
 
-// Athletes table — separate rows per child, linked to the parent's user row
+// Athletes table
 const createAthletesTableQuery = `
   CREATE TABLE IF NOT EXISTS athletes (
     id SERIAL PRIMARY KEY,
@@ -69,11 +69,11 @@ const createAthletesTableQuery = `
     created_at TIMESTAMP DEFAULT NOW()
   );
 `;
-
 pool.query(createAthletesTableQuery)
   .then(() => console.log("Athletes table ready!"))
   .catch((err) => console.error("Error creating athletes table:", err));
 
+// Reviews table
 const createReviewsTableQuery = `
   CREATE TABLE IF NOT EXISTS reviews (
     id SERIAL PRIMARY KEY,
@@ -84,11 +84,11 @@ const createReviewsTableQuery = `
     created_at TIMESTAMP DEFAULT NOW()
   );
 `;
-
 pool.query(createReviewsTableQuery)
   .then(() => console.log("Reviews table ready!"))
   .catch((err) => console.error("Error creating reviews table:", err));
 
+// Password resets table
 const createPasswordResetsQuery = `
   CREATE TABLE IF NOT EXISTS password_resets (
     id SERIAL PRIMARY KEY,
@@ -99,10 +99,26 @@ const createPasswordResetsQuery = `
     created_at TIMESTAMP DEFAULT NOW()
   );
 `;
-
 pool.query(createPasswordResetsQuery)
   .then(() => console.log("Password resets table ready!"))
   .catch((err) => console.error("Error creating password_resets table:", err));
+
+// Schedule table — stores weekly recurring slots set by admins
+const createScheduleTableQuery = `
+  CREATE TABLE IF NOT EXISTS schedule (
+    id SERIAL PRIMARY KEY,
+    day_of_week VARCHAR(10) NOT NULL,
+    category VARCHAR(20) NOT NULL,
+    subcategory VARCHAR(60),
+    start_time VARCHAR(10) NOT NULL,
+    end_time VARCHAR(10) NOT NULL,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+`;
+pool.query(createScheduleTableQuery)
+  .then(() => console.log("Schedule table ready!"))
+  .catch((err) => console.error("Error creating schedule table:", err));
 
 // --- HELPERS ---
 
@@ -158,41 +174,20 @@ app.get('/api/data', async (req, res) => {
 
 // --- AUTH ROUTES ---
 
-// SIGNUP — saves athletes as separate rows in the athletes table
 app.post('/api/auth/signup', async (req, res) => {
-  const {
-    username, email, password,
-    phone, age, gender,
-    role,
-    referralSource, referralDetail,
-    athletes // array of { name, age, gender }
-  } = req.body;
-
+  const { username, email, password, phone, age, gender, role, referralSource, referralDetail, athletes } = req.body;
   try {
     const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     if (userCheck.rows.length > 0) {
       return res.status(400).json({ error: "User already exists with this email." });
     }
-
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const insertResult = await pool.query(
       `INSERT INTO users (username, email, password, phone, age, gender, role, referral_source, referral_detail)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-      [
-        username, email, hashedPassword,
-        phone || null,
-        age ? parseInt(age) : null,
-        gender || null,
-        role || null,
-        referralSource || null,
-        referralDetail || null
-      ]
+      [username, email, hashedPassword, phone || null, age ? parseInt(age) : null, gender || null, role || null, referralSource || null, referralDetail || null]
     );
-
     const userId = insertResult.rows[0].id;
-
-    // Insert each athlete as a separate row
     if (role === 'parent_guardian' && Array.isArray(athletes) && athletes.length > 0) {
       for (const athlete of athletes) {
         if (athlete.name || athlete.age || athlete.gender) {
@@ -203,7 +198,6 @@ app.post('/api/auth/signup', async (req, res) => {
         }
       }
     }
-
     setLoginCookie(res, userId);
     res.status(201).json({ message: "User registered successfully!" });
   } catch (err) {
@@ -212,19 +206,14 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
-// LOGIN
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (result.rows.length === 0) {
-      return res.status(400).json({ error: "Invalid email or password." });
-    }
+    if (result.rows.length === 0) return res.status(400).json({ error: "Invalid email or password." });
     const user = result.rows[0];
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(400).json({ error: "Invalid email or password." });
-    }
+    if (!validPassword) return res.status(400).json({ error: "Invalid email or password." });
     setLoginCookie(res, user.id);
     res.json({ message: "Logged in successfully!", user: { id: user.id, username: user.username } });
   } catch (err) {
@@ -244,8 +233,7 @@ app.get('/api/auth/me', async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Not logged in." });
   try {
     const result = await pool.query(
-      "SELECT id, username, email, phone, age, gender, is_admin FROM users WHERE id = $1",
-      [userId]
+      "SELECT id, username, email, phone, age, gender, is_admin FROM users WHERE id = $1", [userId]
     );
     if (result.rows.length === 0) return res.status(401).json({ error: "Not logged in." });
     res.json({ user: result.rows[0] });
@@ -260,10 +248,8 @@ app.patch('/api/auth/profile', async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Please sign in." });
   const { phone, age, gender } = req.body;
   try {
-    await pool.query(
-      `UPDATE users SET phone = $1, age = $2, gender = $3 WHERE id = $4`,
-      [phone || null, age ? parseInt(age) : null, gender || null, userId]
-    );
+    await pool.query(`UPDATE users SET phone = $1, age = $2, gender = $3 WHERE id = $4`,
+      [phone || null, age ? parseInt(age) : null, gender || null, userId]);
     res.json({ message: "Profile updated successfully." });
   } catch (err) {
     console.error(err);
@@ -278,28 +264,89 @@ app.post('/api/auth/logout', (req, res) => {
 
 // --- ADMIN ROUTES ---
 
-// Returns all users with their athletes array included
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT
-         u.id, u.username, u.email, u.phone, u.age, u.gender,
-         u.role, u.referral_source, u.referral_detail, u.is_admin,
-         COALESCE(
-           json_agg(
-             json_build_object('name', a.name, 'age', a.age, 'gender', a.gender)
-           ) FILTER (WHERE a.id IS NOT NULL),
-           '[]'
-         ) AS athletes
+      `SELECT u.id, u.username, u.email, u.phone, u.age, u.gender,
+              u.role, u.referral_source, u.referral_detail, u.is_admin,
+              COALESCE(json_agg(json_build_object('name',a.name,'age',a.age,'gender',a.gender))
+                FILTER (WHERE a.id IS NOT NULL), '[]') AS athletes
        FROM users u
        LEFT JOIN athletes a ON a.user_id = u.id
-       GROUP BY u.id
-       ORDER BY u.id ASC`
+       GROUP BY u.id ORDER BY u.id ASC`
     );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error fetching users" });
+  }
+});
+
+// --- SCHEDULE ROUTES ---
+
+// GET /api/schedule — PUBLIC: anyone can read the schedule (used on all pages)
+app.get('/api/schedule', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT s.id, s.day_of_week, s.category, s.subcategory, s.start_time, s.end_time,
+              u.username AS created_by
+       FROM schedule s
+       LEFT JOIN users u ON s.created_by = u.id
+       ORDER BY
+         CASE s.day_of_week
+           WHEN 'Monday'    THEN 1
+           WHEN 'Tuesday'   THEN 2
+           WHEN 'Wednesday' THEN 3
+           WHEN 'Thursday'  THEN 4
+           WHEN 'Friday'    THEN 5
+           WHEN 'Saturday'  THEN 6
+         END,
+         s.start_time ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error fetching schedule." });
+  }
+});
+
+// POST /api/schedule — ADMIN ONLY: add a slot
+app.post('/api/schedule', requireAdmin, async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  const { day, category, subcategory, startTime, endTime } = req.body;
+
+  if (!day || !category || !startTime || !endTime) {
+    return res.status(400).json({ error: "Day, category, start time, and end time are all required." });
+  }
+
+  const validDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  if (!validDays.includes(day)) {
+    return res.status(400).json({ error: "Invalid day." });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO schedule (day_of_week, category, subcategory, start_time, end_time, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [day, category, subcategory || null, startTime, endTime, userId]
+    );
+    res.status(201).json({ message: "Schedule slot saved!", slot: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error saving schedule slot." });
+  }
+});
+
+// DELETE /api/schedule/:id — ADMIN ONLY: remove a slot
+app.delete('/api/schedule/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("DELETE FROM schedule WHERE id = $1 RETURNING id", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: "Slot not found." });
+    res.json({ message: "Schedule slot removed." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error removing slot." });
   }
 });
 
@@ -309,13 +356,9 @@ app.post('/api/reviews', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Please sign in to leave a review." });
   const { trainingType, comment, rating } = req.body;
-  if (!trainingType || !comment || !rating) {
-    return res.status(400).json({ error: "Please fill out every field before submitting." });
-  }
+  if (!trainingType || !comment || !rating) return res.status(400).json({ error: "Please fill out every field." });
   const ratingNum = parseInt(rating, 10);
-  if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
-    return res.status(400).json({ error: "Rating must be between 1 and 5." });
-  }
+  if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) return res.status(400).json({ error: "Rating must be 1–5." });
   try {
     await pool.query(
       "INSERT INTO reviews (user_id, training_type, comment, rating) VALUES ($1, $2, $3, $4)",
@@ -333,8 +376,7 @@ app.get('/api/reviews', async (req, res) => {
     const result = await pool.query(
       `SELECT reviews.id, reviews.training_type, reviews.comment, reviews.rating, reviews.created_at,
               users.username
-       FROM reviews
-       JOIN users ON reviews.user_id = users.id
+       FROM reviews JOIN users ON reviews.user_id = users.id
        ORDER BY reviews.created_at DESC LIMIT 20`
     );
     res.json(result.rows);
@@ -390,12 +432,9 @@ app.post('/api/auth/reset-password', async (req, res) => {
   if (password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters." });
   try {
     const result = await pool.query(
-      `SELECT * FROM password_resets WHERE token = $1 AND used = FALSE AND expires_at > NOW()`,
-      [token]
+      `SELECT * FROM password_resets WHERE token = $1 AND used = FALSE AND expires_at > NOW()`, [token]
     );
-    if (result.rows.length === 0) {
-      return res.status(400).json({ error: "This reset link is invalid or has expired." });
-    }
+    if (result.rows.length === 0) return res.status(400).json({ error: "This reset link is invalid or has expired." });
     const resetRow = result.rows[0];
     const hashedPassword = await bcrypt.hash(password, 10);
     await pool.query("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, resetRow.user_id]);

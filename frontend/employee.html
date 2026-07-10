@@ -26,9 +26,75 @@
 
     <section class="emp-page">
 
+        <!-- ===== SCHEDULE BUILDER ===== -->
         <div class="emp-header">
+            <p class="eyebrow">[ SCHEDULE ]</p>
+            <h1 class="emp-title">Weekly Schedule</h1>
+            <p class="emp-sub">Set recurring weekly session times. These appear site-wide for users planning to book.</p>
+        </div>
+
+        <!-- Day selector -->
+        <div class="sched-builder-days" id="sched-day-boxes">
+            <button class="sched-day-box" data-day="Monday">Mon</button>
+            <button class="sched-day-box" data-day="Tuesday">Tue</button>
+            <button class="sched-day-box" data-day="Wednesday">Wed</button>
+            <button class="sched-day-box" data-day="Thursday">Thu</button>
+            <button class="sched-day-box" data-day="Friday">Fri</button>
+            <button class="sched-day-box" data-day="Saturday">Sat</button>
+        </div>
+
+        <!-- Add slot panel (shown when a day is selected) -->
+        <div id="sched-add-panel" class="sched-add-panel" style="display:none;">
+            <p class="sched-add-label" id="sched-panel-day-label">Adding slot for Monday</p>
+
+            <div class="sched-add-row">
+
+                <div class="field">
+                    <label>Category</label>
+                    <select id="sched-category">
+                        <option value="" disabled selected>Select category</option>
+                        <option value="Athletics">Athletics</option>
+                        <option value="Training">Training</option>
+                        <option value="Nutrition">Nutrition</option>
+                    </select>
+                </div>
+
+                <div class="field" id="sched-sub-wrap" style="display:none;">
+                    <label>Service</label>
+                    <select id="sched-subcategory">
+                        <option value="" disabled selected>Select service</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Start Time</label>
+                    <select id="sched-start"></select>
+                </div>
+
+                <div class="field">
+                    <label>End Time</label>
+                    <select id="sched-end"></select>
+                </div>
+
+                <button type="button" id="sched-save-btn" class="sched-save-btn">Save Slot</button>
+
+            </div>
+
+            <p class="sched-error" id="sched-error" style="display:none;"></p>
+        </div>
+
+        <!-- Live schedule preview -->
+        <div class="sched-preview">
+            <p class="eyebrow" style="color:var(--athletics);margin-bottom:20px;">[ CURRENT SCHEDULE ]</p>
+            <div id="schedule-widget"></div>
+        </div>
+
+        <div class="emp-divider"></div>
+
+        <!-- ===== MEMBER DIRECTORY ===== -->
+        <div class="emp-header" style="margin-top:0;">
             <p class="eyebrow">[ EMPLOYEE PORTAL ]</p>
-            <h1 class="emp-title">Member Directory</h1>
+            <h2 class="emp-title" style="font-size:clamp(28px,4vw,40px);">Member Directory</h2>
             <p class="emp-sub">All registered accounts with contact details. Admin only.</p>
         </div>
 
@@ -68,7 +134,164 @@
 
     <script src="script.js"></script>
     <script src="nav.js"></script>
+    <script src="schedule-widget.js"></script>
     <script>
+    // ---- Subcategory options per category ----
+    const SUBCATEGORIES = {
+        'Athletics': [],  // add later
+        'Nutrition': [],  // add later
+        'Training': [
+            'Sports Performance Training',
+            'Personal Training',
+            'Youth Performance Training',
+            'Adult Training',
+            'Remote Training',
+            'Swim Lessons'
+        ]
+    };
+
+    // ---- Generate time options (6:00 AM – 9:00 PM in 30-min steps) ----
+    function buildTimeOptions() {
+        const times = [];
+        for (let h = 6; h <= 21; h++) {
+            ['00','30'].forEach(m => {
+                if (h === 21 && m === '30') return;
+                const hour12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                const ampm   = h >= 12 ? 'PM' : 'AM';
+                times.push(`${hour12}:${m} ${ampm}`);
+            });
+        }
+        return times;
+    }
+
+    function populateTimeSelects() {
+        const times = buildTimeOptions();
+        const startSel = document.getElementById('sched-start');
+        const endSel   = document.getElementById('sched-end');
+        [startSel, endSel].forEach(sel => {
+            sel.innerHTML = '<option value="" disabled selected>Select</option>';
+            times.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = t;
+                sel.appendChild(opt);
+            });
+        });
+
+        // When start changes, default end to start + 1 hour
+        startSel.addEventListener('change', () => {
+            const times = buildTimeOptions();
+            const idx = times.indexOf(startSel.value);
+            if (idx !== -1 && idx + 2 < times.length) {
+                endSel.value = times[idx + 2]; // +2 = 1 hour (30-min steps)
+            }
+        });
+    }
+
+    // ---- Category → subcategory ----
+    document.getElementById('sched-category').addEventListener('change', function () {
+        const subs = SUBCATEGORIES[this.value] || [];
+        const wrap  = document.getElementById('sched-sub-wrap');
+        const sel   = document.getElementById('sched-subcategory');
+
+        if (subs.length > 0) {
+            sel.innerHTML = '<option value="" disabled selected>Select service</option>';
+            subs.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = s;
+                sel.appendChild(opt);
+            });
+            wrap.style.display = 'flex';
+        } else {
+            wrap.style.display = 'none';
+            sel.innerHTML = '';
+        }
+    });
+
+    // ---- Day box selection ----
+    let selectedDay = null;
+    document.querySelectorAll('.sched-day-box').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.sched-day-box').forEach(b => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            selectedDay = btn.dataset.day;
+            document.getElementById('sched-panel-day-label').textContent = `Adding slot for ${selectedDay}`;
+            document.getElementById('sched-add-panel').style.display = 'block';
+            document.getElementById('sched-error').style.display = 'none';
+            // Reset form
+            document.getElementById('sched-category').value = '';
+            document.getElementById('sched-subcategory').value = '';
+            document.getElementById('sched-sub-wrap').style.display = 'none';
+            document.getElementById('sched-start').value = '';
+            document.getElementById('sched-end').value   = '';
+        });
+    });
+
+    // ---- Save slot ----
+    document.getElementById('sched-save-btn').addEventListener('click', async () => {
+        const errorEl   = document.getElementById('sched-error');
+        const category  = document.getElementById('sched-category').value;
+        const subWrap   = document.getElementById('sched-sub-wrap');
+        const subcategory = subWrap.style.display !== 'none'
+            ? document.getElementById('sched-subcategory').value
+            : '';
+        const startTime = document.getElementById('sched-start').value;
+        const endTime   = document.getElementById('sched-end').value;
+
+        errorEl.style.display = 'none';
+
+        if (!selectedDay || !category || !startTime || !endTime) {
+            errorEl.textContent = 'Please fill in all fields before saving.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        if (subWrap.style.display !== 'none' && !subcategory) {
+            errorEl.textContent = 'Please select a service.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        const saveBtn = document.getElementById('sched-save-btn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            const res = await fetch('/api/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ day: selectedDay, category, subcategory, startTime, endTime })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                errorEl.textContent = data.error || 'Something went wrong.';
+                errorEl.style.display = 'block';
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Slot';
+                return;
+            }
+
+            // Reload the schedule widget to show the new slot
+            const widget = document.getElementById('schedule-widget');
+            widget.innerHTML = '<p style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:#8C8F96;text-align:center;padding:24px;">Refreshing...</p>';
+            fetch('/api/schedule').then(r => r.json()).then(slots => {
+                // Re-run the widget render
+                window.dispatchEvent(new Event('schedule-refresh'));
+                location.reload(); // simplest way to refresh both widget + day badges
+            });
+
+        } catch (err) {
+            console.error(err);
+            errorEl.textContent = "Couldn't reach the server. Please try again.";
+            errorEl.style.display = 'block';
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Slot';
+        }
+    });
+
+    populateTimeSelects();
+
+    // ---- Admin gate + member directory ----
     document.addEventListener("DOMContentLoaded", () => {
 
         fetch('/api/auth/me')
@@ -87,10 +310,7 @@
         function loadUsers() {
             fetch('/api/admin/users')
                 .then(res => res.json())
-                .then(users => {
-                    allUsers = users;
-                    renderTable(users);
-                })
+                .then(users => { allUsers = users; renderTable(users); })
                 .catch(err => {
                     console.error(err);
                     document.getElementById("emp-table-wrap").innerHTML =
@@ -106,21 +326,18 @@
         }
 
         function renderTable(users) {
-            const wrap = document.getElementById("emp-table-wrap");
+            const wrap    = document.getElementById("emp-table-wrap");
             const countEl = document.getElementById("emp-count");
             countEl.textContent = `${users.length} member${users.length !== 1 ? "s" : ""}`;
-
             if (users.length === 0) {
                 wrap.innerHTML = '<p class="emp-loading">No members found.</p>';
                 return;
             }
-
             let rows = "";
             users.forEach(u => {
-                const isParent = u.role === "parent_guardian";
-                const athletes = Array.isArray(u.athletes) ? u.athletes : [];
+                const isParent  = u.role === "parent_guardian";
+                const athletes  = Array.isArray(u.athletes) ? u.athletes : [];
                 const hasAthletes = athletes.length > 0;
-
                 rows += `
                     <tr class="emp-user-row">
                         <td class="emp-id">${u.id}</td>
@@ -131,93 +348,68 @@
                         <td>${esc(u.gender)}</td>
                         <td>
                             ${isParent
-                                ? `<span class="emp-role-badge">Parent</span>
-                                   ${hasAthletes
-                                       ? `<button type="button" class="emp-athletes-toggle" onclick="toggleAthletes(this, ${u.id})">
-                                              ▶ Athletes (${athletes.length})
-                                          </button>`
-                                       : ""}`
+                                ? `<span class="emp-role-badge">Parent</span>${hasAthletes
+                                    ? `<button type="button" class="emp-athletes-toggle" onclick="toggleAthletes(this,${u.id})">▶ Athletes (${athletes.length})</button>`
+                                    : ""}`
                                 : (u.role ? "Athlete" : "—")}
                         </td>
                         <td>${esc(u.referral_source)}</td>
                         <td>${esc(u.referral_detail)}</td>
                         <td>${u.is_admin ? '<span class="emp-admin-badge">ADMIN</span>' : "—"}</td>
-                    </tr>
-                `;
-
-                // Athlete sub-row (hidden by default)
+                    </tr>`;
                 if (isParent && hasAthletes) {
                     rows += `
                         <tr class="emp-athlete-row" id="athletes-${u.id}" style="display:none;">
                             <td colspan="10" class="emp-athlete-cell">
                                 <table class="emp-athlete-table">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Name</th>
-                                            <th>Age</th>
-                                            <th>Gender</th>
-                                        </tr>
-                                    </thead>
+                                    <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th></tr></thead>
                                     <tbody>
-                                        ${athletes.map((a, i) => `
+                                        ${athletes.map((a,i) => `
                                             <tr>
-                                                <td class="emp-id">${i + 1}</td>
+                                                <td class="emp-id">${i+1}</td>
                                                 <td>${esc(a.name)}</td>
                                                 <td>${esc(a.age)}</td>
                                                 <td>${esc(a.gender)}</td>
-                                            </tr>
-                                        `).join("")}
+                                            </tr>`).join("")}
                                     </tbody>
                                 </table>
                             </td>
-                        </tr>
-                    `;
+                        </tr>`;
                 }
             });
-
             wrap.innerHTML = `
                 <table class="emp-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Age</th>
-                            <th>Gender</th>
-                            <th>Role</th>
-                            <th>Heard From</th>
-                            <th>Referral Detail</th>
-                            <th>Admin</th>
+                            <th>ID</th><th>Username</th><th>Email</th><th>Phone</th>
+                            <th>Age</th><th>Gender</th><th>Role</th>
+                            <th>Heard From</th><th>Referral Detail</th><th>Admin</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
-                </table>
-            `;
+                </table>`;
         }
 
         window.toggleAthletes = function(btn, userId) {
-            const row = document.getElementById(`athletes-${userId}`);
+            const row    = document.getElementById(`athletes-${userId}`);
             const isOpen = row.style.display !== "none";
             row.style.display = isOpen ? "none" : "table-row";
             btn.textContent = isOpen
-                ? btn.textContent.replace("▼", "▶")
-                : btn.textContent.replace("▶", "▼");
+                ? btn.textContent.replace("▼","▶")
+                : btn.textContent.replace("▶","▼");
         };
 
         document.getElementById("emp-search").addEventListener("input", (ev) => {
             const q = ev.target.value.toLowerCase().trim();
             if (!q) { renderTable(allUsers); return; }
-            const filtered = allUsers.filter(u =>
-                (u.username        || "").toLowerCase().includes(q) ||
-                (u.email           || "").toLowerCase().includes(q) ||
-                (u.phone           || "").toLowerCase().includes(q) ||
-                (u.referral_source || "").toLowerCase().includes(q) ||
-                (u.referral_detail || "").toLowerCase().includes(q) ||
-                (u.athletes || []).some(a => (a.name || "").toLowerCase().includes(q))
-            );
-            renderTable(filtered);
+            renderTable(allUsers.filter(u =>
+                (u.username||"").toLowerCase().includes(q) ||
+                (u.email||"").toLowerCase().includes(q) ||
+                (u.phone||"").toLowerCase().includes(q) ||
+                (u.referral_source||"").toLowerCase().includes(q) ||
+                (u.referral_detail||"").toLowerCase().includes(q) ||
+                (u.athletes||[]).some(a => (a.name||"").toLowerCase().includes(q))
+            ));
         });
     });
     </script>
