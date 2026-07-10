@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Schedule | KP12 Performance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png">
+</head>
+<body>
+
+<header class="nav">
+    <a href="index.html" class="nav-brand">
+        <img src="logo.png" alt="KP12 Performance" class="nav-logo">
+    </a>
+    <ul class="nav-links">
+        <li><a href="my-schedule.html">My Schedule</a></li>
+        <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
+        <li><a href="abt.html">About Us</a></li>
+        <li><a href="shop.html">Shop</a></li>
+    </ul>
+</header>
+
+<!-- Not logged in state -->
+<section id="mys-guest" style="display:none;" class="mys-page mys-guest">
+    <p class="eyebrow" style="color:var(--training)">[ MY SCHEDULE ]</p>
+    <h1 class="mys-title">Sign in to view<br>your schedule.</h1>
+    <p class="mys-sub">Your booked sessions for the week will appear here once you're logged in.</p>
+    <a href="login.html" class="tra-book-btn" style="display:inline-block;margin-top:32px;">Log In →</a>
+    <span style="margin:0 16px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px;">or</span>
+    <a href="signup.html" class="tra-book-btn" style="display:inline-block;">Sign Up →</a>
+</section>
+
+<!-- Logged in state -->
+<section id="mys-main" class="mys-page" style="display:none;">
+
+    <div class="mys-header">
+        <p class="eyebrow">[ MY SCHEDULE ]</p>
+        <h1 class="mys-title" id="mys-greeting">Your Sessions This Week</h1>
+        <p class="mys-sub" id="mys-week-range"></p>
+    </div>
+
+    <div id="mys-bookings-wrap" class="mys-bookings-wrap">
+        <p class="mys-loading">Loading your schedule...</p>
+    </div>
+
+    <!-- No bookings state -->
+    <div id="mys-empty" class="mys-empty" style="display:none;">
+        <p class="eyebrow" style="color:var(--text-muted)">[ NO SESSIONS ]</p>
+        <h2 class="mys-empty-title">Nothing booked yet.</h2>
+        <p class="mys-sub">Browse the training and athletics programs to book your sessions for this week.</p>
+        <div class="mys-empty-links">
+            <a href="tra.html" class="mys-cta-btn mys-cta-training">Training →</a>
+            <a href="ath.html" class="mys-cta-btn mys-cta-athletics">Athletics →</a>
+        </div>
+    </div>
+
+</section>
+
+<footer class="site-footer">
+    <div class="site-footer-inner">
+        <a href="index.html" class="site-footer-brand"><img src="logo.png" alt="KP12 Performance" class="site-footer-logo"></a>
+        <div class="site-footer-socials">
+            <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+                <span>Instagram</span>
+            </a>
+            <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
+                <span>TikTok</span>
+            </a>
+            <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/></svg>
+                <span>YouTube</span>
+            </a>
+        </div>
+        <p class="site-footer-copy">© 2025 KP12 Performance. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="nav.js"></script>
+<script>
+const DAYS_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// Get current week range string (e.g. "July 7 – 12, 2026")
+function weekRangeStr() {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const mon = new Date(d); mon.setDate(diff);
+    const sat = new Date(mon); sat.setDate(mon.getDate() + 5);
+    const fmt = (dt) => dt.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    return `${fmt(mon)} – ${fmt(sat)}, ${sat.getFullYear()}`;
+}
+
+function esc(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+}
+
+function timeToMins(t) {
+    if (!t) return 0;
+    const parts = t.trim().split(' ');
+    const [h, m] = parts[0].split(':').map(Number);
+    const p = parts[1];
+    let hours = h;
+    if (p === 'PM' && h !== 12) hours = h + 12;
+    if (p === 'AM' && h === 12) hours = 0;
+    return hours * 60 + (m || 0);
+}
+
+const CAT_COLORS = {
+    'Training': 'var(--training)',
+    'Athletics': 'var(--athletics)',
+    'Nutrition': 'var(--nutrition, #FFC247)'
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('mys-week-range').textContent = `Week of ${weekRangeStr()}`;
+
+    try {
+        const meRes = await fetch('/api/auth/me');
+        if (!meRes.ok) {
+            document.getElementById('mys-guest').style.display = 'block';
+            return;
+        }
+        const meData = await meRes.json();
+        const user = meData.user;
+
+        document.getElementById('mys-main').style.display = 'block';
+        document.getElementById('mys-greeting').textContent =
+            `${user.username}'s Sessions This Week`;
+
+        const bookingsRes = await fetch('/api/bookings/mine');
+        const bookings = await bookingsRes.json();
+
+        const thisWeekBookings = bookings.filter(b => b.status === 'confirmed');
+
+        if (!thisWeekBookings.length) {
+            document.getElementById('mys-bookings-wrap').style.display = 'none';
+            document.getElementById('mys-empty').style.display = 'block';
+            return;
+        }
+
+        // Flatten slots for display and sort
+        const rows = [];
+        thisWeekBookings.forEach(b => {
+            const slots = Array.isArray(b.slots) ? b.slots : [];
+            if (!slots.length) {
+                rows.push({ booking: b, day: null, start: null, end: null });
+            } else {
+                slots.forEach(sl => rows.push({ booking: b, day: sl.day, start: sl.start, end: sl.end }));
+            }
+        });
+
+        rows.sort((a, b) => {
+            const di = DAYS_ORDER.indexOf(a.day) - DAYS_ORDER.indexOf(b.day);
+            if (di !== 0) return di;
+            return timeToMins(a.start) - timeToMins(b.start);
+        });
+
+        // Group by day
+        const byDay = {};
+        DAYS_ORDER.forEach(d => { byDay[d] = []; });
+        rows.forEach(r => { if (r.day && byDay[r.day]) byDay[r.day].push(r); });
+        const daysWithSessions = DAYS_ORDER.filter(d => byDay[d].length);
+
+        const wrap = document.getElementById('mys-bookings-wrap');
+        let html = '<div class="mys-days">';
+
+        daysWithSessions.forEach(day => {
+            html += `<div class="mys-day-group">
+                <div class="mys-day-header">
+                    <span class="mys-day-name">${day}</span>
+                    <span class="mys-session-count">${byDay[day].length} session${byDay[day].length !== 1 ? 's' : ''}</span>
+                </div>
+                <div class="mys-sessions">`;
+
+            byDay[day].forEach(row => {
+                const b = row.booking;
+                // Determine color by service type (Athletics vs Training)
+                const isAthletics = ['swim-lessons','speed-agility','beach-volleyball','racket-sports'].includes(b.service_key);
+                const accentColor = isAthletics ? 'var(--athletics)' : 'var(--training)';
+
+                html += `
+                    <div class="mys-session-card" style="border-left-color:${accentColor}">
+                        <div class="mys-session-time">
+                            <span class="mys-time-start" style="color:${accentColor}">${esc(row.start)}</span>
+                            <span class="mys-time-sep">–</span>
+                            <span class="mys-time-end">${esc(row.end)}</span>
+                        </div>
+                        <div class="mys-session-info">
+                            <p class="mys-service-name">${esc(b.service_title)}</p>
+                            ${b.package_label ? `<p class="mys-package">${esc(b.package_label)}</p>` : ''}
+                        </div>
+                        <div class="mys-session-badge" style="background:${accentColor}20;border-color:${accentColor}40;color:${accentColor}">
+                            ${isAthletics ? 'ATHLETICS' : 'TRAINING'}
+                        </div>
+                    </div>`;
+            });
+
+            html += `</div></div>`;
+        });
+
+        html += '</div>';
+        wrap.innerHTML = html;
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById('mys-guest').style.display = 'block';
+    }
+});
+</script>
+
+</body>
+</html>

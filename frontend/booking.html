@@ -17,6 +17,7 @@
         <img src="logo.png" alt="KP12 Performance" class="nav-logo">
     </a>
     <ul class="nav-links">
+        <li><a href="my-schedule.html">My Schedule</a></li>
         <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
         <li><a href="abt.html">About Us</a></li>
         <li><a href="shop.html">Shop</a></li>
@@ -151,10 +152,27 @@ const SERVICES = {
     },
     'swim-lessons': {
         title: 'Swim Lessons', tag: 'ALL AGES',
-        desc: 'Learn the four competitive strokes. All ages and ability levels welcome.',
-        chips: ['FREESTYLE','BACKSTROKE','BUTTERFLY','BREASTSTROKE','ALL AGES'],
-        packages: [{ label: 'Contact for Pricing', price: '', tag: '' }],
-        subcategory: 'Swim Lessons'
+        desc: 'Learn to swim and master the four competitive strokes — freestyle, backstroke, butterfly, and breaststroke. Open to all ages and ability levels.',
+        chips: ['FREESTYLE','BACKSTROKE','BUTTERFLY','BREASTSTROKE','ALL AGES','30 MIN SESSIONS'],
+        packages: [{ label: '3 Sessions (30 min each)', price: '$150', tag: '' }],
+        subcategory: 'Swim Lessons',
+        category: 'Athletics'
+    },
+    'speed-agility': {
+        title: 'Speed / Agility / Change of Direction', tag: 'ALL ATHLETES',
+        desc: 'Run faster, move quickly, and become explosive. Sport-specific speed and agility work to sharpen your first step, reaction time, and cutting ability.',
+        chips: ['FIRST STEP SPEED','REACTION TIME','EXPLOSIVE MOVEMENT','AGILITY','SPORT SPECIFIC'],
+        packages: [{ label: '4 Sessions', price: '', tag: '' }],
+        subcategory: 'Speed/Agility/COD',
+        category: 'Athletics'
+    },
+    'beach-volleyball': {
+        title: 'Beach / Indoor Volleyball', tag: '21+ · THURSDAYS',
+        desc: 'Join us for Beach Volleyball on Thursday nights. Learn how to bump, set, and spike on the sand. 21+ only.',
+        chips: ['BUMP','SET','SPIKE','BEACH','INDOOR','21+','THURSDAY NIGHTS'],
+        packages: [{ label: 'Drop In', price: '', tag: '' }],
+        subcategory: 'Beach/Indoor Volleyball',
+        category: 'Athletics'
     }
 };
 
@@ -320,8 +338,10 @@ function showScheduleStep() {
     fetch('/api/schedule')
         .then(r => r.json())
         .then(slots => {
+            // Use service's own category if specified, else default to Training
+            const serviceCategory = service.category || 'Training';
             const relevant = slots.filter(s =>
-                s.category === 'Training' &&
+                s.category === serviceCategory &&
                 s.subcategory === service.subcategory &&
                 validDays.includes(s.day_of_week)
             );

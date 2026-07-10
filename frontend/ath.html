@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athletics | KP12 Performance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png">
+</head>
+<body>
+
+<header class="nav">
+    <a href="index.html" class="nav-brand">
+        <img src="logo.png" alt="KP12 Performance" class="nav-logo">
+    </a>
+    <ul class="nav-links">
+        <li><a href="my-schedule.html">My Schedule</a></li>
+        <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
+        <li><a href="abt.html">About Us</a></li>
+        <li><a href="shop.html">Shop</a></li>
+    </ul>
+</header>
+
+<section class="tra-hero" style="background:
+    radial-gradient(circle at 20% 30%, rgba(184,255,63,0.16), transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(184,255,63,0.07), transparent 55%),
+    repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0px,rgba(255,255,255,.025) 1px,transparent 1px,transparent 30px),
+    var(--bg-panel);">
+    <div class="tra-hero-overlay"></div>
+    <div class="tra-hero-content">
+        <p class="eyebrow" style="color:var(--athletics)">[ KP12 ATHLETICS ]</p>
+        <h1 class="tra-hero-title">PLAY HARDER.<br>MOVE BETTER.<br>COMPETE MORE.</h1>
+        <p class="tra-hero-sub">Sport-specific programming built around the games you love — in the water, on the sand, and everywhere in between.</p>
+    </div>
+    <div class="scroll-cue" aria-hidden="true"><span></span></div>
+</section>
+
+<section class="tra-services">
+
+    <!-- Swim Lessons -->
+    <div class="tra-service-item reveal" data-service="swim-lessons">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag" style="color:var(--athletics)">[ ALL AGES ]</span>
+                <h2 class="tra-service-title" style="color:var(--text)">Swim Lessons</h2>
+                <span class="tra-spots-badge" id="spots-swim-lessons"></span>
+            </div>
+            <span class="tra-chevron" style="color:var(--athletics)">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Learn to swim and master the four competitive strokes — freestyle, backstroke, butterfly, and breaststroke. Open to all ages and ability levels, from first-time swimmers to athletes looking to sharpen their technique and efficiency in the water.</p>
+                <div class="tra-pricing">
+                    <div class="tra-price-card tra-price-card--ath">
+                        <span class="tra-price-sessions">3 Sessions (30 min each)</span>
+                        <span class="tra-price-amount" style="color:var(--athletics)">$150</span>
+                    </div>
+                </div>
+                <div class="tra-service-chips">
+                    <span class="stat-chip">FREESTYLE</span>
+                    <span class="stat-chip">BACKSTROKE</span>
+                    <span class="stat-chip">BUTTERFLY</span>
+                    <span class="stat-chip">BREASTSTROKE</span>
+                    <span class="stat-chip">ALL AGES</span>
+                    <span class="stat-chip">30 MIN SESSIONS</span>
+                </div>
+                <a href="booking.html?service=swim-lessons" class="tra-book-btn tra-book-btn--ath">Book a Session →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speed / Agility / COD -->
+    <div class="tra-service-item reveal" data-service="speed-agility">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag" style="color:var(--athletics)">[ ALL ATHLETES ]</span>
+                <h2 class="tra-service-title" style="color:var(--text)">Speed / Agility / Change of Direction</h2>
+            </div>
+            <span class="tra-chevron" style="color:var(--athletics)">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Run faster, move quickly, and become explosive. Sport-specific speed and agility work designed to sharpen your first step, improve your reaction time, and build the cutting and directional change ability that separates good athletes from great ones.</p>
+                <div class="tra-service-chips">
+                    <span class="stat-chip">FIRST STEP SPEED</span>
+                    <span class="stat-chip">REACTION TIME</span>
+                    <span class="stat-chip">EXPLOSIVE MOVEMENT</span>
+                    <span class="stat-chip">AGILITY</span>
+                    <span class="stat-chip">SPORT SPECIFIC</span>
+                </div>
+                <a href="booking.html?service=speed-agility" class="tra-book-btn tra-book-btn--ath">Book a Session →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Beach / Indoor Volleyball -->
+    <div class="tra-service-item reveal" data-service="beach-volleyball">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag" style="color:var(--athletics)">[ 21+ · THURSDAYS ]</span>
+                <h2 class="tra-service-title" style="color:var(--text)">Beach / Indoor Volleyball</h2>
+            </div>
+            <span class="tra-chevron" style="color:var(--athletics)">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Join us for Beach Volleyball on Thursday nights. Learn how to bump, set, and spike on the sand. Whether you're just getting into the game or looking to sharpen your skills before hitting the court, this is your spot. 21+ only.</p>
+                <div class="tra-service-chips">
+                    <span class="stat-chip">BUMP</span>
+                    <span class="stat-chip">SET</span>
+                    <span class="stat-chip">SPIKE</span>
+                    <span class="stat-chip">BEACH</span>
+                    <span class="stat-chip">INDOOR</span>
+                    <span class="stat-chip">21+</span>
+                    <span class="stat-chip">THURSDAY NIGHTS</span>
+                </div>
+                <a href="booking.html?service=beach-volleyball" class="tra-book-btn tra-book-btn--ath">Book a Session →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Swim Team / Clinics — Coming Soon -->
+    <div class="tra-service-item tra-service-item--coming reveal">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag" style="color:var(--athletics)">[ COMING SOON ]</span>
+                <h2 class="tra-service-title" style="color:var(--text)">Swim Team / Clinics</h2>
+            </div>
+            <span class="tra-chevron" style="color:var(--athletics)">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Group swim clinics and team programming are coming soon. Check back for updates — this will be a great opportunity to train with other competitive swimmers and take your racing to the next level.</p>
+                <div class="tra-service-chips">
+                    <span class="stat-chip">COMING SOON</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Basketball — Coming Soon -->
+    <div class="tra-service-item tra-service-item--coming reveal">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag" style="color:var(--athletics)">[ COMING SOON ]</span>
+                <h2 class="tra-service-title" style="color:var(--text)">Basketball</h2>
+            </div>
+            <span class="tra-chevron" style="color:var(--athletics)">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Basketball-specific training and programming is on the way. Stay tuned for more details.</p>
+                <div class="tra-service-chips"><span class="stat-chip">COMING SOON</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Baseball — Coming Soon -->
+    <div class="tra-service-item tra-service-item--coming reveal">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag" style="color:var(--athletics)">[ COMING SOON ]</span>
+                <h2 class="tra-service-title" style="color:var(--text)">Baseball</h2>
+            </div>
+            <span class="tra-chevron" style="color:var(--athletics)">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Baseball skill development and sport-specific training is coming soon. Check back for updates.</p>
+                <div class="tra-service-chips"><span class="stat-chip">COMING SOON</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Racket Sports — Coming Soon -->
+    <div class="tra-service-item tra-service-item--coming reveal">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag" style="color:var(--athletics)">[ COMING SOON ]</span>
+                <h2 class="tra-service-title" style="color:var(--text)">Racket Sports — Tennis, Badminton, Pickleball</h2>
+            </div>
+            <span class="tra-chevron" style="color:var(--athletics)">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Racket sport programming covering tennis, badminton, and pickleball is in development. Stay tuned for launch details.</p>
+                <div class="tra-service-chips"><span class="stat-chip">COMING SOON</span></div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<section class="tra-cta reveal" style="background:var(--bg-panel);border-top:1px solid #232529;border-bottom:1px solid #232529;">
+    <p class="eyebrow" style="color:var(--athletics)">[ GET IN THE GAME ]</p>
+    <h2 class="tra-cta-title">READY TO COMPETE?</h2>
+    <p class="tra-cta-sub">Pick your sport and book your first session — let's build the athlete you've always wanted to be.</p>
+    <a href="booking.html?service=swim-lessons" class="tra-book-btn tra-book-btn--large" style="border-color:var(--athletics);color:var(--athletics);">Book Now →</a>
+</section>
+
+<footer class="site-footer">
+    <div class="site-footer-inner">
+        <a href="index.html" class="site-footer-brand"><img src="logo.png" alt="KP12 Performance" class="site-footer-logo"></a>
+        <div class="site-footer-socials">
+            <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+                <span>Instagram</span>
+            </a>
+            <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
+                <span>TikTok</span>
+            </a>
+            <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/></svg>
+                <span>YouTube</span>
+            </a>
+        </div>
+        <p class="site-footer-copy">© 2025 KP12 Performance. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="script.js"></script>
+<script src="nav.js"></script>
+<script>
+// Capacity badges (swim-lessons has capacity tracking)
+fetch('/api/capacity')
+    .then(r => r.json())
+    .then(cap => {
+        const swimEl = document.getElementById('spots-swim-lessons');
+        if (!swimEl) return;
+        const info = cap['swim-lessons'];
+        if (!info) return;
+        const full = info.available <= 0;
+        const pct = Math.min(100, (info.taken / info.max) * 100);
+        swimEl.innerHTML = `<span class="tra-spots-text ${full ? 'tra-spots-full' : pct > 70 ? 'tra-spots-warn' : ''}">
+            ${info.taken}/${info.max} spots${full ? ' — FULL' : info.available <= 2 ? ` — ${info.available} left!` : ''}
+        </span>`;
+    })
+    .catch(() => {});
+
+const revealEls = document.querySelectorAll(".reveal");
+if ("IntersectionObserver" in window) {
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in-view"); obs.unobserve(e.target); } });
+    }, { threshold: 0.08 });
+    revealEls.forEach(el => obs.observe(el));
+} else { revealEls.forEach(el => el.classList.add("in-view")); }
+setTimeout(() => { revealEls.forEach(el => el.classList.add("in-view")); }, 1800);
+
+function toggleService(header) {
+    const item = header.closest(".tra-service-item");
+    const isOpen = item.classList.contains("is-open");
+    document.querySelectorAll(".tra-service-item.is-open").forEach(el => el.classList.remove("is-open"));
+    if (!isOpen) item.classList.add("is-open");
+}
+</script>
+
+</body>
+</html>
