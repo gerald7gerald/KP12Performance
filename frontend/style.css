@@ -3400,3 +3400,119 @@ transform:translateY(70px);
         justify-content: center;
     }
 }
+/* ---------- SCHEDULE ADMIN: editable slot grid ---------- */
+.sched-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.sched-clear-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 86, 48, 0.4);
+    color: var(--training);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.sched-clear-btn:hover {
+    background: var(--training);
+    color: var(--training-dark);
+}
+
+.sched-admin-days {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sched-admin-day {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sched-admin-slot-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sched-admin-slot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-left: 3px solid var(--athletics);
+    background: var(--bg);
+    padding: 12px 16px;
+    border-radius: 1px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.sched-admin-slot-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sched-admin-slot-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.sched-slot-edit-btn {
+    background: transparent;
+    border: 1px solid #2A2D31;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.sched-slot-edit-btn:hover {
+    border-color: var(--athletics);
+    color: var(--athletics);
+}
+
+.sched-slot-delete-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 86, 48, 0.3);
+    color: var(--training);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sched-slot-delete-btn:hover {
+    background: var(--training);
+    color: var(--training-dark);
+}
+
+.sched-edit-panel {
+    background: var(--bg-panel);
+    border: 1px solid #2A2D31;
+    border-left: 3px solid var(--nutrition, #FFC247);
+    padding: 24px 28px;
+    margin-bottom: 32px;
+}
