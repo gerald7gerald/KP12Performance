@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Account</title>
+    <title>My Account | KP12 Performance</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,12 +24,65 @@
     </header>
 
     <section class="account-page">
+
+        <!-- Profile card -->
         <div class="account-card">
             <p class="eyebrow">[ MY ACCOUNT ]</p>
             <h1 id="account-username">Welcome back.</h1>
             <p class="account-email" id="account-email"></p>
+
+            <!-- Profile details -->
+            <div class="account-details" id="account-details">
+                <div class="account-detail-row">
+                    <span class="account-detail-label">Phone</span>
+                    <span class="account-detail-value" id="account-phone">—</span>
+                </div>
+                <div class="account-detail-row">
+                    <span class="account-detail-label">Age</span>
+                    <span class="account-detail-value" id="account-age">—</span>
+                </div>
+                <div class="account-detail-row">
+                    <span class="account-detail-label">Gender</span>
+                    <span class="account-detail-value" id="account-gender">—</span>
+                </div>
+            </div>
+
+            <!-- Edit profile toggle -->
+            <button id="edit-toggle-btn" class="edit-toggle-btn">Edit Profile</button>
+
+            <!-- Edit form (hidden by default) -->
+            <form id="edit-profile-form" class="edit-profile-form" style="display:none;">
+                <div class="field">
+                    <label for="edit-phone">Phone Number</label>
+                    <input type="tel" id="edit-phone" placeholder="(555) 000-0000">
+                </div>
+                <div class="auth-form-row">
+                    <div class="field">
+                        <label for="edit-age">Age</label>
+                        <input type="number" id="edit-age" placeholder="Age" min="5" max="100">
+                    </div>
+                    <div class="field">
+                        <label for="edit-gender">Gender</label>
+                        <select id="edit-gender">
+                            <option value="">Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Non-binary">Non-binary</option>
+                            <option value="Prefer not to say">Prefer not to say</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="auth-error" id="edit-error" style="display:none;"></p>
+                <p class="auth-success" id="edit-success" style="display:none;"></p>
+                <div class="edit-form-btns">
+                    <button type="submit" class="edit-save-btn">Save Changes</button>
+                    <button type="button" id="edit-cancel-btn" class="edit-cancel-btn">Cancel</button>
+                </div>
+            </form>
+
             <button id="logout-btn" class="logout-btn">Log Out</button>
         </div>
+
     </section>
 
     <script src="nav.js"></script>

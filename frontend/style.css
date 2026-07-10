@@ -2363,3 +2363,133 @@ transform:translateY(70px);
         padding: 120px 5vw 60px;
     }
 }
+/* ---------- ACCOUNT PAGE — PROFILE & EDIT ---------- */
+.account-details {
+    width: 100%;
+    border-top: 1px solid #232529;
+    margin: 24px 0 20px;
+}
+
+.account-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #1d1f23;
+}
+
+.account-detail-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.account-detail-value {
+    font-size: 14px;
+    color: var(--text);
+}
+
+.edit-toggle-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid #2A2D31;
+    color: var(--text-muted);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-bottom: 14px;
+    transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+.edit-toggle-btn:hover {
+    border-color: var(--athletics);
+    color: var(--athletics);
+}
+
+.edit-profile-form {
+    width: 100%;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 14px;
+    text-align: left;
+}
+
+.edit-profile-form .field label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 8px;
+}
+
+.edit-profile-form input,
+.edit-profile-form select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid #2A2D31;
+    color: var(--text);
+    padding: 12px 14px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    border-radius: 2px;
+    transition: border-color 0.3s ease;
+}
+
+.edit-profile-form input:focus,
+.edit-profile-form select:focus {
+    outline: none;
+    border-color: var(--athletics);
+}
+
+.edit-form-btns {
+    display: flex;
+    gap: 12px;
+}
+
+.edit-save-btn {
+    flex: 1;
+    background: var(--athletics);
+    color: var(--athletics-dark);
+    border: none;
+    padding: 13px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: filter 0.25s ease;
+}
+
+.edit-save-btn:hover {
+    filter: brightness(1.08);
+}
+
+.edit-save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.edit-cancel-btn {
+    background: transparent;
+    border: 1px solid #2A2D31;
+    color: var(--text-muted);
+    padding: 13px 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+.edit-cancel-btn:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+}
