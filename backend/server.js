@@ -449,14 +449,14 @@ app.get('/api/bookings', requireAdmin, async (req, res) => {
     const weekOf = currentWeekMonday();
     const r = await pool.query(
       `SELECT b.id,b.service_key,b.service_title,b.package_label,b.status,b.created_at,
-              u.username,u.email,
+              u.username, u.email, u.phone, u.age,
               COALESCE(json_agg(json_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
                 FILTER (WHERE bs.id IS NOT NULL),'[]') AS slots
        FROM bookings b
        JOIN users u ON b.user_id=u.id
        LEFT JOIN booking_slots bs ON bs.booking_id=b.id
        WHERE b.week_of=$1
-       GROUP BY b.id,u.username,u.email ORDER BY b.created_at DESC`,
+       GROUP BY b.id,u.username,u.email,u.phone,u.age ORDER BY b.created_at DESC`,
       [weekOf]
     );
     res.json(r.rows);

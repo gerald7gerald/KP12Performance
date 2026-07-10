@@ -3664,3 +3664,186 @@ transform:translateY(70px);
     text-align: left;
     margin-bottom: 8px;
 }
+/* ---------- APPOINTMENTS SECTION ---------- */
+.appt-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    margin-bottom: 8px;
+}
+
+.appt-day-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.appt-day-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #232529;
+}
+
+.appt-day-label {
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: 0.04em;
+    color: var(--text);
+}
+
+.appt-day-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #2A2D31;
+    padding: 3px 10px;
+    border-radius: 2px;
+}
+
+.appt-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.appt-card {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    border-left: 3px solid var(--training);
+    overflow: hidden;
+    transition: border-color 0.25s ease, transform 0.2s ease;
+}
+
+.appt-card:hover {
+    border-color: var(--training);
+    transform: translateX(2px);
+}
+
+/* Time column */
+.appt-card-time {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 18px 20px;
+    min-width: 110px;
+    background: rgba(255, 86, 48, 0.06);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.appt-time-main {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--training);
+    display: block;
+    white-space: nowrap;
+}
+
+.appt-time-end {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+/* Divider between time and info */
+.appt-card-divider {
+    width: 1px;
+    background: #232529;
+    flex-shrink: 0;
+}
+
+/* Info column */
+.appt-card-info {
+    padding: 16px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+}
+
+.appt-name {
+    font-family: var(--font-display);
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    margin: 0;
+}
+
+.appt-service {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--training);
+    margin: 0;
+}
+
+.appt-contact-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.appt-contact-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid #2A2D31;
+    padding: 4px 10px;
+    border-radius: 2px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.appt-email:hover {
+    border-color: var(--athletics);
+    color: var(--athletics);
+}
+
+.appt-phone:hover {
+    border-color: var(--training);
+    color: var(--training);
+}
+
+.appt-missing {
+    opacity: 0.5;
+    font-style: italic;
+}
+
+@media (max-width: 600px) {
+    .appt-card {
+        flex-direction: column;
+    }
+
+    .appt-card-time {
+        flex-direction: row;
+        gap: 8px;
+        min-width: 0;
+        padding: 12px 16px;
+        justify-content: flex-start;
+    }
+
+    .appt-card-divider {
+        width: auto;
+        height: 1px;
+    }
+}

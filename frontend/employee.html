@@ -17,7 +17,6 @@
         <img src="logo.png" alt="KP12 Performance" class="nav-logo">
     </a>
     <ul class="nav-links">
-        <li><a href="https://app.letsponey.com/h/kp12-performance" target="_blank">Scheduling</a></li>
         <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
         <li><a href="abt.html">About Us</a></li>
         <li><a href="shop.html">Shop</a></li>
@@ -33,7 +32,6 @@
         <p class="emp-sub">Set session times for the current week. Resets automatically every Sunday.</p>
     </div>
 
-    <!-- Day selector -->
     <div class="sched-builder-days">
         <button class="sched-day-box" data-day="Monday">Mon</button>
         <button class="sched-day-box" data-day="Tuesday">Tue</button>
@@ -43,7 +41,6 @@
         <button class="sched-day-box" data-day="Saturday">Sat</button>
     </div>
 
-    <!-- Add slot panel -->
     <div id="sched-add-panel" class="sched-add-panel" style="display:none;">
         <p class="sched-add-label" id="sched-panel-day-label">Adding slot for Monday</p>
         <div class="sched-add-row">
@@ -58,9 +55,7 @@
             </div>
             <div class="field" id="sched-sub-wrap" style="display:none;">
                 <label>Service</label>
-                <select id="sched-subcategory">
-                    <option value="" disabled selected>Select service</option>
-                </select>
+                <select id="sched-subcategory"><option value="" disabled selected>Select service</option></select>
             </div>
             <div class="field">
                 <label>Start Time</label>
@@ -75,7 +70,6 @@
         <p class="sched-error" id="sched-error" style="display:none;"></p>
     </div>
 
-    <!-- Current schedule with editable/deletable slots -->
     <div class="sched-preview">
         <div class="sched-preview-header">
             <p class="eyebrow" style="color:var(--athletics);">[ CURRENT SCHEDULE ]</p>
@@ -86,19 +80,12 @@
         </div>
     </div>
 
-    <!-- Inline edit panel (hidden until user clicks Edit on a slot) -->
     <div id="sched-edit-panel" class="sched-edit-panel" style="display:none;">
         <p class="sched-add-label" id="sched-edit-label">Edit slot</p>
         <input type="hidden" id="sched-edit-id">
         <div class="sched-add-row">
-            <div class="field">
-                <label>New Start Time</label>
-                <select id="sched-edit-start"></select>
-            </div>
-            <div class="field">
-                <label>New End Time</label>
-                <select id="sched-edit-end"></select>
-            </div>
+            <div class="field"><label>New Start Time</label><select id="sched-edit-start"></select></div>
+            <div class="field"><label>New End Time</label><select id="sched-edit-end"></select></div>
             <button type="button" id="sched-edit-save-btn" class="sched-save-btn">Update</button>
             <button type="button" id="sched-edit-cancel-btn" class="sched-clear-btn">Cancel</button>
         </div>
@@ -107,9 +94,22 @@
 
     <div class="emp-divider"></div>
 
+    <!-- ===== APPOINTMENTS ===== -->
+    <div class="emp-header" style="margin-top:0;">
+        <p class="eyebrow">[ APPOINTMENTS ]</p>
+        <h2 class="emp-title" style="font-size:clamp(28px,4vw,40px);">This Week's Bookings</h2>
+        <p class="emp-sub">All confirmed appointments for the current week, sorted by day and time.</p>
+    </div>
+
+    <div id="appt-wrap" class="appt-wrap">
+        <p class="emp-loading">Loading appointments...</p>
+    </div>
+
+    <div class="emp-divider"></div>
+
     <!-- ===== MEMBER DIRECTORY ===== -->
     <div class="emp-header" style="margin-top:0;">
-        <p class="eyebrow">[ EMPLOYEE PORTAL ]</p>
+        <p class="eyebrow">[ MEMBERS ]</p>
         <h2 class="emp-title" style="font-size:clamp(28px,4vw,40px);">Member Directory</h2>
         <p class="emp-sub">All registered accounts with contact details.</p>
     </div>
@@ -127,9 +127,7 @@
 
 <footer class="site-footer">
     <div class="site-footer-inner">
-        <a href="index.html" class="site-footer-brand">
-            <img src="logo.png" alt="KP12 Performance" class="site-footer-logo">
-        </a>
+        <a href="index.html" class="site-footer-brand"><img src="logo.png" alt="KP12 Performance" class="site-footer-logo"></a>
         <div class="site-footer-socials">
             <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
@@ -151,56 +149,54 @@
 <script src="script.js"></script>
 <script src="nav.js"></script>
 <script>
+// ---- Constants ----
 const SUBCATEGORIES = {
-    'Athletics': [],
-    'Nutrition': [],
-    'Training': ['Sports Performance Training','Personal Training','Youth Performance Training','Adult Training','Remote Training','Swim Lessons']
+    Athletics: [], Nutrition: [],
+    Training: ['Sports Performance Training','Personal Training','Youth Performance Training','Adult Training','Remote Training','Swim Lessons']
 };
-const CATEGORY_COLORS = { 'Athletics':'var(--athletics)', 'Training':'var(--training)', 'Nutrition':'var(--nutrition,#FFC247)' };
+const DAYS_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const CAT_COLORS = { Athletics:'var(--athletics)', Training:'var(--training)', Nutrition:'var(--nutrition,#FFC247)' };
 
-function buildTimeOptions() {
-    const times = [];
+// ---- Time selects ----
+function buildTimes() {
+    const t = [];
     for (let h = 6; h <= 21; h++) {
         for (const m of ['00','30']) {
             if (h === 21 && m === '30') continue;
             const h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            times.push(`${h12}:${m} ${ampm}`);
+            t.push(`${h12}:${m} ${h >= 12 ? 'PM' : 'AM'}`);
         }
     }
-    return times;
+    return t;
 }
+const TIMES = buildTimes();
 
-function populateSelect(sel, times, selected) {
+function populateSel(sel, times, selected) {
     sel.innerHTML = '<option value="" disabled>Select</option>';
     times.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = opt.textContent = t;
-        if (t === selected) opt.selected = true;
-        sel.appendChild(opt);
+        const o = document.createElement('option');
+        o.value = o.textContent = t;
+        if (t === selected) o.selected = true;
+        sel.appendChild(o);
     });
 }
 
-const TIMES = buildTimeOptions();
-populateSelect(document.getElementById('sched-start'), TIMES);
-populateSelect(document.getElementById('sched-end'), TIMES);
-populateSelect(document.getElementById('sched-edit-start'), TIMES);
-populateSelect(document.getElementById('sched-edit-end'), TIMES);
-
-// Auto-set end time +1hr when start changes
-document.getElementById('sched-start').addEventListener('change', () => {
-    const idx = TIMES.indexOf(document.getElementById('sched-start').value);
-    if (idx !== -1 && idx + 2 < TIMES.length) {
-        document.getElementById('sched-end').value = TIMES[idx + 2];
-    }
+['sched-start','sched-end','sched-edit-start','sched-edit-end'].forEach(id => {
+    populateSel(document.getElementById(id), TIMES);
 });
 
-// Category → subcategory
+document.getElementById('sched-start').addEventListener('change', () => {
+    const idx = TIMES.indexOf(document.getElementById('sched-start').value);
+    if (idx !== -1 && idx + 2 < TIMES.length)
+        document.getElementById('sched-end').value = TIMES[idx + 2];
+});
+
+// ---- Category → subcategory ----
 document.getElementById('sched-category').addEventListener('change', function () {
     const subs = SUBCATEGORIES[this.value] || [];
     const wrap = document.getElementById('sched-sub-wrap');
     const sel  = document.getElementById('sched-subcategory');
-    if (subs.length > 0) {
+    if (subs.length) {
         sel.innerHTML = '<option value="" disabled selected>Select service</option>';
         subs.forEach(s => { const o = document.createElement('option'); o.value = o.textContent = s; sel.appendChild(o); });
         wrap.style.display = 'flex';
@@ -209,7 +205,7 @@ document.getElementById('sched-category').addEventListener('change', function ()
     }
 });
 
-// Day box selection
+// ---- Day box selection ----
 let selectedDay = null;
 document.querySelectorAll('.sched-day-box').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -220,193 +216,242 @@ document.querySelectorAll('.sched-day-box').forEach(btn => {
         document.getElementById('sched-add-panel').style.display = 'block';
         document.getElementById('sched-error').style.display = 'none';
         document.getElementById('sched-category').value = '';
-        document.getElementById('sched-subcategory').value = '';
         document.getElementById('sched-sub-wrap').style.display = 'none';
         document.getElementById('sched-start').value = '';
         document.getElementById('sched-end').value = '';
     });
 });
 
-// Save slot
+// ---- Save slot ----
 document.getElementById('sched-save-btn').addEventListener('click', async () => {
-    const errorEl   = document.getElementById('sched-error');
-    const category  = document.getElementById('sched-category').value;
-    const subVisible= document.getElementById('sched-sub-wrap').style.display !== 'none';
-    const subcategory = subVisible ? document.getElementById('sched-subcategory').value : '';
-    const startTime = document.getElementById('sched-start').value;
-    const endTime   = document.getElementById('sched-end').value;
+    const errorEl    = document.getElementById('sched-error');
+    const category   = document.getElementById('sched-category').value;
+    const subVisible = document.getElementById('sched-sub-wrap').style.display !== 'none';
+    const subcategory= subVisible ? document.getElementById('sched-subcategory').value : '';
+    const startTime  = document.getElementById('sched-start').value;
+    const endTime    = document.getElementById('sched-end').value;
     errorEl.style.display = 'none';
 
     if (!selectedDay || !category || !startTime || !endTime) {
-        errorEl.textContent = 'Please fill in all fields before saving.';
-        errorEl.style.display = 'block';
-        return;
+        errorEl.textContent = 'Please fill in all fields.'; errorEl.style.display = 'block'; return;
     }
     if (subVisible && !subcategory) {
-        errorEl.textContent = 'Please select a service.';
-        errorEl.style.display = 'block';
-        return;
+        errorEl.textContent = 'Please select a service.'; errorEl.style.display = 'block'; return;
     }
 
-    const saveBtn = document.getElementById('sched-save-btn');
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving...';
-
+    const btn = document.getElementById('sched-save-btn');
+    btn.disabled = true; btn.textContent = 'Saving...';
     try {
         const res = await fetch('/api/schedule', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ day: selectedDay, category, subcategory, startTime, endTime })
         });
         const data = await res.json();
-        if (!res.ok) {
-            errorEl.textContent = data.error || 'Something went wrong.';
-            errorEl.style.display = 'block';
-        } else {
-            loadSchedule();
-        }
-    } catch (err) {
-        errorEl.textContent = "Couldn't reach the server.";
-        errorEl.style.display = 'block';
-    }
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Save Slot';
+        if (!res.ok) { errorEl.textContent = data.error || 'Error.'; errorEl.style.display = 'block'; }
+        else loadSchedule();
+    } catch { errorEl.textContent = "Couldn't reach server."; errorEl.style.display = 'block'; }
+    btn.disabled = false; btn.textContent = 'Save Slot';
 });
 
-// Clear schedule
+// ---- Clear schedule ----
 document.getElementById('sched-clear-btn').addEventListener('click', async () => {
-    if (!confirm('Clear all slots for this week? This cannot be undone.')) return;
-    try {
-        await fetch('/api/schedule', { method: 'DELETE' });
-        loadSchedule();
-    } catch (err) { alert('Failed to clear schedule.'); }
+    if (!confirm('Clear all slots for this week?')) return;
+    try { await fetch('/api/schedule', { method: 'DELETE' }); loadSchedule(); }
+    catch { alert('Failed to clear.'); }
 });
 
-// Edit panel logic
+// ---- Edit panel ----
 document.getElementById('sched-edit-cancel-btn').addEventListener('click', () => {
     document.getElementById('sched-edit-panel').style.display = 'none';
 });
-
 document.getElementById('sched-edit-save-btn').addEventListener('click', async () => {
-    const id        = document.getElementById('sched-edit-id').value;
-    const startTime = document.getElementById('sched-edit-start').value;
-    const endTime   = document.getElementById('sched-edit-end').value;
-    const errorEl   = document.getElementById('sched-edit-error');
-    errorEl.style.display = 'none';
-
-    if (!startTime || !endTime) {
-        errorEl.textContent = 'Please select both times.';
-        errorEl.style.display = 'block';
-        return;
-    }
-
+    const id = document.getElementById('sched-edit-id').value;
+    const s  = document.getElementById('sched-edit-start').value;
+    const e  = document.getElementById('sched-edit-end').value;
+    const err= document.getElementById('sched-edit-error');
+    err.style.display = 'none';
+    if (!s || !e) { err.textContent = 'Select both times.'; err.style.display = 'block'; return; }
     const btn = document.getElementById('sched-edit-save-btn');
     btn.disabled = true;
-
     try {
         const res = await fetch(`/api/schedule/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ startTime, endTime })
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ startTime: s, endTime: e })
         });
         const data = await res.json();
-        if (!res.ok) {
-            errorEl.textContent = data.error || 'Update failed.';
-            errorEl.style.display = 'block';
-        } else {
-            document.getElementById('sched-edit-panel').style.display = 'none';
-            loadSchedule();
-        }
-    } catch (err) {
-        errorEl.textContent = "Couldn't reach the server.";
-        errorEl.style.display = 'block';
-    }
+        if (!res.ok) { err.textContent = data.error || 'Update failed.'; err.style.display = 'block'; }
+        else { document.getElementById('sched-edit-panel').style.display = 'none'; loadSchedule(); }
+    } catch { err.textContent = "Couldn't reach server."; err.style.display = 'block'; }
     btn.disabled = false;
 });
 
-// Open edit panel for a specific slot
 function openEditPanel(slot) {
-    const panel = document.getElementById('sched-edit-panel');
     document.getElementById('sched-edit-id').value = slot.id;
     document.getElementById('sched-edit-label').textContent =
         `Editing: ${slot.day_of_week} — ${slot.subcategory || slot.category}`;
-    populateSelect(document.getElementById('sched-edit-start'), TIMES, slot.start_time);
-    populateSelect(document.getElementById('sched-edit-end'), TIMES, slot.end_time);
+    populateSel(document.getElementById('sched-edit-start'), TIMES, slot.start_time);
+    populateSel(document.getElementById('sched-edit-end'),   TIMES, slot.end_time);
     document.getElementById('sched-edit-error').style.display = 'none';
+    const panel = document.getElementById('sched-edit-panel');
     panel.style.display = 'block';
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// Delete a slot
 async function deleteSlot(id) {
     if (!confirm('Delete this slot?')) return;
     try {
         const res = await fetch(`/api/schedule/${id}`, { method: 'DELETE' });
-        if (res.ok) loadSchedule();
-        else alert('Failed to delete slot.');
-    } catch (err) { alert("Couldn't reach the server."); }
+        if (res.ok) loadSchedule(); else alert('Failed to delete.');
+    } catch { alert("Couldn't reach server."); }
 }
 
-// Load and render the schedule grid with edit/delete buttons
+// ---- Load schedule ----
 async function loadSchedule() {
     const grid = document.getElementById('sched-live-grid');
     grid.innerHTML = '<p class="emp-loading">Loading...</p>';
-
     try {
-        const res = await fetch('/api/schedule');
-        const slots = await res.json();
-
-        if (!Array.isArray(slots) || slots.length === 0) {
-            grid.innerHTML = '<p class="emp-loading">No slots this week yet — add some above.</p>';
-            return;
-        }
-
-        const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const slots = await fetch('/api/schedule').then(r => r.json());
+        if (!slots.length) { grid.innerHTML = '<p class="emp-loading">No slots this week — add some above.</p>'; return; }
         const byDay = {};
-        DAYS.forEach(d => { byDay[d] = []; });
+        DAYS_ORDER.forEach(d => { byDay[d] = []; });
         slots.forEach(s => { if (byDay[s.day_of_week]) byDay[s.day_of_week].push(s); });
-
         let html = '<div class="sched-admin-days">';
-        DAYS.forEach(day => {
-            const daySlots = byDay[day];
-            if (daySlots.length === 0) return;
-            html += `<div class="sched-admin-day">
-                <p class="sched-day-label">${day.toUpperCase()}</p>
-                <div class="sched-admin-slot-list">`;
-            daySlots.forEach(s => {
-                const color = { Athletics:'var(--athletics)', Training:'var(--training)', Nutrition:'var(--nutrition,#FFC247)' }[s.category] || '#8C8F96';
-                html += `
-                    <div class="sched-admin-slot" style="border-left-color:${color}" data-id="${s.id}">
-                        <div class="sched-admin-slot-info">
-                            <span class="sched-slot-cat" style="color:${color}">${s.category}</span>
-                            ${s.subcategory ? `<span class="sched-slot-sub">${s.subcategory}</span>` : ''}
-                            <span class="sched-slot-time">${s.start_time} – ${s.end_time}</span>
-                        </div>
-                        <div class="sched-admin-slot-actions">
-                            <button class="sched-slot-edit-btn" onclick='openEditPanel(${JSON.stringify(s)})'>Edit</button>
-                            <button class="sched-slot-delete-btn" onclick="deleteSlot(${s.id})">Delete</button>
-                        </div>
-                    </div>`;
+        DAYS_ORDER.forEach(day => {
+            if (!byDay[day].length) return;
+            html += `<div class="sched-admin-day"><p class="sched-day-label">${day.toUpperCase()}</p><div class="sched-admin-slot-list">`;
+            byDay[day].forEach(s => {
+                const color = CAT_COLORS[s.category] || '#8C8F96';
+                html += `<div class="sched-admin-slot" style="border-left-color:${color}">
+                    <div class="sched-admin-slot-info">
+                        <span class="sched-slot-cat" style="color:${color}">${s.category}</span>
+                        ${s.subcategory ? `<span class="sched-slot-sub">${s.subcategory}</span>` : ''}
+                        <span class="sched-slot-time">${s.start_time} – ${s.end_time}</span>
+                    </div>
+                    <div class="sched-admin-slot-actions">
+                        <button class="sched-slot-edit-btn" onclick='openEditPanel(${JSON.stringify(s)})'>Edit</button>
+                        <button class="sched-slot-delete-btn" onclick="deleteSlot(${s.id})">Delete</button>
+                    </div>
+                </div>`;
             });
             html += `</div></div>`;
         });
         html += '</div>';
         grid.innerHTML = html;
+    } catch { grid.innerHTML = '<p class="emp-loading">Couldn\'t load schedule.</p>'; }
+}
+
+// ---- Load appointments ----
+async function loadAppointments() {
+    const wrap = document.getElementById('appt-wrap');
+    wrap.innerHTML = '<p class="emp-loading">Loading appointments...</p>';
+    try {
+        const bookings = await fetch('/api/bookings').then(r => r.json());
+
+        if (!bookings.length) {
+            wrap.innerHTML = '<p class="emp-loading">No bookings this week yet.</p>';
+            return;
+        }
+
+        // Flatten: one row per slot per booking for easy day/time sorting
+        const rows = [];
+        bookings.forEach(b => {
+            const slots = Array.isArray(b.slots) ? b.slots : [];
+            if (!slots.length) {
+                rows.push({ booking: b, day: '—', start: '—', end: '—' });
+            } else {
+                slots.forEach(sl => rows.push({ booking: b, day: sl.day, start: sl.start, end: sl.end }));
+            }
+        });
+
+        // Sort by day order then start time
+        function timeToMins(t) {
+            if (!t || t === '—') return 0;
+            const parts = t.trim().split(' ');
+            const [h, m] = parts[0].split(':').map(Number);
+            const p = parts[1];
+            let hours = h;
+            if (p === 'PM' && h !== 12) hours = h + 12;
+            if (p === 'AM' && h === 12) hours = 0;
+            return hours * 60 + (m || 0);
+        }
+
+        rows.sort((a, b) => {
+            const di = DAYS_ORDER.indexOf(a.day) - DAYS_ORDER.indexOf(b.day);
+            if (di !== 0) return di;
+            return timeToMins(a.start) - timeToMins(b.start);
+        });
+
+        // Group by day for visual headers
+        const byDay = {};
+        DAYS_ORDER.forEach(d => { byDay[d] = []; });
+        rows.forEach(r => { if (byDay[r.day]) byDay[r.day].push(r); else byDay['—'] ? byDay['—'].push(r) : null; });
+
+        function esc(str) {
+            if (!str) return '—';
+            const d = document.createElement('div');
+            d.textContent = String(str);
+            return d.innerHTML;
+        }
+
+        let html = '';
+        const daysWithRows = DAYS_ORDER.filter(d => byDay[d] && byDay[d].length);
+
+        if (!daysWithRows.length) {
+            wrap.innerHTML = '<p class="emp-loading">No bookings this week yet.</p>';
+            return;
+        }
+
+        daysWithRows.forEach(day => {
+            html += `
+                <div class="appt-day-group">
+                    <div class="appt-day-header">
+                        <span class="appt-day-label">${day.toUpperCase()}</span>
+                        <span class="appt-day-count">${byDay[day].length} appointment${byDay[day].length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div class="appt-cards">`;
+
+            byDay[day].forEach(row => {
+                const b = row.booking;
+                const serviceColor = 'var(--training)';
+                html += `
+                    <div class="appt-card">
+                        <div class="appt-card-time">
+                            <span class="appt-time-main">${esc(row.start)}</span>
+                            <span class="appt-time-end">to ${esc(row.end)}</span>
+                        </div>
+                        <div class="appt-card-divider"></div>
+                        <div class="appt-card-info">
+                            <p class="appt-name">${esc(b.username)}</p>
+                            <p class="appt-service">${esc(b.service_title)}${b.package_label ? ' · ' + esc(b.package_label) : ''}</p>
+                            <div class="appt-contact-row">
+                                ${b.email ? `<a href="mailto:${esc(b.email)}" class="appt-contact-chip appt-email">✉ ${esc(b.email)}</a>` : ''}
+                                ${b.phone ? `<a href="tel:${esc(b.phone)}" class="appt-contact-chip appt-phone">📞 ${esc(b.phone)}</a>` : '<span class="appt-contact-chip appt-missing">No phone on file</span>'}
+                                ${b.age ? `<span class="appt-contact-chip">Age ${esc(b.age)}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            html += `</div></div>`;
+        });
+
+        wrap.innerHTML = html;
     } catch (err) {
-        grid.innerHTML = '<p class="emp-loading">Couldn\'t load schedule.</p>';
+        console.error(err);
+        wrap.innerHTML = '<p class="emp-loading">Couldn\'t load appointments.</p>';
     }
 }
 
-// ---- Admin gate + member directory ----
+// ---- Admin gate + load everything ----
 document.addEventListener("DOMContentLoaded", () => {
     fetch('/api/auth/me')
-        .then(res => res.ok ? res.json() : null)
+        .then(r => r.ok ? r.json() : null)
         .then(data => {
             if (!data || !data.user || !data.user.is_admin) {
-                window.location.href = "index.html";
-                return;
+                window.location.href = "index.html"; return;
             }
             loadSchedule();
+            loadAppointments();
             loadUsers();
         })
         .catch(() => { window.location.href = "index.html"; });
@@ -414,32 +459,26 @@ document.addEventListener("DOMContentLoaded", () => {
     let allUsers = [];
 
     function loadUsers() {
-        fetch('/api/admin/users')
-            .then(res => res.json())
+        fetch('/api/admin/users').then(r => r.json())
             .then(users => { allUsers = users; renderTable(users); })
-            .catch(() => {
-                document.getElementById("emp-table-wrap").innerHTML = '<p class="emp-loading">Failed to load.</p>';
-            });
+            .catch(() => { document.getElementById("emp-table-wrap").innerHTML = '<p class="emp-loading">Failed to load.</p>'; });
     }
 
     function esc(str) {
         if (str === null || str === undefined) return "—";
-        const d = document.createElement("div");
-        d.textContent = String(str);
-        return d.innerHTML;
+        const d = document.createElement("div"); d.textContent = String(str); return d.innerHTML;
     }
 
     function renderTable(users) {
-        const wrap    = document.getElementById("emp-table-wrap");
+        const wrap = document.getElementById("emp-table-wrap");
         const countEl = document.getElementById("emp-count");
         countEl.textContent = `${users.length} member${users.length !== 1 ? "s" : ""}`;
-        if (users.length === 0) { wrap.innerHTML = '<p class="emp-loading">No members found.</p>'; return; }
+        if (!users.length) { wrap.innerHTML = '<p class="emp-loading">No members found.</p>'; return; }
 
         let rows = "";
         users.forEach(u => {
-            const isParent    = u.role === "parent_guardian";
-            const athletes    = Array.isArray(u.athletes) ? u.athletes : [];
-            const hasAthletes = athletes.length > 0;
+            const isParent = u.role === "parent_guardian";
+            const athletes = Array.isArray(u.athletes) ? u.athletes : [];
             rows += `
                 <tr>
                     <td class="emp-id">${u.id}</td>
@@ -448,39 +487,34 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${u.phone ? `<a href="tel:${esc(u.phone)}" class="emp-email-link">${esc(u.phone)}</a>` : "—"}</td>
                     <td>${esc(u.age)}</td>
                     <td>${esc(u.gender)}</td>
-                    <td>
-                        ${isParent
-                            ? `<span class="emp-role-badge">Parent</span>${hasAthletes
-                                ? `<button type="button" class="emp-athletes-toggle" onclick="toggleAthletes(this,${u.id})">▶ Athletes (${athletes.length})</button>`
-                                : ""}`
-                            : (u.role ? "Athlete" : "—")}
-                    </td>
+                    <td>${isParent
+                        ? `<span class="emp-role-badge">Parent</span>${athletes.length
+                            ? `<button type="button" class="emp-athletes-toggle" onclick="toggleAthletes(this,${u.id})">▶ Athletes (${athletes.length})</button>`
+                            : ""}`
+                        : (u.role ? "Athlete" : "—")}</td>
                     <td>${esc(u.referral_source)}</td>
                     <td>${esc(u.referral_detail)}</td>
                     <td>${u.is_admin ? '<span class="emp-admin-badge">ADMIN</span>' : "—"}</td>
                 </tr>`;
-            if (isParent && hasAthletes) {
-                rows += `
-                    <tr id="athletes-${u.id}" style="display:none;">
-                        <td colspan="10" class="emp-athlete-cell">
-                            <table class="emp-athlete-table">
-                                <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th></tr></thead>
-                                <tbody>${athletes.map((a,i) => `<tr><td class="emp-id">${i+1}</td><td>${esc(a.name)}</td><td>${esc(a.age)}</td><td>${esc(a.gender)}</td></tr>`).join("")}</tbody>
-                            </table>
-                        </td>
-                    </tr>`;
+            if (isParent && athletes.length) {
+                rows += `<tr id="athletes-${u.id}" style="display:none;">
+                    <td colspan="10" class="emp-athlete-cell">
+                        <table class="emp-athlete-table">
+                            <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th></tr></thead>
+                            <tbody>${athletes.map((a,i) => `<tr><td class="emp-id">${i+1}</td><td>${esc(a.name)}</td><td>${esc(a.age)}</td><td>${esc(a.gender)}</td></tr>`).join('')}</tbody>
+                        </table>
+                    </td>
+                </tr>`;
             }
         });
 
         wrap.innerHTML = `
             <table class="emp-table">
-                <thead>
-                    <tr>
-                        <th>ID</th><th>Username</th><th>Email</th><th>Phone</th>
-                        <th>Age</th><th>Gender</th><th>Role</th>
-                        <th>Heard From</th><th>Referral Detail</th><th>Admin</th>
-                    </tr>
-                </thead>
+                <thead><tr>
+                    <th>ID</th><th>Username</th><th>Email</th><th>Phone</th>
+                    <th>Age</th><th>Gender</th><th>Role</th>
+                    <th>Heard From</th><th>Referral Detail</th><th>Admin</th>
+                </tr></thead>
                 <tbody>${rows}</tbody>
             </table>`;
     }
