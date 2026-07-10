@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Session | KP12 Performance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png">
+</head>
+<body>
+
+    <header class="nav">
+        <a href="index.html" class="nav-brand">
+            <img src="logo.png" alt="KP12 Performance" class="nav-logo">
+        </a>
+        <ul class="nav-links">
+            <li><a href="https://app.letsponey.com/h/kp12-performance" target="_blank">Scheduling</a></li>
+            <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
+            <li><a href="abt.html">About Us</a></li>
+            <li><a href="shop.html">Shop</a></li>
+        </ul>
+    </header>
+
+    <!-- Not found state (shown if ?service= is unrecognised) -->
+    <section id="booking-not-found" style="display:none;" class="booking-not-found">
+        <p class="eyebrow" style="color:var(--training)">[ ERROR ]</p>
+        <h1>Service not found.</h1>
+        <a href="tra.html" class="tra-book-btn" style="margin-top:24px;display:inline-block;">← Back to Training</a>
+    </section>
+
+    <!-- Main booking content -->
+    <section id="booking-main" class="booking-page" style="display:none;">
+
+        <!-- Step 1: Service info + package selection -->
+        <div class="booking-step" id="step-1">
+            <a href="tra.html" class="booking-back">← Back to Training</a>
+            <p class="eyebrow booking-eyebrow">[ BOOK A SESSION ]</p>
+            <span class="tra-tag" id="booking-tag"></span>
+            <h1 class="booking-title" id="booking-title"></h1>
+            <p class="booking-desc" id="booking-desc"></p>
+            <p class="booking-note" id="booking-note" style="display:none;"></p>
+
+            <div class="booking-chips" id="booking-chips"></div>
+
+            <div class="booking-section-label">Choose your package</div>
+            <div class="booking-packages" id="booking-packages"></div>
+
+            <p class="booking-pick-hint" id="booking-pick-hint">Select a package above to see available times.</p>
+        </div>
+
+        <!-- Step 2: Schedule slot selection (revealed after picking a package) -->
+        <div class="booking-step booking-step--schedule" id="step-2" style="display:none;">
+            <div class="booking-section-label">Pick an available time</div>
+            <p class="booking-schedule-sub">These are the recurring weekly times set by your coach. Select the one that works for you.</p>
+
+            <div id="booking-slots-wrap" class="booking-slots-wrap">
+                <p class="booking-loading">Loading available times...</p>
+            </div>
+
+            <div class="booking-selected-summary" id="booking-summary" style="display:none;">
+                <div class="booking-summary-inner">
+                    <div>
+                        <p class="booking-summary-label">Selected Package</p>
+                        <p class="booking-summary-val" id="summary-package"></p>
+                    </div>
+                    <div>
+                        <p class="booking-summary-label">Selected Time</p>
+                        <p class="booking-summary-val" id="summary-time"></p>
+                    </div>
+                </div>
+                <a id="booking-proceed-btn" href="https://app.letsponey.com/h/kp12-performance"
+                   target="_blank" class="booking-proceed-btn">
+                   Proceed to Book →
+                </a>
+            </div>
+        </div>
+
+    </section>
+
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <a href="index.html" class="site-footer-brand">
+                <img src="logo.png" alt="KP12 Performance" class="site-footer-logo">
+            </a>
+            <div class="site-footer-socials">
+                <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+                    <span>Instagram</span>
+                </a>
+                <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
+                    <span>TikTok</span>
+                </a>
+                <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/></svg>
+                    <span>YouTube</span>
+                </a>
+            </div>
+            <p class="site-footer-copy">© 2025 KP12 Performance. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="nav.js"></script>
+    <script>
+    // ---- Service catalogue ----
+    const SERVICES = {
+        'sports-performance-training': {
+            title: 'Sports Performance Training',
+            tag: '6TH GRADE → PROFESSIONAL',
+            desc: 'Private training to enhance athletic potential. Develop sport-specific needs by training for strength, speed, coordination, injury prevention, and mobility. Sport-specific training includes training of energy systems, and the program incorporates modern-day exercise science equipment to track performance progress.',
+            note: 'Nutritional advice and recovery can also be included if needed.',
+            chips: ['STRENGTH','SPEED','COORDINATION','INJURY PREVENTION','MOBILITY','ENERGY SYSTEMS'],
+            packages: [
+                { label: '4 Sessions', price: '$175', tag: 'STARTER' },
+                { label: '8 Sessions', price: '$350', tag: 'BEST VALUE' }
+            ],
+            subcategory: 'Sports Performance Training'
+        },
+        'personal-training': {
+            title: 'Personal Training',
+            tag: '13 & UP',
+            desc: 'Individualized training to meet exactly what you need. From being introduced to the weight room for the first time to needing accountability and motivation to hit your goals — everything you want and need is here. Sessions include warm-ups, exercises, and recovery.',
+            chips: ['INDIVIDUALIZED','ACCOUNTABILITY','WARM-UP + RECOVERY','ALL FITNESS LEVELS'],
+            packages: [
+                { label: '6 Sessions', price: '$250', tag: '' },
+                { label: '9 Sessions', price: '$400', tag: 'BEST VALUE' }
+            ],
+            subcategory: 'Personal Training'
+        },
+        'youth-performance-training': {
+            title: 'Youth Performance Training',
+            tag: '5 YEARS OLD → 11 YEARS OLD',
+            desc: 'Proper training at a young age enhances motor development and motor control. Improving these foundational skills improves both quality of life and athletic performance down the road — building the habits and movement patterns that last a lifetime.',
+            chips: ['MOTOR DEVELOPMENT','MOTOR CONTROL','MOVEMENT PATTERNS','AGES 5–11'],
+            packages: [
+                { label: '4 Sessions', price: '$100', tag: '' }
+            ],
+            subcategory: 'Youth Performance Training'
+        },
+        'adult-training': {
+            title: 'Adult Training',
+            tag: '24 & UP',
+            desc: 'Training built around your life — not the other way around. Programs are designed to improve strength, endurance, and overall health for adults who want to feel better, move better, and perform at their best no matter their starting point.',
+            chips: ['STRENGTH','ENDURANCE','GENERAL HEALTH','24+'],
+            packages: [
+                { label: '4 Sessions', price: '$225', tag: '' }
+            ],
+            subcategory: 'Adult Training'
+        },
+        'remote-training': {
+            title: 'Remote Training',
+            tag: 'ALL AGES',
+            desc: 'Online training on your schedule. Individuals complete workouts at their own time with whatever equipment is available to them. Workouts are provided based on what is accessible — fully customized to your situation, wherever you are.',
+            chips: ['FULLY ONLINE','ANY EQUIPMENT','YOUR SCHEDULE','ALL AGES'],
+            packages: [
+                { label: '9 Sessions', price: '$250', tag: '' }
+            ],
+            subcategory: 'Remote Training'
+        },
+        'swim-lessons': {
+            title: 'Swim Lessons',
+            tag: 'ALL AGES',
+            desc: 'Learn to swim and master the four competitive strokes — freestyle, backstroke, butterfly, and breaststroke. Open to all ages and ability levels, from first-time swimmers to athletes looking to sharpen their technique and efficiency in the water.',
+            chips: ['FREESTYLE','BACKSTROKE','BUTTERFLY','BREASTSTROKE','ALL AGES'],
+            packages: [
+                { label: 'Contact for Pricing', price: '', tag: '' }
+            ],
+            subcategory: 'Swim Lessons'
+        }
+    };
+
+    const DAYS_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+    let selectedPackage = null;
+    let selectedSlot    = null;
+
+    // ---- Parse URL ----
+    const params  = new URLSearchParams(window.location.search);
+    const serviceKey = params.get('service');
+    const service = SERVICES[serviceKey];
+
+    if (!service) {
+        document.getElementById('booking-not-found').style.display = 'block';
+    } else {
+        document.title = `${service.title} | KP12 Performance`;
+        document.getElementById('booking-main').style.display = 'block';
+
+        // Populate step 1
+        document.getElementById('booking-tag').textContent   = `[ ${service.tag} ]`;
+        document.getElementById('booking-title').textContent = service.title;
+        document.getElementById('booking-desc').textContent  = service.desc;
+
+        if (service.note) {
+            const noteEl = document.getElementById('booking-note');
+            noteEl.textContent = service.note;
+            noteEl.style.display = 'block';
+        }
+
+        // Chips
+        const chipsEl = document.getElementById('booking-chips');
+        service.chips.forEach(c => {
+            const span = document.createElement('span');
+            span.className = 'stat-chip';
+            span.textContent = c;
+            chipsEl.appendChild(span);
+        });
+
+        // Packages
+        const pkgEl = document.getElementById('booking-packages');
+        service.packages.forEach((pkg, i) => {
+            const card = document.createElement('div');
+            card.className = 'booking-pkg-card';
+            if (i === service.packages.length - 1 && service.packages.length > 1) {
+                card.classList.add('booking-pkg-card--highlight');
+            }
+            card.innerHTML = `
+                ${pkg.tag ? `<span class="booking-pkg-tag">${pkg.tag}</span>` : ""}
+                <span class="booking-pkg-sessions">${pkg.label}</span>
+                ${pkg.price ? `<span class="booking-pkg-price">${pkg.price}</span>` : ""}
+            `;
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.booking-pkg-card').forEach(c => c.classList.remove('is-selected'));
+                card.classList.add('is-selected');
+                selectedPackage = pkg;
+                selectedSlot = null;
+                document.getElementById('booking-summary').style.display = 'none';
+                document.getElementById('summary-package').textContent = `${pkg.label}${pkg.price ? ' — ' + pkg.price : ''}`;
+                showScheduleStep();
+            });
+            pkgEl.appendChild(card);
+        });
+    }
+
+    // ---- Step 2: load + display schedule slots for this service ----
+    function showScheduleStep() {
+        const step2 = document.getElementById('step-2');
+        step2.style.display = 'block';
+        step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        const wrap = document.getElementById('booking-slots-wrap');
+        wrap.innerHTML = '<p class="booking-loading">Loading available times...</p>';
+
+        fetch('/api/schedule')
+            .then(res => res.json())
+            .then(slots => {
+                // Filter to this service's subcategory
+                const relevant = slots.filter(s =>
+                    s.category === 'Training' && s.subcategory === service.subcategory
+                );
+
+                if (relevant.length === 0) {
+                    wrap.innerHTML = `
+                        <div class="booking-no-slots">
+                            <p>No scheduled times for <strong>${service.title}</strong> yet.</p>
+                            <p>Check back soon or contact us to arrange a time.</p>
+                            <a href="https://app.letsponey.com/h/kp12-performance" target="_blank" class="tra-book-btn" style="margin-top:20px;display:inline-block;">
+                                Book Directly via Scheduling →
+                            </a>
+                        </div>`;
+                    return;
+                }
+
+                // Group by day
+                const byDay = {};
+                DAYS_ORDER.forEach(d => { byDay[d] = []; });
+                relevant.forEach(s => { if (byDay[s.day_of_week]) byDay[s.day_of_week].push(s); });
+
+                let html = '<div class="booking-slots-grid">';
+                DAYS_ORDER.forEach(day => {
+                    const daySlots = byDay[day];
+                    if (daySlots.length === 0) return;
+                    html += `<div class="booking-day-group">
+                        <p class="booking-day-label">${day}</p>
+                        <div class="booking-day-slots">`;
+                    daySlots.forEach(slot => {
+                        html += `
+                            <button type="button" class="booking-slot-btn" data-slot-id="${slot.id}"
+                                data-day="${slot.day_of_week}"
+                                data-start="${slot.start_time}"
+                                data-end="${slot.end_time}">
+                                <span class="booking-slot-time">${slot.start_time} – ${slot.end_time}</span>
+                                <span class="booking-slot-day">${slot.day_of_week}s</span>
+                            </button>`;
+                    });
+                    html += `</div></div>`;
+                });
+                html += '</div>';
+                wrap.innerHTML = html;
+
+                // Slot selection
+                document.querySelectorAll('.booking-slot-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.booking-slot-btn').forEach(b => b.classList.remove('is-selected'));
+                        btn.classList.add('is-selected');
+                        selectedSlot = {
+                            day:   btn.dataset.day,
+                            start: btn.dataset.start,
+                            end:   btn.dataset.end
+                        };
+                        document.getElementById('summary-time').textContent =
+                            `${selectedSlot.day}s, ${selectedSlot.start} – ${selectedSlot.end}`;
+                        document.getElementById('booking-summary').style.display = 'block';
+                        document.getElementById('booking-summary').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    });
+                });
+            })
+            .catch(() => {
+                wrap.innerHTML = '<p class="booking-loading">Couldn\'t load schedule. Please try again.</p>';
+            });
+    }
+    </script>
+
+</body>
+</html>

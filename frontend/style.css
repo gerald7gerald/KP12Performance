@@ -3085,3 +3085,318 @@ transform:translateY(70px);
         flex-direction: column;
     }
 }
+/* ---------- BOOKING PAGE ---------- */
+.booking-page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 140px 6vw 100px;
+}
+
+.booking-not-found {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 160px 6vw 80px;
+    text-align: center;
+}
+
+.booking-step {
+    margin-bottom: 56px;
+}
+
+.booking-step--schedule {
+    border-top: 1px solid #232529;
+    padding-top: 48px;
+}
+
+.booking-back {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 28px;
+    transition: color 0.25s ease;
+}
+
+.booking-back:hover {
+    color: var(--training);
+}
+
+.booking-eyebrow {
+    color: var(--training);
+    margin-bottom: 12px;
+}
+
+.booking-title {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 6vw, 56px);
+    text-transform: uppercase;
+    line-height: 1.02;
+    margin: 10px 0 20px;
+}
+
+.booking-desc {
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1.65;
+    margin-bottom: 14px;
+    max-width: 620px;
+}
+
+.booking-note {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--training);
+    opacity: 0.85;
+    margin-bottom: 20px;
+}
+
+.booking-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 36px;
+}
+
+.booking-section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #232529;
+}
+
+/* Package cards */
+.booking-packages {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.booking-pkg-card {
+    flex: 1;
+    min-width: 160px;
+    background: var(--bg-panel);
+    border: 1px solid #2A2D31;
+    padding: 24px 20px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.25s ease, background 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.booking-pkg-card:hover {
+    border-color: var(--training);
+}
+
+.booking-pkg-card.is-selected {
+    border-color: var(--training);
+    background: rgba(255, 86, 48, 0.07);
+}
+
+.booking-pkg-card--highlight {
+    border-color: rgba(255, 86, 48, 0.4);
+}
+
+.booking-pkg-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--training);
+    background: rgba(255, 86, 48, 0.12);
+    border: 1px solid rgba(255, 86, 48, 0.3);
+    padding: 3px 8px;
+    border-radius: 2px;
+    align-self: flex-start;
+}
+
+.booking-pkg-sessions {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.booking-pkg-price {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4vw, 38px);
+    color: var(--training);
+    line-height: 1;
+}
+
+.booking-pick-hint {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* Schedule slots */
+.booking-schedule-sub {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 28px;
+}
+
+.booking-slots-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.booking-day-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.booking-day-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.booking-day-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.booking-slot-btn {
+    background: var(--bg-panel);
+    border: 1px solid #2A2D31;
+    padding: 14px 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 160px;
+    transition: border-color 0.25s ease, background 0.25s ease;
+    border-radius: 2px;
+}
+
+.booking-slot-btn:hover {
+    border-color: var(--training);
+}
+
+.booking-slot-btn.is-selected {
+    border-color: var(--training);
+    background: rgba(255, 86, 48, 0.07);
+}
+
+.booking-slot-time {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    color: var(--text);
+}
+
+.booking-slot-day {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.booking-no-slots {
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    padding: 32px;
+    text-align: center;
+}
+
+.booking-no-slots p {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+.booking-loading {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 24px 0;
+}
+
+/* Summary + proceed */
+.booking-selected-summary {
+    margin-top: 36px;
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    border-top: 3px solid var(--training);
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.booking-summary-inner {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+
+.booking-summary-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.booking-summary-val {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.booking-proceed-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--training);
+    color: var(--training-dark);
+    padding: 14px 28px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: filter 0.25s ease;
+}
+
+.booking-proceed-btn:hover {
+    filter: brightness(1.08);
+}
+
+@media (max-width: 600px) {
+    .booking-packages {
+        flex-direction: column;
+    }
+
+    .booking-selected-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+    }
+
+    .booking-proceed-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
