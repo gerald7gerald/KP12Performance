@@ -32,7 +32,6 @@
 
                 <form id="signup-form" class="auth-form">
 
-                    <!-- Basic info -->
                     <div class="field">
                         <label for="signup-username">Username</label>
                         <input type="text" id="signup-username" placeholder="Username" required>
@@ -60,7 +59,6 @@
                                 <option value="" disabled selected>Select</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
-                                <option value="Non-binary">Non-binary</option>
                                 <option value="Prefer not to say">Prefer not to say</option>
                             </select>
                         </div>
@@ -80,29 +78,12 @@
                         <input type="hidden" id="signup-role" value="athlete">
                     </div>
 
-                    <!-- Athlete details (only shown for parent/guardian) -->
-                    <div id="athlete-fields" class="athlete-fields" style="display:none;">
-                        <p class="athlete-fields-label">[ ATHLETE DETAILS ]</p>
-                        <div class="field">
-                            <label for="athlete-name">Athlete's Full Name</label>
-                            <input type="text" id="athlete-name" placeholder="Full name">
-                        </div>
-                        <div class="auth-form-row">
-                            <div class="field">
-                                <label for="athlete-age">Athlete's Age</label>
-                                <input type="number" id="athlete-age" placeholder="Age" min="1" max="30">
-                            </div>
-                            <div class="field">
-                                <label for="athlete-gender">Athlete's Gender</label>
-                                <select id="athlete-gender">
-                                    <option value="" disabled selected>Select</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Non-binary">Non-binary</option>
-                                    <option value="Prefer not to say">Prefer not to say</option>
-                                </select>
-                            </div>
-                        </div>
+                    <!-- Athlete entries (only shown for parent/guardian) -->
+                    <div id="athlete-section" style="display:none;">
+                        <div id="athlete-list"></div>
+                        <button type="button" id="add-athlete-btn" class="add-athlete-btn">
+                            + Add Another Athlete
+                        </button>
                     </div>
 
                     <!-- How did you hear about us -->
@@ -118,7 +99,6 @@
                         </select>
                     </div>
 
-                    <!-- Conditional referral detail fields -->
                     <div id="referral-friend" class="field" style="display:none;">
                         <label for="referral-friend-name">Friend or family member's full name</label>
                         <input type="text" id="referral-friend-name" placeholder="Full name">
@@ -140,6 +120,58 @@
 
     <script src="auth.js"></script>
     <script>
+    let athleteCount = 0;
+
+    function createAthleteEntry(index) {
+        const div = document.createElement("div");
+        div.className = "athlete-entry";
+        div.dataset.index = index;
+        div.innerHTML = `
+            <div class="athlete-entry-header">
+                <p class="athlete-fields-label">[ ATHLETE ${index + 1} ]</p>
+                ${index > 0 ? `<button type="button" class="remove-athlete-btn" onclick="removeAthlete(this)">Remove</button>` : ""}
+            </div>
+            <div class="field">
+                <label>Athlete's Full Name</label>
+                <input type="text" class="athlete-name-input" placeholder="Full name">
+            </div>
+            <div class="auth-form-row">
+                <div class="field">
+                    <label>Athlete's Age</label>
+                    <input type="number" class="athlete-age-input" placeholder="Age" min="1" max="30">
+                </div>
+                <div class="field">
+                    <label>Athlete's Gender</label>
+                    <select class="athlete-gender-input">
+                        <option value="" disabled selected>Select</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        return div;
+    }
+
+    function addAthlete() {
+        const list = document.getElementById("athlete-list");
+        list.appendChild(createAthleteEntry(athleteCount));
+        athleteCount++;
+        renumberAthletes();
+    }
+
+    function removeAthlete(btn) {
+        btn.closest(".athlete-entry").remove();
+        renumberAthletes();
+    }
+
+    function renumberAthletes() {
+        document.querySelectorAll(".athlete-entry").forEach((entry, i) => {
+            entry.querySelector(".athlete-fields-label").textContent = `[ ATHLETE ${i + 1} ]`;
+        });
+    }
+
     // Role toggle
     document.querySelectorAll(".role-btn").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -147,10 +179,17 @@
             btn.classList.add("role-btn--active");
             const role = btn.dataset.role;
             document.getElementById("signup-role").value = role;
-            document.getElementById("athlete-fields").style.display =
-                role === "parent_guardian" ? "flex" : "none";
+            const section = document.getElementById("athlete-section");
+            if (role === "parent_guardian") {
+                section.style.display = "flex";
+                if (athleteCount === 0) addAthlete(); // add first entry automatically
+            } else {
+                section.style.display = "none";
+            }
         });
     });
+
+    document.getElementById("add-athlete-btn").addEventListener("click", addAthlete);
 
     // Referral conditional fields
     document.getElementById("signup-referral").addEventListener("change", function () {

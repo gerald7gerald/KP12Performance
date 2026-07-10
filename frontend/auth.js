@@ -26,18 +26,24 @@ document.addEventListener("DOMContentLoaded", () => {
             const username = document.getElementById("signup-username").value.trim();
             const email    = document.getElementById("signup-email").value.trim();
             const password = document.getElementById("signup-password").value;
-            const phone    = document.getElementById("signup-phone")?.value.trim()   || "";
-            const age      = document.getElementById("signup-age")?.value             || "";
-            const gender   = document.getElementById("signup-gender")?.value          || "";
+            const phone    = document.getElementById("signup-phone")?.value.trim()  || "";
+            const age      = document.getElementById("signup-age")?.value            || "";
+            const gender   = document.getElementById("signup-gender")?.value         || "";
+            const role     = document.getElementById("signup-role")?.value           || "athlete";
 
-            // Role & athlete details
-            const role          = document.getElementById("signup-role")?.value       || "athlete";
-            const athleteName   = document.getElementById("athlete-name")?.value.trim() || "";
-            const athleteAge    = document.getElementById("athlete-age")?.value        || "";
-            const athleteGender = document.getElementById("athlete-gender")?.value     || "";
+            // Collect all athlete entries
+            const athletes = [];
+            document.querySelectorAll(".athlete-entry").forEach(entry => {
+                const name   = entry.querySelector(".athlete-name-input")?.value.trim()  || "";
+                const aAge   = entry.querySelector(".athlete-age-input")?.value           || "";
+                const aGender= entry.querySelector(".athlete-gender-input")?.value        || "";
+                if (name || aAge || aGender) {
+                    athletes.push({ name, age: aAge, gender: aGender });
+                }
+            });
 
             // Referral
-            const referralSource = document.getElementById("signup-referral")?.value  || "";
+            const referralSource = document.getElementById("signup-referral")?.value || "";
             let   referralDetail = "";
             if (referralSource === "Friend/Family") {
                 referralDetail = document.getElementById("referral-friend-name")?.value.trim() || "";
@@ -55,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify({
                         username, email, password,
                         phone, age, gender,
-                        role, athleteName, athleteAge, athleteGender,
+                        role, athletes,
                         referralSource, referralDetail
                     })
                 });
@@ -91,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const email    = document.getElementById("login-email").value.trim();
             const password = document.getElementById("login-password").value;
-
             const submitBtn = loginForm.querySelector("button[type='submit']");
             submitBtn.disabled = true;
 
@@ -124,4 +129,4 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-}); 
+});

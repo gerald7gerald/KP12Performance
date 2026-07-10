@@ -94,12 +94,12 @@
                 .catch(err => {
                     console.error(err);
                     document.getElementById("emp-table-wrap").innerHTML =
-                        '<p class="emp-loading">Failed to load member data. Please try again.</p>';
+                        '<p class="emp-loading">Failed to load member data.</p>';
                 });
         }
 
-        function e(str) {
-            if (!str && str !== 0) return "—";
+        function esc(str) {
+            if (str === null || str === undefined) return "—";
             const d = document.createElement("div");
             d.textContent = String(str);
             return d.innerHTML;
@@ -115,6 +115,67 @@
                 return;
             }
 
+            let rows = "";
+            users.forEach(u => {
+                const isParent = u.role === "parent_guardian";
+                const athletes = Array.isArray(u.athletes) ? u.athletes : [];
+                const hasAthletes = athletes.length > 0;
+
+                rows += `
+                    <tr class="emp-user-row">
+                        <td class="emp-id">${u.id}</td>
+                        <td>${esc(u.username)}</td>
+                        <td><a href="mailto:${esc(u.email)}" class="emp-email-link">${esc(u.email)}</a></td>
+                        <td>${u.phone ? `<a href="tel:${esc(u.phone)}" class="emp-email-link">${esc(u.phone)}</a>` : "—"}</td>
+                        <td>${esc(u.age)}</td>
+                        <td>${esc(u.gender)}</td>
+                        <td>
+                            ${isParent
+                                ? `<span class="emp-role-badge">Parent</span>
+                                   ${hasAthletes
+                                       ? `<button type="button" class="emp-athletes-toggle" onclick="toggleAthletes(this, ${u.id})">
+                                              ▶ Athletes (${athletes.length})
+                                          </button>`
+                                       : ""}`
+                                : (u.role ? "Athlete" : "—")}
+                        </td>
+                        <td>${esc(u.referral_source)}</td>
+                        <td>${esc(u.referral_detail)}</td>
+                        <td>${u.is_admin ? '<span class="emp-admin-badge">ADMIN</span>' : "—"}</td>
+                    </tr>
+                `;
+
+                // Athlete sub-row (hidden by default)
+                if (isParent && hasAthletes) {
+                    rows += `
+                        <tr class="emp-athlete-row" id="athletes-${u.id}" style="display:none;">
+                            <td colspan="10" class="emp-athlete-cell">
+                                <table class="emp-athlete-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Name</th>
+                                            <th>Age</th>
+                                            <th>Gender</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${athletes.map((a, i) => `
+                                            <tr>
+                                                <td class="emp-id">${i + 1}</td>
+                                                <td>${esc(a.name)}</td>
+                                                <td>${esc(a.age)}</td>
+                                                <td>${esc(a.gender)}</td>
+                                            </tr>
+                                        `).join("")}
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
             wrap.innerHTML = `
                 <table class="emp-table">
                     <thead>
@@ -126,36 +187,24 @@
                             <th>Age</th>
                             <th>Gender</th>
                             <th>Role</th>
-                            <th>Athlete Name</th>
-                            <th>Athlete Age</th>
-                            <th>Athlete Gender</th>
                             <th>Heard From</th>
                             <th>Referral Detail</th>
                             <th>Admin</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${users.map(u => `
-                            <tr>
-                                <td class="emp-id">${u.id}</td>
-                                <td>${e(u.username)}</td>
-                                <td><a href="mailto:${e(u.email)}" class="emp-email-link">${e(u.email)}</a></td>
-                                <td>${u.phone ? `<a href="tel:${e(u.phone)}" class="emp-email-link">${e(u.phone)}</a>` : "—"}</td>
-                                <td>${e(u.age)}</td>
-                                <td>${e(u.gender)}</td>
-                                <td>${u.role === "parent_guardian" ? '<span class="emp-role-badge">Parent</span>' : e(u.role) === "—" ? "—" : "Athlete"}</td>
-                                <td>${e(u.athlete_name)}</td>
-                                <td>${e(u.athlete_age)}</td>
-                                <td>${e(u.athlete_gender)}</td>
-                                <td>${e(u.referral_source)}</td>
-                                <td>${e(u.referral_detail)}</td>
-                                <td>${u.is_admin ? '<span class="emp-admin-badge">ADMIN</span>' : "—"}</td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
+                    <tbody>${rows}</tbody>
                 </table>
             `;
         }
+
+        window.toggleAthletes = function(btn, userId) {
+            const row = document.getElementById(`athletes-${userId}`);
+            const isOpen = row.style.display !== "none";
+            row.style.display = isOpen ? "none" : "table-row";
+            btn.textContent = isOpen
+                ? btn.textContent.replace("▼", "▶")
+                : btn.textContent.replace("▶", "▼");
+        };
 
         document.getElementById("emp-search").addEventListener("input", (ev) => {
             const q = ev.target.value.toLowerCase().trim();
@@ -164,9 +213,9 @@
                 (u.username        || "").toLowerCase().includes(q) ||
                 (u.email           || "").toLowerCase().includes(q) ||
                 (u.phone           || "").toLowerCase().includes(q) ||
-                (u.athlete_name    || "").toLowerCase().includes(q) ||
                 (u.referral_source || "").toLowerCase().includes(q) ||
-                (u.referral_detail || "").toLowerCase().includes(q)
+                (u.referral_detail || "").toLowerCase().includes(q) ||
+                (u.athletes || []).some(a => (a.name || "").toLowerCase().includes(q))
             );
             renderTable(filtered);
         });

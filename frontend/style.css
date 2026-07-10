@@ -2729,3 +2729,125 @@ transform:translateY(70px);
     padding: 3px 8px;
     border-radius: 2px;
 }
+/* ---------- SIGNUP — MULTI-ATHLETE FORM ---------- */
+#athlete-section {
+    flex-direction: column;
+    gap: 16px;
+}
+
+.athlete-entry {
+    background: rgba(184, 255, 63, 0.04);
+    border: 1px solid rgba(184, 255, 63, 0.2);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-radius: 2px;
+}
+
+.athlete-entry-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.athlete-fields-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--athletics);
+}
+
+.remove-athlete-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 86, 48, 0.4);
+    color: var(--training);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.remove-athlete-btn:hover {
+    background: var(--training);
+    color: var(--training-dark);
+}
+
+.add-athlete-btn {
+    background: transparent;
+    border: 1px dashed rgba(184, 255, 63, 0.4);
+    color: var(--athletics);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 12px;
+    width: 100%;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.add-athlete-btn:hover {
+    background: rgba(184, 255, 63, 0.08);
+    border-style: solid;
+}
+
+/* ---------- EMPLOYEE — ATHLETE SUB-TABLE ---------- */
+.emp-athletes-toggle {
+    background: transparent;
+    border: 1px solid rgba(184, 255, 63, 0.35);
+    color: var(--athletics);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 4px 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-left: 8px;
+    transition: background 0.25s ease;
+    white-space: nowrap;
+}
+
+.emp-athletes-toggle:hover {
+    background: rgba(184, 255, 63, 0.1);
+}
+
+.emp-athlete-cell {
+    background: rgba(184, 255, 63, 0.04);
+    border-top: 1px solid rgba(184, 255, 63, 0.15);
+    border-bottom: 1px solid rgba(184, 255, 63, 0.15);
+    padding: 16px 24px;
+}
+
+.emp-athlete-table {
+    width: auto;
+    min-width: 400px;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.emp-athlete-table th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--athletics);
+    padding: 8px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(184, 255, 63, 0.2);
+}
+
+.emp-athlete-table td {
+    padding: 10px 14px;
+    color: var(--text);
+    border-bottom: 1px solid #1d1f23;
+}
+
+.emp-athlete-table tbody tr:last-child td {
+    border-bottom: none;
+}

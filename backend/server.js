@@ -32,11 +32,10 @@ const createTableQuery = `
 
 pool.query(createTableQuery)
   .then(() => {
-    console.log("Users table verified/created successfully!");
+    console.log("Users table ready!");
     return pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;`);
   })
   .then(() => {
-    console.log("is_admin column verified/created successfully!");
     return pool.query(`
       ALTER TABLE users
         ADD COLUMN IF NOT EXISTS phone VARCHAR(30),
@@ -45,23 +44,35 @@ pool.query(createTableQuery)
     `);
   })
   .then(() => {
-    console.log("Profile columns (phone, age, gender) verified/created successfully!");
     return pool.query(`
       ALTER TABLE users
         ADD COLUMN IF NOT EXISTS role VARCHAR(30),
-        ADD COLUMN IF NOT EXISTS athlete_name VARCHAR(100),
-        ADD COLUMN IF NOT EXISTS athlete_age INTEGER,
-        ADD COLUMN IF NOT EXISTS athlete_gender VARCHAR(30),
         ADD COLUMN IF NOT EXISTS referral_source VARCHAR(60),
         ADD COLUMN IF NOT EXISTS referral_detail TEXT;
     `);
   })
   .then(() => {
-    console.log("Extended profile columns verified/created successfully!");
+    console.log("All user columns verified!");
     return pool.query("UPDATE users SET is_admin = TRUE WHERE email = 'geraldcgarcia7@gmail.com';");
   })
-  .then(() => console.log("SUCCESS: geraldcgarcia7@gmail.com is now flagged as an Admin!"))
-  .catch((err) => console.error("Error during users table / admin setup:", err));
+  .then(() => console.log("SUCCESS: geraldcgarcia7@gmail.com is flagged as Admin!"))
+  .catch((err) => console.error("Error during users table setup:", err));
+
+// Athletes table — separate rows per child, linked to the parent's user row
+const createAthletesTableQuery = `
+  CREATE TABLE IF NOT EXISTS athletes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(100),
+    age INTEGER,
+    gender VARCHAR(30),
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+`;
+
+pool.query(createAthletesTableQuery)
+  .then(() => console.log("Athletes table ready!"))
+  .catch((err) => console.error("Error creating athletes table:", err));
 
 const createReviewsTableQuery = `
   CREATE TABLE IF NOT EXISTS reviews (
@@ -75,7 +86,7 @@ const createReviewsTableQuery = `
 `;
 
 pool.query(createReviewsTableQuery)
-  .then(() => console.log("Reviews table verified/created successfully!"))
+  .then(() => console.log("Reviews table ready!"))
   .catch((err) => console.error("Error creating reviews table:", err));
 
 const createPasswordResetsQuery = `
@@ -90,7 +101,7 @@ const createPasswordResetsQuery = `
 `;
 
 pool.query(createPasswordResetsQuery)
-  .then(() => console.log("Password resets table verified/created successfully!"))
+  .then(() => console.log("Password resets table ready!"))
   .catch((err) => console.error("Error creating password_resets table:", err));
 
 // --- HELPERS ---
@@ -147,13 +158,14 @@ app.get('/api/data', async (req, res) => {
 
 // --- AUTH ROUTES ---
 
-// SIGNUP
+// SIGNUP — saves athletes as separate rows in the athletes table
 app.post('/api/auth/signup', async (req, res) => {
   const {
     username, email, password,
     phone, age, gender,
-    role, athleteName, athleteAge, athleteGender,
-    referralSource, referralDetail
+    role,
+    referralSource, referralDetail,
+    athletes // array of { name, age, gender }
   } = req.body;
 
   try {
@@ -161,29 +173,38 @@ app.post('/api/auth/signup', async (req, res) => {
     if (userCheck.rows.length > 0) {
       return res.status(400).json({ error: "User already exists with this email." });
     }
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const insertResult = await pool.query(
-      `INSERT INTO users
-        (username, email, password, phone, age, gender,
-         role, athlete_name, athlete_age, athlete_gender,
-         referral_source, referral_detail)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-       RETURNING id`,
+      `INSERT INTO users (username, email, password, phone, age, gender, role, referral_source, referral_detail)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
       [
         username, email, hashedPassword,
         phone || null,
         age ? parseInt(age) : null,
         gender || null,
         role || null,
-        athleteName || null,
-        athleteAge ? parseInt(athleteAge) : null,
-        athleteGender || null,
         referralSource || null,
         referralDetail || null
       ]
     );
-    setLoginCookie(res, insertResult.rows[0].id);
+
+    const userId = insertResult.rows[0].id;
+
+    // Insert each athlete as a separate row
+    if (role === 'parent_guardian' && Array.isArray(athletes) && athletes.length > 0) {
+      for (const athlete of athletes) {
+        if (athlete.name || athlete.age || athlete.gender) {
+          await pool.query(
+            "INSERT INTO athletes (user_id, name, age, gender) VALUES ($1, $2, $3, $4)",
+            [userId, athlete.name || null, athlete.age ? parseInt(athlete.age) : null, athlete.gender || null]
+          );
+        }
+      }
+    }
+
+    setLoginCookie(res, userId);
     res.status(201).json({ message: "User registered successfully!" });
   } catch (err) {
     console.error(err);
@@ -212,16 +233,12 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// AUTH STATUS
 app.get('/api/auth/status', (req, res) => {
   const cookies = req.headers.cookie;
-  if (cookies && cookies.includes('userId=')) {
-    return res.json({ loggedIn: true });
-  }
+  if (cookies && cookies.includes('userId=')) return res.json({ loggedIn: true });
   res.json({ loggedIn: false });
 });
 
-// ME
 app.get('/api/auth/me', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Not logged in." });
@@ -238,7 +255,6 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
-// UPDATE PROFILE
 app.patch('/api/auth/profile', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Please sign in." });
@@ -255,7 +271,6 @@ app.patch('/api/auth/profile', async (req, res) => {
   }
 });
 
-// LOGOUT
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie('userId');
   res.json({ message: "Logged out successfully." });
@@ -263,14 +278,23 @@ app.post('/api/auth/logout', (req, res) => {
 
 // --- ADMIN ROUTES ---
 
+// Returns all users with their athletes array included
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, username, email, phone, age, gender,
-              role, athlete_name, athlete_age, athlete_gender,
-              referral_source, referral_detail,
-              is_admin
-       FROM users ORDER BY id ASC`
+      `SELECT
+         u.id, u.username, u.email, u.phone, u.age, u.gender,
+         u.role, u.referral_source, u.referral_detail, u.is_admin,
+         COALESCE(
+           json_agg(
+             json_build_object('name', a.name, 'age', a.age, 'gender', a.gender)
+           ) FILTER (WHERE a.id IS NOT NULL),
+           '[]'
+         ) AS athletes
+       FROM users u
+       LEFT JOIN athletes a ON a.user_id = u.id
+       GROUP BY u.id
+       ORDER BY u.id ASC`
     );
     res.json(result.rows);
   } catch (err) {
@@ -311,8 +335,7 @@ app.get('/api/reviews', async (req, res) => {
               users.username
        FROM reviews
        JOIN users ON reviews.user_id = users.id
-       ORDER BY reviews.created_at DESC
-       LIMIT 20`
+       ORDER BY reviews.created_at DESC LIMIT 20`
     );
     res.json(result.rows);
   } catch (err) {
@@ -351,16 +374,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         from: 'support@kp12performance.com',
         to: email,
         subject: 'Reset your KP12 Performance password',
-        html: `
-          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:520px;margin:0 auto;padding:48px 40px;border:1px solid #232529;">
-            <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;">
-            <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#8C8F96;margin-bottom:16px;">[ PASSWORD RESET ]</p>
-            <h1 style="font-size:28px;font-weight:700;text-transform:uppercase;margin:0 0 20px;">Hey ${user.username},</h1>
-            <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin-bottom:32px;">We received a request to reset your KP12 Performance password. Click the button below to choose a new one. This link expires in <strong style="color:#F5F4F0;">1 hour</strong>.</p>
-            <a href="${resetLink}" style="display:inline-block;background:#B8FF3F;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:16px 32px;margin-bottom:32px;">Reset Password</a>
-            <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">If you didn't request this, you can safely ignore this email — your password won't change.<br><br>Or copy this link: <a href="${resetLink}" style="color:#B8FF3F;word-break:break-all;">${resetLink}</a></p>
-          </div>
-        `
+        html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:520px;margin:0 auto;padding:48px 40px;border:1px solid #232529;"><img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;"><p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#8C8F96;margin-bottom:16px;">[ PASSWORD RESET ]</p><h1 style="font-size:28px;font-weight:700;text-transform:uppercase;margin:0 0 20px;">Hey ${user.username},</h1><p style="color:#8C8F96;font-size:15px;line-height:1.6;margin-bottom:32px;">We received a request to reset your KP12 Performance password. This link expires in <strong style="color:#F5F4F0;">1 hour</strong>.</p><a href="${resetLink}" style="display:inline-block;background:#B8FF3F;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:16px 32px;margin-bottom:32px;">Reset Password</a><p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">If you didn't request this, ignore this email.<br><br><a href="${resetLink}" style="color:#B8FF3F;word-break:break-all;">${resetLink}</a></p></div>`
       });
     }
     res.json({ message: "If that email is registered, a reset link is on its way." });
@@ -380,7 +394,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
       [token]
     );
     if (result.rows.length === 0) {
-      return res.status(400).json({ error: "This reset link is invalid or has expired. Please request a new one." });
+      return res.status(400).json({ error: "This reset link is invalid or has expired." });
     }
     const resetRow = result.rows[0];
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -394,7 +408,6 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
-// --- START SERVER ---
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
