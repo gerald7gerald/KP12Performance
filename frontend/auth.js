@@ -1,6 +1,6 @@
 // ---- Backend config ----
-// Removed the hardcoded onrender URL so it uses your actual domain cleanly
-const API_BASE_URL = ""; 
+// Empty string = same origin (frontend and backend served from same domain)
+const API_BASE_URL = "";
 
 function showError(id, message) {
     const el = document.getElementById(id);
@@ -26,8 +26,14 @@ document.addEventListener("DOMContentLoaded", () => {
             clearError("signup-error");
 
             const username = document.getElementById("signup-username").value.trim();
-            const email = document.getElementById("signup-email").value.trim();
+            const email    = document.getElementById("signup-email").value.trim();
             const password = document.getElementById("signup-password").value;
+
+            // New profile fields — optional, won't break if the elements
+            // don't exist on a page (?.value guards against that)
+            const phone  = document.getElementById("signup-phone")?.value.trim()  || "";
+            const age    = document.getElementById("signup-age")?.value            || "";
+            const gender = document.getElementById("signup-gender")?.value         || "";
 
             const submitBtn = signupForm.querySelector("button[type='submit']");
             submitBtn.disabled = true;
@@ -36,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, email, password })
+                    body: JSON.stringify({ username, email, password, phone, age, gender })
                 });
                 const data = await res.json();
 
@@ -46,11 +52,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Removed localStorage step — Backend cookies take over now!
-
-                // If they were trying to leave a review, send them there
+                // Backend cookie takes over — no localStorage needed.
+                // If they were trying to do something before signing up,
+                // send them back there; otherwise go home.
                 const redirect = localStorage.getItem("redirectAfterLogin");
-
                 if (redirect) {
                     localStorage.removeItem("redirectAfterLogin");
                     window.location.href = redirect;
@@ -72,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             clearError("login-error");
 
-            const email = document.getElementById("login-email").value.trim();
+            const email    = document.getElementById("login-email").value.trim();
             const password = document.getElementById("login-password").value;
 
             const submitBtn = loginForm.querySelector("button[type='submit']");
@@ -92,11 +97,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Removed localStorage step — Backend cookies take over now!
-
-                // If they were trying to leave a review, send them there
+                // Backend cookie takes over — no localStorage needed.
                 const redirect = localStorage.getItem("redirectAfterLogin");
-
                 if (redirect) {
                     localStorage.removeItem("redirectAfterLogin");
                     window.location.href = redirect;

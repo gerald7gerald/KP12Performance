@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard | KP12 Performance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png">
+</head>
+<body>
+
+    <header class="nav">
+        <a href="index.html" class="nav-brand">
+            <img src="logo.png" alt="KP12 Performance" class="nav-logo">
+        </a>
+        <ul class="nav-links">
+            <li><a href="https://app.letsponey.com/h/kp12-performance" target="_blank">Scheduling</a></li>
+            <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
+            <li><a href="abt.html">About Us</a></li>
+            <li><a href="shop.html">Shop</a></li>
+        </ul>
+    </header>
+
+    <section class="emp-page">
+
+        <div class="emp-header">
+            <p class="eyebrow">[ EMPLOYEE PORTAL ]</p>
+            <h1 class="emp-title">Member Directory</h1>
+            <p class="emp-sub">All registered accounts with contact details. Admin only.</p>
+        </div>
+
+        <div class="emp-toolbar">
+            <input type="text" id="emp-search" class="emp-search" placeholder="Search by name, email, or phone...">
+            <span class="emp-count" id="emp-count"></span>
+        </div>
+
+        <div id="emp-table-wrap" class="emp-table-wrap">
+            <p class="emp-loading">Loading member data...</p>
+        </div>
+
+    </section>
+
+    <footer class="status-bar">
+        <span class="status-label">[ SYSTEM ]</span>
+        <div id="data-container">Loading data from backend...</div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="nav.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+        // ---- Gate: redirect non-admins immediately ----
+        fetch('/api/auth/me')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (!data || !data.user || !data.user.is_admin) {
+                    window.location.href = "index.html";
+                    return;
+                }
+                loadUsers();
+            })
+            .catch(() => {
+                window.location.href = "index.html";
+            });
+
+        let allUsers = [];
+
+        function loadUsers() {
+            fetch('/api/admin/users')
+                .then(res => res.json())
+                .then(users => {
+                    allUsers = users;
+                    renderTable(users);
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById("emp-table-wrap").innerHTML =
+                        '<p class="emp-loading">Failed to load member data. Please try again.</p>';
+                });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "—";
+            const d = document.createElement("div");
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function renderTable(users) {
+            const wrap = document.getElementById("emp-table-wrap");
+            const countEl = document.getElementById("emp-count");
+
+            countEl.textContent = `${users.length} member${users.length !== 1 ? "s" : ""}`;
+
+            if (users.length === 0) {
+                wrap.innerHTML = '<p class="emp-loading">No members found.</p>';
+                return;
+            }
+
+            wrap.innerHTML = `
+                <table class="emp-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Admin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(u => `
+                            <tr>
+                                <td class="emp-id">${u.id}</td>
+                                <td>${escapeHtml(u.username)}</td>
+                                <td><a href="mailto:${escapeHtml(u.email)}" class="emp-email-link">${escapeHtml(u.email)}</a></td>
+                                <td>${u.phone ? `<a href="tel:${escapeHtml(u.phone)}" class="emp-email-link">${escapeHtml(u.phone)}</a>` : "—"}</td>
+                                <td>${u.age || "—"}</td>
+                                <td>${escapeHtml(u.gender)}</td>
+                                <td>${u.is_admin ? '<span class="emp-admin-badge">ADMIN</span>' : "—"}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // ---- Live search ----
+        document.getElementById("emp-search").addEventListener("input", (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            if (!q) {
+                renderTable(allUsers);
+                return;
+            }
+            const filtered = allUsers.filter(u =>
+                (u.username || "").toLowerCase().includes(q) ||
+                (u.email || "").toLowerCase().includes(q) ||
+                (u.phone || "").toLowerCase().includes(q)
+            );
+            renderTable(filtered);
+        });
+
+    });
+    </script>
+
+</body>
+</html>

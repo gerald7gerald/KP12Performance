@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
+    <title>Sign Up | KP12 Performance</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -43,8 +43,29 @@
                         <label for="signup-password">Password</label>
                         <input type="password" id="signup-password" placeholder="Password" required>
                     </div>
+                    <div class="field">
+                        <label for="signup-phone">Phone Number</label>
+                        <input type="tel" id="signup-phone" placeholder="(555) 000-0000">
+                    </div>
+                    <div class="auth-form-row">
+                        <div class="field">
+                            <label for="signup-age">Age</label>
+                            <input type="number" id="signup-age" placeholder="Age" min="5" max="100">
+                        </div>
+                        <div class="field">
+                            <label for="signup-gender">Gender</label>
+                            <select id="signup-gender">
+                                <option value="" disabled selected>Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Non-binary">Non-binary</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </select>
+                        </div>
+                    </div>
                     <button type="submit">Create Account</button>
                 </form>
+
                 <p class="auth-error" id="signup-error"></p>
 
                 <p class="auth-switch">Already have an account? <a href="login.html">Login here</a></p>

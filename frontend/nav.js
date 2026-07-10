@@ -1,35 +1,50 @@
-// Swaps the nav's auth link between "Sign Up" (logged out)
-// and "My Account" (logged in) based on what's stored locally.
-//
-// NOTE: this is a lightweight, client-side-only check — it's not a real
-// session. It's just enough to reflect login state in the UI until the
-// backend issues real sessions/tokens.
+// ---- Auth nav link: "Sign Up" (logged out) vs "My Account" (logged in) ----
+// ---- + Employee link: only injected for admin accounts ----
 
 document.addEventListener("DOMContentLoaded", () => {
     const authLink = document.getElementById("auth-nav-link");
-    if (!authLink) return;
+    const navLinks = document.querySelector(".nav-links");
+    if (!authLink || !navLinks) return;
 
-    const stored = localStorage.getItem("kp12_user");
+    // Ask the server who's logged in — this is the authoritative check
+    fetch('/api/auth/me')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+            if (data && data.user) {
+                // Logged in
+                authLink.textContent = "My Account";
+                authLink.setAttribute("href", "acc.html");
 
-    if (stored) {
-        try {
-            JSON.parse(stored); // just confirms it's valid
-            authLink.textContent = "My Account";
-            authLink.setAttribute("href", "acc.html");
-        } catch (err) {
-            // Corrupted data — treat as logged out
-            localStorage.removeItem("kp12_user");
+                // If admin, inject the Employee link into the nav
+                if (data.user.is_admin) {
+                    const existing = document.getElementById("employee-nav-link");
+                    if (!existing) {
+                        const li = document.createElement("li");
+                        const a = document.createElement("a");
+                        a.id = "employee-nav-link";
+                        a.href = "employee.html";
+                        a.textContent = "Employee";
+                        li.appendChild(a);
+                        // Insert before the last item (Shop)
+                        const items = navLinks.querySelectorAll("li");
+                        const lastItem = items[items.length - 1];
+                        navLinks.insertBefore(li, lastItem);
+                    }
+                }
+            } else {
+                // Logged out
+                authLink.textContent = "Sign Up";
+                authLink.setAttribute("href", "signup.html");
+            }
+        })
+        .catch(() => {
+            // Server unreachable — fall back to logged-out state
             authLink.textContent = "Sign Up";
             authLink.setAttribute("href", "signup.html");
-        }
-    } else {
-        authLink.textContent = "Sign Up";
-        authLink.setAttribute("href", "signup.html");
-    }
+        });
 });
 
-// ---- Fixed nav: add a background once the page has scrolled,
-// so the nav stays legible over whatever content passes underneath it ----
+// ---- Fixed nav: blur background on scroll ----
 document.addEventListener("DOMContentLoaded", () => {
     const nav = document.querySelector(".nav");
     if (!nav) return;
@@ -44,6 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    updateNavBackground(); // handle page loads that aren't scrolled to top
+    updateNavBackground();
     window.addEventListener("scroll", updateNavBackground, { passive: true });
 });
