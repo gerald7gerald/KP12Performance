@@ -201,6 +201,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="mys-session-badge" style="background:${accentColor}20;border-color:${accentColor}40;color:${accentColor}">
                             ${isAthletics ? 'ATHLETICS' : 'TRAINING'}
                         </div>
+                        ${b.sessions_remaining !== null && b.sessions_remaining !== undefined
+                            ? `<div class="mys-sessions-left ${b.sessions_remaining === 0 ? 'mys-sessions-done' : b.sessions_remaining <= 2 ? 'mys-sessions-low' : ''}"
+                                style="border-color:${accentColor}40">
+                                <span class="mys-sessions-num" style="color:${accentColor}">${b.sessions_remaining}</span>
+                                <span class="mys-sessions-lbl">session${b.sessions_remaining !== 1 ? 's' : ''} left</span>
+                              </div>`
+                            : ''}
                     </div>`;
             });
 

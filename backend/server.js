@@ -34,6 +34,13 @@ function timeToMinutes(t) {
 
 const DAYS_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
+// Parses session count from package label e.g. "4 Sessions" -> 4, "Drop In" -> null
+function parseSessionCount(label) {
+  if (!label) return null;
+  const match = label.match(/^(\d+)\s+session/i);
+  return match ? parseInt(match[1]) : null;
+}
+
 function sortSlots(rows) {
   return [...rows].sort((a, b) => {
     const di = DAYS_ORDER.indexOf(a.day_of_week) - DAYS_ORDER.indexOf(b.day_of_week);
@@ -171,11 +178,25 @@ pool.query(`
     service_key VARCHAR(60) NOT NULL,
     service_title VARCHAR(100),
     package_label VARCHAR(60),
+    sessions_remaining INTEGER,
     week_of DATE NOT NULL,
     status VARCHAR(20) DEFAULT 'confirmed',
     created_at TIMESTAMP DEFAULT NOW()
   );
-`).catch(err => console.error("Bookings:", err));
+`).then(() => pool.query(`
+  ALTER TABLE bookings ADD COLUMN IF NOT EXISTS sessions_remaining INTEGER;
+`)).then(() => console.log("Bookings table ready!"))
+  .catch(err => console.error("Bookings:", err));
+
+// Tracks which days sessions have already been auto-decremented (prevents double-decrement)
+pool.query(`
+  CREATE TABLE IF NOT EXISTS booking_decrements (
+    id SERIAL PRIMARY KEY,
+    booking_id INTEGER REFERENCES bookings(id) ON DELETE CASCADE,
+    decremented_date DATE NOT NULL,
+    UNIQUE(booking_id, decremented_date)
+  );
+`).catch(err => console.error("Booking decrements:", err));
 
 // Booking slots — the specific days/times a user picked within their booking
 pool.query(`
@@ -407,10 +428,12 @@ app.post('/api/bookings', async (req, res) => {
     }
 
     // Create the booking
+    const sessionsRemaining = parseSessionCount(packageLabel);
+
     const bookingResult = await pool.query(
-      `INSERT INTO bookings (user_id, service_key, service_title, package_label, week_of, status)
-       VALUES ($1,$2,$3,$4,$5,'confirmed') RETURNING id`,
-      [userId, serviceKey, serviceTitle, packageLabel||null, weekOf]
+      `INSERT INTO bookings (user_id, service_key, service_title, package_label, sessions_remaining, week_of, status)
+       VALUES ($1,$2,$3,$4,$5,$6,'confirmed') RETURNING id`,
+      [userId, serviceKey, serviceTitle, packageLabel||null, sessionsRemaining, weekOf]
     );
     const bookingId = bookingResult.rows[0].id;
 
@@ -432,7 +455,7 @@ app.get('/api/bookings/mine', async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Sign in first." });
   try {
     const r = await pool.query(
-      `SELECT b.id,b.service_title,b.package_label,b.week_of,b.status,b.created_at,
+      `SELECT b.id,b.service_title,b.package_label,b.sessions_remaining,b.week_of,b.status,b.created_at,
               COALESCE(json_agg(json_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
                 FILTER (WHERE bs.id IS NOT NULL),'[]') AS slots
        FROM bookings b LEFT JOIN booking_slots bs ON bs.booking_id=b.id
@@ -448,7 +471,7 @@ app.get('/api/bookings', requireAdmin, async (req, res) => {
   try {
     const weekOf = currentWeekMonday();
     const r = await pool.query(
-      `SELECT b.id,b.service_key,b.service_title,b.package_label,b.status,b.created_at,
+      `SELECT b.id,b.service_key,b.service_title,b.package_label,b.sessions_remaining,b.status,b.created_at,
               u.username, u.email, u.phone, u.age,
               COALESCE(json_agg(json_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
                 FILTER (WHERE bs.id IS NOT NULL),'[]') AS slots
@@ -542,4 +565,78 @@ app.post('/api/auth/reset-password', async (req, res) => {
   } catch (err) { res.status(500).json({ error: "Error." }); }
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// ---- Auto-decrement sessions for today's day ----
+// Runs once at server startup. Since Render keeps the server running,
+// this fires once per deployment/restart. For fully automatic daily runs,
+// add node-cron later.
+async function autoDecrementSessions() {
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const todayName = dayNames[new Date().getDay()];
+  if (todayName === 'Sunday') return;
+
+  const weekOf = currentWeekMonday();
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  try {
+    const result = await pool.query(
+      `SELECT DISTINCT b.id
+       FROM bookings b
+       JOIN booking_slots bs ON bs.booking_id = b.id
+       WHERE b.week_of = $1
+         AND bs.day_of_week = $2
+         AND b.status = 'confirmed'
+         AND (b.sessions_remaining IS NULL OR b.sessions_remaining > 0)
+         AND NOT EXISTS (
+           SELECT 1 FROM booking_decrements bd
+           WHERE bd.booking_id = b.id AND bd.decremented_date = $3
+         )`,
+      [weekOf, todayName, todayStr]
+    );
+
+    for (const row of result.rows) {
+      await pool.query(
+        `UPDATE bookings
+         SET sessions_remaining = GREATEST(0, COALESCE(sessions_remaining, 1) - 1)
+         WHERE id = $1`,
+        [row.id]
+      );
+      await pool.query(
+        `INSERT INTO booking_decrements (booking_id, decremented_date)
+         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [row.id, todayStr]
+      );
+    }
+
+    if (result.rows.length > 0) {
+      console.log(`Auto-decremented ${result.rows.length} booking(s) for ${todayName}`);
+    }
+  } catch (err) {
+    console.error('Auto-decrement error:', err);
+  }
+}
+
+// PATCH /api/bookings/:id/sessions — admin adjusts sessions_remaining for a user
+app.patch('/api/bookings/:id/sessions', requireAdmin, async (req, res) => {
+  const { sessions } = req.body;
+  if (sessions === undefined || sessions === null || isNaN(parseInt(sessions))) {
+    return res.status(400).json({ error: "Valid session count required." });
+  }
+  const count = Math.max(0, parseInt(sessions));
+  try {
+    const r = await pool.query(
+      "UPDATE bookings SET sessions_remaining = $1 WHERE id = $2 RETURNING id, sessions_remaining",
+      [count, req.params.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: "Booking not found." });
+    res.json({ message: "Sessions updated.", sessions_remaining: r.rows[0].sessions_remaining });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error updating sessions." });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  // Run auto-decrement after a short delay so tables are ready
+  setTimeout(autoDecrementSessions, 3000);
+});

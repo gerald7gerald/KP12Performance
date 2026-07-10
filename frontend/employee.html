@@ -151,8 +151,20 @@
 <script>
 // ---- Constants ----
 const SUBCATEGORIES = {
-    Athletics: [], Nutrition: [],
-    Training: ['Sports Performance Training','Personal Training','Youth Performance Training','Adult Training','Remote Training','Swim Lessons']
+    Athletics: [
+        'Swim Lessons',
+        'Speed/Agility/COD',
+        'Beach/Indoor Volleyball',
+        'Swim Team/Clinics'
+    ],
+    Nutrition: [],
+    Training: [
+        'Sports Performance Training',
+        'Personal Training',
+        'Youth Performance Training',
+        'Adult Training',
+        'Remote Training'
+    ]
 };
 const DAYS_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const CAT_COLORS = { Athletics:'var(--athletics)', Training:'var(--training)', Nutrition:'var(--nutrition,#FFC247)' };
@@ -414,7 +426,7 @@ async function loadAppointments() {
                 const b = row.booking;
                 const serviceColor = 'var(--training)';
                 html += `
-                    <div class="appt-card">
+                    <div class="appt-card" id="appt-booking-${b.id}">
                         <div class="appt-card-time">
                             <span class="appt-time-main">${esc(row.start)}</span>
                             <span class="appt-time-end">to ${esc(row.end)}</span>
@@ -429,6 +441,20 @@ async function loadAppointments() {
                                 ${b.age ? `<span class="appt-contact-chip">Age ${esc(b.age)}</span>` : ''}
                             </div>
                         </div>
+                        <div class="appt-sessions-col">
+                            <p class="appt-sessions-label">Sessions Left</p>
+                            <div class="appt-sessions-display" id="sessions-display-${b.id}">
+                                <span class="appt-sessions-num ${b.sessions_remaining === 0 ? 'appt-sessions-done' : b.sessions_remaining <= 2 ? 'appt-sessions-low' : ''}">
+                                    ${b.sessions_remaining !== null && b.sessions_remaining !== undefined ? b.sessions_remaining : '—'}
+                                </span>
+                            </div>
+                            <div class="appt-sessions-edit">
+                                <input type="number" class="appt-sessions-input" id="sessions-input-${b.id}"
+                                    value="${b.sessions_remaining !== null && b.sessions_remaining !== undefined ? b.sessions_remaining : ''}"
+                                    min="0" max="99" placeholder="—">
+                                <button class="sched-slot-edit-btn" onclick="updateSessions(${b.id})">Save</button>
+                            </div>
+                        </div>
                     </div>`;
             });
 
@@ -439,6 +465,33 @@ async function loadAppointments() {
     } catch (err) {
         console.error(err);
         wrap.innerHTML = '<p class="emp-loading">Couldn\'t load appointments.</p>';
+    }
+}
+
+// ---- Update sessions remaining (admin) ----
+async function updateSessions(bookingId) {
+    const input = document.getElementById(`sessions-input-${bookingId}`);
+    const val = parseInt(input.value);
+    if (isNaN(val) || val < 0) {
+        alert('Please enter a valid number (0 or more).');
+        return;
+    }
+    try {
+        const res = await fetch(`/api/bookings/${bookingId}/sessions`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessions: val })
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || 'Failed to update.'); return; }
+
+        // Update the display number in place
+        const display = document.getElementById(`sessions-display-${bookingId}`);
+        const cls = val === 0 ? 'appt-sessions-done' : val <= 2 ? 'appt-sessions-low' : '';
+        display.innerHTML = `<span class="appt-sessions-num ${cls}">${val}</span>`;
+    } catch (err) {
+        console.error(err);
+        alert("Couldn't reach the server.");
     }
 }
 
