@@ -17,7 +17,6 @@
         <img src="logo.png" alt="KP12 Performance" class="nav-logo">
     </a>
     <ul class="nav-links">
-        <li><a href="https://app.letsponey.com/h/kp12-performance" target="_blank">Scheduling</a></li>
         <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
         <li><a href="abt.html">About Us</a></li>
         <li><a href="shop.html">Shop</a></li>
@@ -37,48 +36,62 @@
         <p class="eyebrow booking-eyebrow">[ BOOK A SESSION ]</p>
         <span class="tra-tag" id="booking-tag"></span>
         <h1 class="booking-title" id="booking-title"></h1>
+
+        <!-- Capacity badge -->
+        <div class="booking-capacity-wrap" id="booking-capacity-wrap" style="display:none;">
+            <div class="booking-capacity-bar-track">
+                <div class="booking-capacity-bar-fill" id="booking-cap-fill"></div>
+            </div>
+            <p class="booking-capacity-label" id="booking-cap-label"></p>
+        </div>
+
         <p class="booking-desc" id="booking-desc"></p>
         <p class="booking-note" id="booking-note" style="display:none;"></p>
         <div class="booking-chips" id="booking-chips"></div>
 
         <div class="booking-section-label">Choose your package</div>
         <div class="booking-packages" id="booking-packages"></div>
-        <p class="booking-pick-hint" id="booking-pick-hint">Select a package above to see available times.</p>
+        <p class="booking-pick-hint">Select a package above to see available times.</p>
     </div>
 
     <div class="booking-step booking-step--schedule" id="step-2" style="display:none;">
-        <div class="booking-section-label" id="step-2-label">Pick an available time</div>
+        <div class="booking-section-label">
+            Pick your sessions
+            <span class="booking-selected-count" id="booking-selected-count"></span>
+        </div>
         <p class="booking-schedule-sub" id="booking-week-note"></p>
 
-        <div id="booking-slots-wrap" class="booking-slots-wrap">
-            <p class="booking-loading">Loading available times...</p>
+        <div id="booking-slots-wrap" class="booking-slots-wrap"></div>
+
+        <!-- Login required notice -->
+        <div id="booking-login-notice" class="booking-login-notice" style="display:none;">
+            <p>You need to be signed in to book a session.</p>
+            <a href="signup.html" class="booking-proceed-btn" style="margin-top:16px;display:inline-block;">Sign Up / Log In →</a>
         </div>
 
-        <div class="booking-selected-summary" id="booking-summary" style="display:none;">
-            <div class="booking-summary-inner">
-                <div>
-                    <p class="booking-summary-label">Package</p>
-                    <p class="booking-summary-val" id="summary-package"></p>
-                </div>
-                <div>
-                    <p class="booking-summary-label">Time</p>
-                    <p class="booking-summary-val" id="summary-time"></p>
-                </div>
-            </div>
-            <a id="booking-contact-btn" href="mailto:support@kp12performance.com"
-               class="booking-proceed-btn">
-               Contact Us to Confirm →
-            </a>
+        <!-- Confirm button (shown when slots selected + logged in) -->
+        <div id="booking-confirm-wrap" class="booking-confirm-wrap" style="display:none;">
+            <div class="booking-summary-inner" id="booking-summary-inner"></div>
+            <p class="booking-error" id="booking-error" style="display:none;"></p>
+            <button id="booking-confirm-btn" class="booking-proceed-btn booking-confirm-btn">
+                Confirm Booking
+            </button>
         </div>
+    </div>
+
+    <!-- Success state -->
+    <div id="booking-success" class="booking-success-wrap" style="display:none;">
+        <p class="eyebrow" style="color:var(--athletics)">[ CONFIRMED ]</p>
+        <h2 class="booking-success-title">YOU'RE BOOKED.</h2>
+        <div id="booking-success-details" class="booking-success-details"></div>
+        <a href="tra.html" class="booking-proceed-btn" style="margin-top:32px;display:inline-block;">← Back to Training</a>
     </div>
 
 </section>
 
 <footer class="site-footer">
     <div class="site-footer-inner">
-        <a href="index.html" class="site-footer-brand">
-            <img src="logo.png" alt="KP12 Performance" class="site-footer-logo">
-        </a>
+        <a href="index.html" class="site-footer-brand"><img src="logo.png" alt="KP12 Performance" class="site-footer-logo"></a>
         <div class="site-footer-socials">
             <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
@@ -102,7 +115,7 @@
 const SERVICES = {
     'sports-performance-training': {
         title: 'Sports Performance Training', tag: '6TH GRADE → PROFESSIONAL',
-        desc: 'Private training to enhance athletic potential. Develop sport-specific needs by training for strength, speed, coordination, injury prevention, and mobility. The program incorporates modern-day exercise science equipment to track performance progress.',
+        desc: 'Private training to enhance athletic potential. Develop sport-specific needs by training for strength, speed, coordination, injury prevention, and mobility.',
         note: 'Nutritional advice and recovery can also be included if needed.',
         chips: ['STRENGTH','SPEED','COORDINATION','INJURY PREVENTION','MOBILITY','ENERGY SYSTEMS'],
         packages: [{ label: '4 Sessions', price: '$175', tag: '' }, { label: '8 Sessions', price: '$350', tag: 'BEST VALUE' }],
@@ -110,56 +123,61 @@ const SERVICES = {
     },
     'personal-training': {
         title: 'Personal Training', tag: '13 & UP',
-        desc: 'Individualized training to meet exactly what you need. From being introduced to the weight room for the first time to needing accountability and motivation — sessions include warm-ups, exercises, and recovery.',
+        desc: 'Individualized training to meet exactly what you need. Sessions include warm-ups, exercises, and recovery.',
         chips: ['INDIVIDUALIZED','ACCOUNTABILITY','WARM-UP + RECOVERY','ALL FITNESS LEVELS'],
         packages: [{ label: '6 Sessions', price: '$250', tag: '' }, { label: '9 Sessions', price: '$400', tag: 'BEST VALUE' }],
         subcategory: 'Personal Training'
     },
     'youth-performance-training': {
         title: 'Youth Performance Training', tag: '5 YEARS OLD → 11 YEARS OLD',
-        desc: 'Proper training at a young age enhances motor development and motor control. Improving these foundational skills improves quality of life and athletic performance down the road.',
+        desc: 'Proper training at a young age enhances motor development and motor control.',
         chips: ['MOTOR DEVELOPMENT','MOTOR CONTROL','MOVEMENT PATTERNS','AGES 5–11'],
         packages: [{ label: '4 Sessions', price: '$100', tag: '' }],
         subcategory: 'Youth Performance Training'
     },
     'adult-training': {
         title: 'Adult Training', tag: '24 & UP',
-        desc: 'Training built around your life. Programs are designed to improve strength, endurance, and overall health for adults who want to feel better, move better, and perform at their best.',
+        desc: 'Training built around your life to improve strength, endurance, and overall health.',
         chips: ['STRENGTH','ENDURANCE','GENERAL HEALTH','24+'],
         packages: [{ label: '4 Sessions', price: '$225', tag: '' }],
         subcategory: 'Adult Training'
     },
     'remote-training': {
         title: 'Remote Training', tag: 'ALL AGES',
-        desc: 'Online training on your schedule. Workouts are fully customized to whatever equipment you have available, wherever you are.',
+        desc: 'Online training on your schedule with whatever equipment you have available.',
         chips: ['FULLY ONLINE','ANY EQUIPMENT','YOUR SCHEDULE','ALL AGES'],
         packages: [{ label: '9 Sessions', price: '$250', tag: '' }],
         subcategory: 'Remote Training'
     },
     'swim-lessons': {
         title: 'Swim Lessons', tag: 'ALL AGES',
-        desc: 'Learn to swim and master the four competitive strokes. Open to all ages and ability levels.',
+        desc: 'Learn the four competitive strokes. All ages and ability levels welcome.',
         chips: ['FREESTYLE','BACKSTROKE','BUTTERFLY','BREASTSTROKE','ALL AGES'],
         packages: [{ label: 'Contact for Pricing', price: '', tag: '' }],
         subcategory: 'Swim Lessons'
     }
 };
 
-// ---- Day filter: only show current day through Saturday ----
 const DAYS_ALL = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-// JS getDay(): 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
-const JS_TO_DAY = { 1:'Monday',2:'Tuesday',3:'Wednesday',4:'Thursday',5:'Friday',6:'Saturday' };
+const JS_TO_DAY = {1:'Monday',2:'Tuesday',3:'Wednesday',4:'Thursday',5:'Friday',6:'Saturday'};
 const todayJSDay = new Date().getDay();
+const todayName  = JS_TO_DAY[todayJSDay] || 'Monday';
+const todayIdx   = DAYS_ALL.indexOf(todayName);
+const validDays  = todayJSDay === 0 ? DAYS_ALL : DAYS_ALL.slice(todayIdx);
 
-// On Sunday (0), show all days for the upcoming week
-const todayName = JS_TO_DAY[todayJSDay] || 'Monday';
-const todayIdx  = DAYS_ALL.indexOf(todayName);
-const validDays = todayJSDay === 0 ? DAYS_ALL : DAYS_ALL.slice(todayIdx);
-
-// ---- Parse URL ----
 const params     = new URLSearchParams(window.location.search);
 const serviceKey = params.get('service');
 const service    = SERVICES[serviceKey];
+
+let selectedPkg  = null;
+let selectedSlots = new Set(); // Set of slot IDs
+let slotDataMap  = {};         // id -> slot object
+let isLoggedIn   = false;
+
+// Check login state
+fetch('/api/auth/status')
+    .then(r => r.json())
+    .then(d => { isLoggedIn = !!d.loggedIn; });
 
 if (!service) {
     document.getElementById('booking-not-found').style.display = 'block';
@@ -172,40 +190,118 @@ if (!service) {
     document.getElementById('booking-desc').textContent  = service.desc;
 
     if (service.note) {
-        const noteEl = document.getElementById('booking-note');
-        noteEl.textContent = service.note;
-        noteEl.style.display = 'block';
+        const n = document.getElementById('booking-note');
+        n.textContent = service.note;
+        n.style.display = 'block';
     }
 
     const chipsEl = document.getElementById('booking-chips');
     service.chips.forEach(c => {
-        const span = document.createElement('span');
-        span.className = 'stat-chip';
-        span.textContent = c;
-        chipsEl.appendChild(span);
+        const s = document.createElement('span');
+        s.className = 'stat-chip';
+        s.textContent = c;
+        chipsEl.appendChild(s);
     });
 
-    const pkgEl = document.getElementById('booking-packages');
-    service.packages.forEach((pkg, i) => {
-        const card = document.createElement('div');
-        card.className = 'booking-pkg-card';
-        if (i === service.packages.length - 1 && service.packages.length > 1) {
-            card.classList.add('booking-pkg-card--highlight');
-        }
-        card.innerHTML = `
-            ${pkg.tag ? `<span class="booking-pkg-tag">${pkg.tag}</span>` : ""}
-            <span class="booking-pkg-sessions">${pkg.label}</span>
-            ${pkg.price ? `<span class="booking-pkg-price">${pkg.price}</span>` : ""}
-        `;
-        card.addEventListener('click', () => {
-            document.querySelectorAll('.booking-pkg-card').forEach(c => c.classList.remove('is-selected'));
-            card.classList.add('is-selected');
-            document.getElementById('summary-package').textContent = `${pkg.label}${pkg.price ? ' — '+pkg.price : ''}`;
-            document.getElementById('booking-summary').style.display = 'none';
-            showScheduleStep();
+    // Load + display capacity
+    fetch('/api/capacity')
+        .then(r => r.json())
+        .then(cap => {
+            const info = cap[serviceKey];
+            if (!info) return;
+            const wrap  = document.getElementById('booking-capacity-wrap');
+            const fill  = document.getElementById('booking-cap-fill');
+            const label = document.getElementById('booking-cap-label');
+            const pct   = Math.min(100, (info.taken / info.max) * 100);
+            const full  = info.available <= 0;
+
+            fill.style.width = pct + '%';
+            fill.style.background = full ? 'var(--training)' : pct > 70 ? '#FFC247' : 'var(--athletics)';
+            label.textContent = full
+                ? `FULL — ${info.taken}/${info.max} spots taken this week`
+                : `${info.taken}/${info.max} spots taken this week — ${info.available} left`;
+            label.style.color = full ? 'var(--training)' : 'var(--text-muted)';
+            wrap.style.display = 'block';
+
+            // If full, disable booking
+            if (full) {
+                document.getElementById('booking-packages').innerHTML =
+                    `<p class="booking-full-msg">This service is fully booked for the current week. Check back next Monday when spots reset.</p>`;
+            } else {
+                buildPackages();
+            }
+        })
+        .catch(() => buildPackages()); // If capacity fetch fails, still allow booking
+
+    function buildPackages() {
+        const pkgEl = document.getElementById('booking-packages');
+        service.packages.forEach((pkg, i) => {
+            const card = document.createElement('div');
+            card.className = 'booking-pkg-card';
+            if (i === service.packages.length - 1 && service.packages.length > 1)
+                card.classList.add('booking-pkg-card--highlight');
+            card.innerHTML = `
+                ${pkg.tag ? `<span class="booking-pkg-tag">${pkg.tag}</span>` : ""}
+                <span class="booking-pkg-sessions">${pkg.label}</span>
+                ${pkg.price ? `<span class="booking-pkg-price">${pkg.price}</span>` : ""}
+            `;
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.booking-pkg-card').forEach(c => c.classList.remove('is-selected'));
+                card.classList.add('is-selected');
+                selectedPkg = pkg;
+                selectedSlots.clear();
+                updateConfirmState();
+                showScheduleStep();
+            });
+            pkgEl.appendChild(card);
         });
-        pkgEl.appendChild(card);
+    }
+}
+
+function updateSelectedCount() {
+    const count = selectedSlots.size;
+    const el = document.getElementById('booking-selected-count');
+    el.textContent = count > 0 ? `${count} selected` : '';
+    el.style.color = count > 0 ? 'var(--athletics)' : 'transparent';
+}
+
+function updateConfirmState() {
+    updateSelectedCount();
+    const wrap = document.getElementById('booking-confirm-wrap');
+    const notice = document.getElementById('booking-login-notice');
+
+    if (selectedSlots.size === 0) {
+        wrap.style.display = 'none';
+        notice.style.display = 'none';
+        return;
+    }
+
+    if (!isLoggedIn) {
+        notice.style.display = 'block';
+        wrap.style.display = 'none';
+        return;
+    }
+
+    notice.style.display = 'none';
+    wrap.style.display = 'block';
+
+    // Build summary
+    const summaryEl = document.getElementById('booking-summary-inner');
+    const sortedSlots = [...selectedSlots].map(id => slotDataMap[id]).sort((a,b) => {
+        const di = DAYS_ALL.indexOf(a.day) - DAYS_ALL.indexOf(b.day);
+        return di !== 0 ? di : (a.start < b.start ? -1 : 1);
     });
+
+    summaryEl.innerHTML = `
+        <div>
+            <p class="booking-summary-label">Package</p>
+            <p class="booking-summary-val">${selectedPkg ? selectedPkg.label + (selectedPkg.price ? ' — '+selectedPkg.price : '') : ''}</p>
+        </div>
+        <div>
+            <p class="booking-summary-label">Selected Times (${sortedSlots.length})</p>
+            ${sortedSlots.map(s => `<p class="booking-summary-val" style="font-size:14px;margin-bottom:4px;">${s.day}, ${s.start} – ${s.end}</p>`).join('')}
+        </div>
+    `;
 }
 
 function showScheduleStep() {
@@ -213,24 +309,17 @@ function showScheduleStep() {
     step2.style.display = 'block';
     step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // Show which days are available
-    const endDay = 'Saturday';
     const weekNote = document.getElementById('booking-week-note');
-    if (todayJSDay === 0) {
-        weekNote.textContent = 'Showing all available sessions this week (Monday–Saturday).';
-    } else if (validDays.length === 1) {
-        weekNote.textContent = `Only Saturday sessions are available for the remainder of this week.`;
-    } else {
-        weekNote.textContent = `Showing available sessions from ${todayName} through Saturday this week.`;
-    }
+    weekNote.textContent = todayJSDay === 0
+        ? 'Showing all sessions this week. Select as many as you need.'
+        : `Showing sessions from ${todayName} through Saturday. Click to select — pick as many as you need.`;
 
     const wrap = document.getElementById('booking-slots-wrap');
     wrap.innerHTML = '<p class="booking-loading">Loading available times...</p>';
 
     fetch('/api/schedule')
-        .then(res => res.json())
+        .then(r => r.json())
         .then(slots => {
-            // Filter to this service AND only days from today through Saturday
             const relevant = slots.filter(s =>
                 s.category === 'Training' &&
                 s.subcategory === service.subcategory &&
@@ -241,15 +330,18 @@ function showScheduleStep() {
                 wrap.innerHTML = `
                     <div class="booking-no-slots">
                         <p>No sessions for <strong>${service.title}</strong> are scheduled for the rest of this week.</p>
-                        <p>Check back on Sunday when the new week's schedule is posted, or contact us directly.</p>
-                        <a href="mailto:support@kp12performance.com" class="tra-book-btn" style="margin-top:20px;display:inline-block;">
-                            Email Us to Book →
-                        </a>
+                        <p>New sessions are posted every Sunday. Check back then or contact us directly.</p>
+                        <a href="mailto:support@kp12performance.com" class="tra-book-btn" style="margin-top:20px;display:inline-block;">Email Us →</a>
                     </div>`;
                 return;
             }
 
-            // Group by day (already sorted by server)
+            // Build slotDataMap
+            slotDataMap = {};
+            relevant.forEach(s => {
+                slotDataMap[s.id] = { id: s.id, day: s.day_of_week, start: s.start_time, end: s.end_time };
+            });
+
             const byDay = {};
             DAYS_ALL.forEach(d => { byDay[d] = []; });
             relevant.forEach(s => { if (byDay[s.day_of_week]) byDay[s.day_of_week].push(s); });
@@ -257,16 +349,13 @@ function showScheduleStep() {
             let html = '<div class="booking-slots-grid">';
             validDays.forEach(day => {
                 const daySlots = byDay[day];
-                if (daySlots.length === 0) return;
+                if (!daySlots.length) return;
                 html += `<div class="booking-day-group">
                     <p class="booking-day-label">${day}</p>
                     <div class="booking-day-slots">`;
                 daySlots.forEach(slot => {
                     html += `
-                        <button type="button" class="booking-slot-btn" data-slot-id="${slot.id}"
-                            data-day="${slot.day_of_week}"
-                            data-start="${slot.start_time}"
-                            data-end="${slot.end_time}">
+                        <button type="button" class="booking-slot-btn" data-slot-id="${slot.id}">
                             <span class="booking-slot-time">${slot.start_time} – ${slot.end_time}</span>
                             <span class="booking-slot-day">${slot.day_of_week}s</span>
                         </button>`;
@@ -276,29 +365,18 @@ function showScheduleStep() {
             html += '</div>';
             wrap.innerHTML = html;
 
-            // Slot click
+            // Toggle multi-select
             document.querySelectorAll('.booking-slot-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    document.querySelectorAll('.booking-slot-btn').forEach(b => b.classList.remove('is-selected'));
-                    btn.classList.add('is-selected');
-
-                    const day   = btn.dataset.day;
-                    const start = btn.dataset.start;
-                    const end   = btn.dataset.end;
-
-                    document.getElementById('summary-time').textContent = `${day}s, ${start} – ${end}`;
-
-                    // Build a mailto with the selection pre-filled
-                    const pkg = document.getElementById('summary-package').textContent;
-                    const subject = encodeURIComponent(`Booking Request: ${service.title}`);
-                    const body = encodeURIComponent(
-                        `Hi KP12 Performance,\n\nI'd like to book a session:\n\nService: ${service.title}\nPackage: ${pkg}\nPreferred time: ${day}s, ${start} – ${end}\n\nPlease let me know how to proceed.\n\nThank you!`
-                    );
-                    document.getElementById('booking-contact-btn').href =
-                        `mailto:support@kp12performance.com?subject=${subject}&body=${body}`;
-
-                    document.getElementById('booking-summary').style.display = 'block';
-                    document.getElementById('booking-summary').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    const id = parseInt(btn.dataset.slotId);
+                    if (selectedSlots.has(id)) {
+                        selectedSlots.delete(id);
+                        btn.classList.remove('is-selected');
+                    } else {
+                        selectedSlots.add(id);
+                        btn.classList.add('is-selected');
+                    }
+                    updateConfirmState();
                 });
             });
         })
@@ -306,6 +384,67 @@ function showScheduleStep() {
             wrap.innerHTML = '<p class="booking-loading">Couldn\'t load schedule. Please try again.</p>';
         });
 }
+
+// Confirm booking
+document.getElementById('booking-confirm-btn').addEventListener('click', async () => {
+    const errorEl = document.getElementById('booking-error');
+    errorEl.style.display = 'none';
+
+    if (selectedSlots.size === 0) return;
+
+    const btn = document.getElementById('booking-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Confirming...';
+
+    const slots = [...selectedSlots].map(id => {
+        const s = slotDataMap[id];
+        return { day: s.day, start: s.start, end: s.end };
+    });
+
+    try {
+        const res = await fetch('/api/bookings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                serviceKey,
+                serviceTitle: service.title,
+                packageLabel: selectedPkg ? selectedPkg.label : '',
+                slots
+            })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            errorEl.textContent = data.error || 'Something went wrong. Please try again.';
+            errorEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Confirm Booking';
+            return;
+        }
+
+        // Show success
+        document.getElementById('step-1').style.display = 'none';
+        document.getElementById('step-2').style.display = 'none';
+        const successEl = document.getElementById('booking-success');
+        successEl.style.display = 'block';
+
+        const sortedSlots = slots.sort((a,b) => DAYS_ALL.indexOf(a.day) - DAYS_ALL.indexOf(b.day));
+        document.getElementById('booking-success-details').innerHTML = `
+            <p class="booking-summary-label" style="margin-bottom:8px;">SERVICE</p>
+            <p style="font-weight:600;margin-bottom:20px;">${service.title}${selectedPkg && selectedPkg.price ? ' — ' + selectedPkg.label + ' / ' + selectedPkg.price : ''}</p>
+            <p class="booking-summary-label" style="margin-bottom:8px;">YOUR SESSIONS</p>
+            ${sortedSlots.map(s => `<p style="margin-bottom:6px;">• ${s.day}s, ${s.start} – ${s.end}</p>`).join('')}
+        `;
+        successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+        console.error(err);
+        errorEl.textContent = "Couldn't reach the server. Please try again.";
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Confirm Booking';
+    }
+});
 </script>
 
 </body>

@@ -3516,3 +3516,151 @@ transform:translateY(70px);
     padding: 24px 28px;
     margin-bottom: 32px;
 }
+/* ---------- TRA.HTML — SPOTS BADGES ---------- */
+.tra-spots-badge {
+    display: block;
+    margin-top: 6px;
+}
+
+.tra-spots-text {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #2A2D31;
+    padding: 3px 10px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.tra-spots-warn {
+    color: #FFC247;
+    border-color: rgba(255, 194, 71, 0.4);
+    background: rgba(255, 194, 71, 0.08);
+}
+
+.tra-spots-full {
+    color: var(--training);
+    border-color: rgba(255, 86, 48, 0.4);
+    background: rgba(255, 86, 48, 0.08);
+}
+
+/* ---------- BOOKING PAGE — CAPACITY BAR ---------- */
+.booking-capacity-wrap {
+    margin: 16px 0 28px;
+}
+
+.booking-capacity-bar-track {
+    height: 5px;
+    background: #2A2D31;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.booking-capacity-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--athletics);
+    transition: width 0.6s ease;
+}
+
+.booking-capacity-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.booking-full-msg {
+    color: var(--training);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px;
+    border: 1px solid rgba(255,86,48,0.3);
+    background: rgba(255,86,48,0.07);
+    border-radius: 2px;
+}
+
+/* ---------- BOOKING PAGE — MULTI-SELECT SLOTS ---------- */
+.booking-selected-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    margin-left: 12px;
+    color: var(--athletics);
+}
+
+.booking-slot-btn.is-selected {
+    border-color: var(--training);
+    background: rgba(255, 86, 48, 0.1);
+}
+
+.booking-slot-btn.is-selected .booking-slot-time {
+    color: var(--training);
+}
+
+/* Confirm / summary section */
+.booking-confirm-wrap {
+    margin-top: 36px;
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    border-top: 3px solid var(--training);
+    padding: 28px 32px;
+}
+
+.booking-error {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(255,86,48,0.08);
+    border: 1px solid rgba(255,86,48,0.35);
+    color: var(--training);
+    font-size: 13px;
+    border-radius: 2px;
+}
+
+.booking-confirm-btn {
+    width: 100%;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.booking-login-notice {
+    margin-top: 32px;
+    padding: 24px;
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    text-align: center;
+}
+
+.booking-login-notice p {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin-bottom: 0;
+}
+
+/* ---------- BOOKING SUCCESS STATE ---------- */
+.booking-success-wrap {
+    max-width: 520px;
+    margin: 140px auto 100px;
+    padding: 0 6vw;
+    text-align: center;
+}
+
+.booking-success-title {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 6vw, 56px);
+    text-transform: uppercase;
+    margin: 14px 0 28px;
+}
+
+.booking-success-details {
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    border-top: 3px solid var(--athletics);
+    padding: 28px;
+    text-align: left;
+    margin-bottom: 8px;
+}

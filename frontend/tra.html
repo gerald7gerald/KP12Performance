@@ -12,236 +12,217 @@
 </head>
 <body>
 
-    <header class="nav">
-        <a href="index.html" class="nav-brand">
-            <img src="logo.png" alt="KP12 Performance" class="nav-logo">
-        </a>
-        <ul class="nav-links">
-            <li><a href="https://app.letsponey.com/h/kp12-performance" target="_blank">Scheduling</a></li>
-            <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
-            <li><a href="abt.html">About Us</a></li>
-            <li><a href="shop.html">Shop</a></li>
-        </ul>
-    </header>
+<header class="nav">
+    <a href="index.html" class="nav-brand">
+        <img src="logo.png" alt="KP12 Performance" class="nav-logo">
+    </a>
+    <ul class="nav-links">
+        <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
+        <li><a href="abt.html">About Us</a></li>
+        <li><a href="shop.html">Shop</a></li>
+    </ul>
+</header>
 
-    <section class="tra-hero">
-        <div class="tra-hero-overlay"></div>
-        <div class="tra-hero-content">
-            <p class="eyebrow">[ KP12 TRAINING ]</p>
-            <h1 class="tra-hero-title">CHOOSE THE<br>SERVICE THAT<br>BUILDS YOU.</h1>
-            <p class="tra-hero-sub">Training programs designed to help you achieve your optimal lifestyle and goals — at any age, any level.</p>
-        </div>
-        <div class="scroll-cue" aria-hidden="true"><span></span></div>
-    </section>
+<section class="tra-hero">
+    <div class="tra-hero-overlay"></div>
+    <div class="tra-hero-content">
+        <p class="eyebrow">[ KP12 TRAINING ]</p>
+        <h1 class="tra-hero-title">CHOOSE THE<br>SERVICE THAT<br>BUILDS YOU.</h1>
+        <p class="tra-hero-sub">Training programs designed to help you achieve your optimal lifestyle and goals — at any age, any level.</p>
+    </div>
+    <div class="scroll-cue" aria-hidden="true"><span></span></div>
+</section>
 
-    <section class="tra-services">
+<section class="tra-services">
 
-        <div class="tra-service-item reveal">
-            <div class="tra-service-header" onclick="toggleService(this)">
-                <div class="tra-service-label">
-                    <span class="tra-tag">[ 6TH GRADE → PROFESSIONAL ]</span>
-                    <h2 class="tra-service-title">Sports Performance Training</h2>
-                </div>
-                <span class="tra-chevron">+</span>
+    <div class="tra-service-item reveal" data-service="sports-performance-training">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag">[ 6TH GRADE → PROFESSIONAL ]</span>
+                <h2 class="tra-service-title">Sports Performance Training</h2>
+                <span class="tra-spots-badge" id="spots-sports-performance-training"></span>
             </div>
-            <div class="tra-service-body">
-                <div class="tra-service-inner">
-                    <p class="tra-service-desc">Private training to enhance athletic potential. Develop sport-specific needs by training for strength, speed, coordination, injury prevention, and mobility. Sport-specific training includes training of energy systems, and the program incorporates modern-day exercise science equipment to track performance progress.</p>
-                    <p class="tra-service-note">Nutritional advice and recovery can also be included if needed.</p>
-                    <div class="tra-pricing">
-                        <div class="tra-price-card">
-                            <span class="tra-price-sessions">4 Sessions</span>
-                            <span class="tra-price-amount">$175</span>
-                        </div>
-                        <div class="tra-price-card tra-price-card--highlight">
-                            <span class="tra-price-sessions">8 Sessions</span>
-                            <span class="tra-price-amount">$350</span>
-                        </div>
-                    </div>
-                    <div class="tra-service-chips">
-                        <span class="stat-chip">STRENGTH</span>
-                        <span class="stat-chip">SPEED</span>
-                        <span class="stat-chip">COORDINATION</span>
-                        <span class="stat-chip">INJURY PREVENTION</span>
-                        <span class="stat-chip">MOBILITY</span>
-                        <span class="stat-chip">ENERGY SYSTEMS</span>
-                    </div>
-                    <a href="booking.html?service=sports-performance-training" class="tra-book-btn">Book a Session →</a>
+            <span class="tra-chevron">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Private training to enhance athletic potential. Develop sport-specific needs by training for strength, speed, coordination, injury prevention, and mobility.</p>
+                <p class="tra-service-note">Nutritional advice and recovery can also be included if needed.</p>
+                <div class="tra-pricing">
+                    <div class="tra-price-card"><span class="tra-price-sessions">4 Sessions</span><span class="tra-price-amount">$175</span></div>
+                    <div class="tra-price-card tra-price-card--highlight"><span class="tra-price-sessions">8 Sessions</span><span class="tra-price-amount">$350</span></div>
                 </div>
+                <div class="tra-service-chips">
+                    <span class="stat-chip">STRENGTH</span><span class="stat-chip">SPEED</span><span class="stat-chip">COORDINATION</span><span class="stat-chip">INJURY PREVENTION</span><span class="stat-chip">MOBILITY</span><span class="stat-chip">ENERGY SYSTEMS</span>
+                </div>
+                <a href="booking.html?service=sports-performance-training" class="tra-book-btn">Book a Session →</a>
             </div>
         </div>
+    </div>
 
-        <div class="tra-service-item reveal">
-            <div class="tra-service-header" onclick="toggleService(this)">
-                <div class="tra-service-label">
-                    <span class="tra-tag">[ 13 &amp; UP ]</span>
-                    <h2 class="tra-service-title">Personal Training</h2>
-                </div>
-                <span class="tra-chevron">+</span>
+    <div class="tra-service-item reveal" data-service="personal-training">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag">[ 13 &amp; UP ]</span>
+                <h2 class="tra-service-title">Personal Training</h2>
+                <span class="tra-spots-badge" id="spots-personal-training"></span>
             </div>
-            <div class="tra-service-body">
-                <div class="tra-service-inner">
-                    <p class="tra-service-desc">Individualized training to meet exactly what you need. From being introduced to the weight room for the first time to needing accountability and motivation to hit your goals — everything you want and need is here. Sessions include warm-ups, exercises, and recovery.</p>
-                    <div class="tra-pricing">
-                        <div class="tra-price-card">
-                            <span class="tra-price-sessions">6 Sessions</span>
-                            <span class="tra-price-amount">$250</span>
-                        </div>
-                        <div class="tra-price-card tra-price-card--highlight">
-                            <span class="tra-price-sessions">9 Sessions</span>
-                            <span class="tra-price-amount">$400</span>
-                        </div>
-                    </div>
-                    <div class="tra-service-chips">
-                        <span class="stat-chip">INDIVIDUALIZED</span>
-                        <span class="stat-chip">ACCOUNTABILITY</span>
-                        <span class="stat-chip">WARM-UP + RECOVERY</span>
-                        <span class="stat-chip">ALL FITNESS LEVELS</span>
-                    </div>
-                    <a href="booking.html?service=personal-training" class="tra-book-btn">Book a Session →</a>
+            <span class="tra-chevron">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Individualized training to meet exactly what you need. From the weight room for the first time to hitting your goals — sessions include warm-ups, exercises, and recovery.</p>
+                <div class="tra-pricing">
+                    <div class="tra-price-card"><span class="tra-price-sessions">6 Sessions</span><span class="tra-price-amount">$250</span></div>
+                    <div class="tra-price-card tra-price-card--highlight"><span class="tra-price-sessions">9 Sessions</span><span class="tra-price-amount">$400</span></div>
                 </div>
+                <div class="tra-service-chips">
+                    <span class="stat-chip">INDIVIDUALIZED</span><span class="stat-chip">ACCOUNTABILITY</span><span class="stat-chip">WARM-UP + RECOVERY</span><span class="stat-chip">ALL FITNESS LEVELS</span>
+                </div>
+                <a href="booking.html?service=personal-training" class="tra-book-btn">Book a Session →</a>
             </div>
         </div>
+    </div>
 
-        <div class="tra-service-item reveal">
-            <div class="tra-service-header" onclick="toggleService(this)">
-                <div class="tra-service-label">
-                    <span class="tra-tag">[ 5 YEARS OLD → 11 YEARS OLD ]</span>
-                    <h2 class="tra-service-title">Youth Performance Training</h2>
-                </div>
-                <span class="tra-chevron">+</span>
+    <div class="tra-service-item reveal" data-service="youth-performance-training">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag">[ 5 YEARS OLD → 11 YEARS OLD ]</span>
+                <h2 class="tra-service-title">Youth Performance Training</h2>
+                <span class="tra-spots-badge" id="spots-youth-performance-training"></span>
             </div>
-            <div class="tra-service-body">
-                <div class="tra-service-inner">
-                    <p class="tra-service-desc">Proper training at a young age enhances motor development and motor control. Improving these foundational skills improves both quality of life and athletic performance down the road — building the habits and movement patterns that last a lifetime.</p>
-                    <div class="tra-pricing">
-                        <div class="tra-price-card">
-                            <span class="tra-price-sessions">4 Sessions</span>
-                            <span class="tra-price-amount">$100</span>
-                        </div>
-                    </div>
-                    <div class="tra-service-chips">
-                        <span class="stat-chip">MOTOR DEVELOPMENT</span>
-                        <span class="stat-chip">MOTOR CONTROL</span>
-                        <span class="stat-chip">MOVEMENT PATTERNS</span>
-                        <span class="stat-chip">AGES 5–11</span>
-                    </div>
-                    <a href="booking.html?service=youth-performance-training" class="tra-book-btn">Book a Session →</a>
+            <span class="tra-chevron">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Proper training at a young age enhances motor development and motor control — building the habits and movement patterns that last a lifetime.</p>
+                <div class="tra-pricing">
+                    <div class="tra-price-card"><span class="tra-price-sessions">4 Sessions</span><span class="tra-price-amount">$100</span></div>
                 </div>
+                <div class="tra-service-chips">
+                    <span class="stat-chip">MOTOR DEVELOPMENT</span><span class="stat-chip">MOTOR CONTROL</span><span class="stat-chip">MOVEMENT PATTERNS</span><span class="stat-chip">AGES 5–11</span>
+                </div>
+                <a href="booking.html?service=youth-performance-training" class="tra-book-btn">Book a Session →</a>
             </div>
         </div>
+    </div>
 
-        <div class="tra-service-item reveal">
-            <div class="tra-service-header" onclick="toggleService(this)">
-                <div class="tra-service-label">
-                    <span class="tra-tag">[ 24 &amp; UP ]</span>
-                    <h2 class="tra-service-title">Adult Training</h2>
-                </div>
-                <span class="tra-chevron">+</span>
+    <div class="tra-service-item reveal" data-service="adult-training">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag">[ 24 &amp; UP ]</span>
+                <h2 class="tra-service-title">Adult Training</h2>
+                <span class="tra-spots-badge" id="spots-adult-training"></span>
             </div>
-            <div class="tra-service-body">
-                <div class="tra-service-inner">
-                    <p class="tra-service-desc">Training built around your life — not the other way around. Programs are designed to improve strength, endurance, and overall health for adults who want to feel better, move better, and perform at their best no matter their starting point.</p>
-                    <div class="tra-pricing">
-                        <div class="tra-price-card">
-                            <span class="tra-price-sessions">4 Sessions</span>
-                            <span class="tra-price-amount">$225</span>
-                        </div>
-                    </div>
-                    <div class="tra-service-chips">
-                        <span class="stat-chip">STRENGTH</span>
-                        <span class="stat-chip">ENDURANCE</span>
-                        <span class="stat-chip">GENERAL HEALTH</span>
-                        <span class="stat-chip">24+</span>
-                    </div>
-                    <a href="booking.html?service=adult-training" class="tra-book-btn">Book a Session →</a>
+            <span class="tra-chevron">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Training built around your life to improve strength, endurance, and overall health — at your pace, at your level.</p>
+                <div class="tra-pricing">
+                    <div class="tra-price-card"><span class="tra-price-sessions">4 Sessions</span><span class="tra-price-amount">$225</span></div>
                 </div>
+                <div class="tra-service-chips">
+                    <span class="stat-chip">STRENGTH</span><span class="stat-chip">ENDURANCE</span><span class="stat-chip">GENERAL HEALTH</span><span class="stat-chip">24+</span>
+                </div>
+                <a href="booking.html?service=adult-training" class="tra-book-btn">Book a Session →</a>
             </div>
         </div>
+    </div>
 
-        <div class="tra-service-item reveal">
-            <div class="tra-service-header" onclick="toggleService(this)">
-                <div class="tra-service-label">
-                    <span class="tra-tag">[ ALL AGES ]</span>
-                    <h2 class="tra-service-title">Remote Training</h2>
-                </div>
-                <span class="tra-chevron">+</span>
+    <div class="tra-service-item reveal" data-service="remote-training">
+        <div class="tra-service-header" onclick="toggleService(this)">
+            <div class="tra-service-label">
+                <span class="tra-tag">[ ALL AGES ]</span>
+                <h2 class="tra-service-title">Remote Training</h2>
+                <span class="tra-spots-badge" id="spots-remote-training"></span>
             </div>
-            <div class="tra-service-body">
-                <div class="tra-service-inner">
-                    <p class="tra-service-desc">Online training on your schedule. Individuals complete workouts at their own time with whatever equipment is available to them. Workouts are provided based on what is accessible — fully customized to your situation, wherever you are.</p>
-                    <div class="tra-pricing">
-                        <div class="tra-price-card">
-                            <span class="tra-price-sessions">9 Sessions</span>
-                            <span class="tra-price-amount">$250</span>
-                        </div>
-                    </div>
-                    <div class="tra-service-chips">
-                        <span class="stat-chip">FULLY ONLINE</span>
-                        <span class="stat-chip">ANY EQUIPMENT</span>
-                        <span class="stat-chip">YOUR SCHEDULE</span>
-                        <span class="stat-chip">ALL AGES</span>
-                    </div>
-                    <a href="booking.html?service=remote-training" class="tra-book-btn">Book a Session →</a>
+            <span class="tra-chevron">+</span>
+        </div>
+        <div class="tra-service-body">
+            <div class="tra-service-inner">
+                <p class="tra-service-desc">Online training on your schedule. Fully customized to whatever equipment you have, wherever you are.</p>
+                <div class="tra-pricing">
+                    <div class="tra-price-card"><span class="tra-price-sessions">9 Sessions</span><span class="tra-price-amount">$250</span></div>
                 </div>
+                <div class="tra-service-chips">
+                    <span class="stat-chip">FULLY ONLINE</span><span class="stat-chip">ANY EQUIPMENT</span><span class="stat-chip">YOUR SCHEDULE</span><span class="stat-chip">ALL AGES</span>
+                </div>
+                <a href="booking.html?service=remote-training" class="tra-book-btn">Book a Session →</a>
             </div>
         </div>
+    </div>
 
-    </section>
+</section>
 
-    <section class="tra-cta reveal">
-        <p class="eyebrow">[ GET STARTED ]</p>
-        <h2 class="tra-cta-title">READY TO TRAIN?</h2>
-        <p class="tra-cta-sub">Use the scheduler to book your first session — pick the program that fits you and we'll take it from there.</p>
-        <a href="https://app.letsponey.com/h/kp12-performance" target="_blank" class="tra-book-btn tra-book-btn--large">Book Now →</a>
-    </section>
+<section class="tra-cta reveal">
+    <p class="eyebrow">[ GET STARTED ]</p>
+    <h2 class="tra-cta-title">READY TO TRAIN?</h2>
+    <p class="tra-cta-sub">Pick the program that fits you and get started this week.</p>
+    <a href="#" onclick="document.querySelector('.tra-services').scrollIntoView({behavior:'smooth'});return false;" class="tra-book-btn tra-book-btn--large">View All Programs →</a>
+</section>
 
-    <footer class="site-footer">
-        <div class="site-footer-inner">
-            <a href="index.html" class="site-footer-brand">
-                <img src="logo.png" alt="KP12 Performance" class="site-footer-logo">
+<footer class="site-footer">
+    <div class="site-footer-inner">
+        <a href="index.html" class="site-footer-brand"><img src="logo.png" alt="KP12 Performance" class="site-footer-logo"></a>
+        <div class="site-footer-socials">
+            <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+                <span>Instagram</span>
             </a>
-            <div class="site-footer-socials">
-                <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
-                    <span>Instagram</span>
-                </a>
-                <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
-                    <span>TikTok</span>
-                </a>
-                <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/></svg>
-                    <span>YouTube</span>
-                </a>
-            </div>
-            <p class="site-footer-copy">© 2025 KP12 Performance. All rights reserved.</p>
+            <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
+                <span>TikTok</span>
+            </a>
+            <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/></svg>
+                <span>YouTube</span>
+            </a>
         </div>
-    </footer>
+        <p class="site-footer-copy">© 2025 KP12 Performance. All rights reserved.</p>
+    </div>
+</footer>
 
-    <script src="script.js"></script>
-    <script src="nav.js"></script>
-    <script>
-        const revealEls = document.querySelectorAll(".reveal");
-        if ("IntersectionObserver" in window) {
-            const obs = new IntersectionObserver((entries) => {
-                entries.forEach(e => {
-                    if (e.isIntersecting) { e.target.classList.add("in-view"); obs.unobserve(e.target); }
-                });
-            }, { threshold: 0.08 });
-            revealEls.forEach(el => obs.observe(el));
-        } else {
-            revealEls.forEach(el => el.classList.add("in-view"));
-        }
-        setTimeout(() => { revealEls.forEach(el => el.classList.add("in-view")); }, 1800);
+<script src="script.js"></script>
+<script src="nav.js"></script>
+<script>
+// Accordion
+const revealEls = document.querySelectorAll(".reveal");
+if ("IntersectionObserver" in window) {
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in-view"); obs.unobserve(e.target); } });
+    }, { threshold: 0.08 });
+    revealEls.forEach(el => obs.observe(el));
+} else { revealEls.forEach(el => el.classList.add("in-view")); }
+setTimeout(() => { revealEls.forEach(el => el.classList.add("in-view")); }, 1800);
 
-        function toggleService(header) {
-            const item = header.closest(".tra-service-item");
-            const isOpen = item.classList.contains("is-open");
-            document.querySelectorAll(".tra-service-item.is-open").forEach(el => el.classList.remove("is-open"));
-            if (!isOpen) item.classList.add("is-open");
-        }
-    </script>
+function toggleService(header) {
+    const item = header.closest(".tra-service-item");
+    const isOpen = item.classList.contains("is-open");
+    document.querySelectorAll(".tra-service-item.is-open").forEach(el => el.classList.remove("is-open"));
+    if (!isOpen) item.classList.add("is-open");
+}
+
+// Load capacity badges
+fetch('/api/capacity')
+    .then(r => r.json())
+    .then(cap => {
+        Object.keys(cap).forEach(key => {
+            const el = document.getElementById(`spots-${key}`);
+            if (!el) return;
+            const info = cap[key];
+            const full = info.available <= 0;
+            const pct  = Math.min(100, (info.taken / info.max) * 100);
+
+            el.innerHTML = `
+                <span class="tra-spots-text ${full ? 'tra-spots-full' : pct > 70 ? 'tra-spots-warn' : ''}">
+                    ${info.taken}/${info.max} spots
+                    ${full ? ' — FULL' : info.available <= 2 ? ` — ${info.available} left!` : ''}
+                </span>`;
+        });
+    })
+    .catch(() => {}); // Fail silently — capacity badges are supplementary
+</script>
 
 </body>
 </html>
