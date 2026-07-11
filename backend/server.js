@@ -796,6 +796,19 @@ app.post('/api/reviews', async (req, res) => {
   try {
     await pool.query("INSERT INTO reviews (user_id,training_type,comment,rating) VALUES ($1,$2,$3,$4)",
       [userId, trainingType, comment, rNum]);
+    // Notify employees of the new review
+    try {
+      const userResult = await pool.query("SELECT username, email FROM users WHERE id=$1", [userId]);
+      const reviewer = userResult.rows[0];
+      const stars = '★'.repeat(rNum) + '☆'.repeat(5 - rNum);
+      await resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: ['performancekp12@gmail.com', 'geraldcgarcia7@gmail.com'],
+        subject: `[NEW REVIEW] ${reviewer?.username || 'A client'} left a ${rNum}-star review`,
+        html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:520px;margin:0 auto;padding:0;border:1px solid #232529;"><div style="background:#15171A;padding:24px 32px;border-bottom:3px solid #2ECC71;"><img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:28px;display:block;margin-bottom:12px;"><p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#2ECC71;margin:0;">[ NEW REVIEW ]</p></div><div style="padding:28px 32px;"><h2 style="font-size:20px;font-weight:700;text-transform:uppercase;margin:0 0 20px;">${reviewer?.username || 'A client'} left a review.</h2><div style="background:#15171A;border:1px solid #232529;border-left:3px solid #2ECC71;padding:20px 24px;margin-bottom:20px;"><p style="font-size:22px;letter-spacing:4px;color:#2ECC71;margin:0 0 12px;">${stars}</p><p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;color:#8C8F96;margin:0 0 8px;">SERVICE</p><p style="font-size:14px;color:#F5F4F0;margin:0 0 16px;">${trainingType}</p><p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;color:#8C8F96;margin:0 0 8px;">REVIEW</p><p style="font-size:15px;color:#F5F4F0;line-height:1.6;margin:0;">"${comment}"</p></div>${reviewer?.email ? `<p style="font-size:13px;color:#8C8F96;">From: <a href="mailto:${reviewer.email}" style="color:#3D9EFF;">${reviewer.email}</a></p>` : ''}<div style="margin-top:24px;text-align:center;"><a href="https://kp12performance.com/review.html" style="display:inline-block;background:#2ECC71;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 24px;font-weight:600;">View All Reviews →</a></div></div><div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;"><p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">KP12 Performance · Internal Notification</p></div></div>`
+      });
+    } catch (emailErr) { console.error('Review notification error:', emailErr); }
+
     res.status(201).json({ message: "Review submitted!" });
   } catch (err) { res.status(500).json({ error: "Error." }); }
 });
