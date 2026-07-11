@@ -94,6 +94,59 @@
 
     <div class="emp-divider"></div>
 
+    <!-- ===== ELITE PLAYERS ===== -->
+    <div class="emp-header" style="margin-top:0;">
+        <p class="eyebrow">[ ELITE PLAYERS ]</p>
+        <h2 class="emp-title" style="font-size:clamp(28px,4vw,40px);">Featured Athletes</h2>
+        <p class="emp-sub">These appear on the homepage. Add athletes you've trained who you want to showcase.</p>
+    </div>
+
+    <div id="elite-admin-list" class="elite-admin-grid">
+        <p class="emp-loading">Loading...</p>
+    </div>
+
+    <button type="button" id="elite-add-toggle" class="sched-save-btn" style="margin-bottom:20px;">+ Add Athlete</button>
+
+    <div id="elite-add-form" class="elite-add-form" style="display:none;">
+        <p class="sched-add-label">[ ADD ELITE PLAYER ]</p>
+
+        <div>
+            <label>Full Name *</label>
+            <input type="text" id="elite-name" placeholder="e.g. Gerald Garcia">
+        </div>
+        <div>
+            <label>Sport / Position</label>
+            <input type="text" id="elite-sport" placeholder="e.g. Competitive Swimming">
+        </div>
+        <div>
+            <label>Achievement / Credential</label>
+            <input type="text" id="elite-achievement" placeholder="e.g. 10+ years competitive swimming">
+        </div>
+        <div>
+            <label>Description / Quote</label>
+            <textarea id="elite-description" rows="3" placeholder="A short quote or description from/about this athlete..."></textarea>
+        </div>
+        <div>
+            <label>Photo</label>
+            <div class="elite-photo-drop" id="elite-photo-drop">
+                <input type="file" id="elite-photo-input" accept="image/*" style="display:none;">
+                <img id="elite-photo-preview" src="" alt="" style="display:none;width:100%;max-height:140px;object-fit:cover;">
+                <span id="elite-photo-label">Click to upload a photo (will be cropped 4:3)</span>
+            </div>
+        </div>
+        <div>
+            <label>Display Order (lower = first)</label>
+            <input type="number" id="elite-order" value="0" min="0">
+        </div>
+        <p class="sched-error" id="elite-error" style="display:none;"></p>
+        <div style="display:flex;gap:10px;">
+            <button type="button" id="elite-save-btn" class="sched-save-btn">Save Player</button>
+            <button type="button" id="elite-cancel-btn" class="sched-clear-btn">Cancel</button>
+        </div>
+    </div>
+
+    <div class="emp-divider"></div>
+
     <!-- ===== APPOINTMENTS ===== -->
     <div class="emp-header" style="margin-top:0;">
         <p class="eyebrow">[ APPOINTMENTS ]</p>
@@ -553,6 +606,136 @@ async function updateSessions(bookingId) {
     }
 }
 
+// ---- Elite Players Admin ----
+async function loadElitePlayers() {
+    const list = document.getElementById('elite-admin-list');
+    if (!list) return;
+    try {
+        const players = await fetch('/api/elite-players').then(r => r.json());
+        if (!players.length) {
+            list.innerHTML = '<p class="emp-loading">No elite players added yet.</p>';
+            return;
+        }
+        list.innerHTML = players.map(p => `
+            <div class="elite-admin-card" id="elite-card-${p.id}">
+                ${p.image_data
+                    ? `<img src="${p.image_data}" alt="${esc(p.name)}" class="elite-admin-thumb">`
+                    : `<div class="elite-admin-thumb-placeholder"></div>`}
+                <div style="flex:1;">
+                    <p class="elite-admin-name">${esc(p.name)}</p>
+                    ${p.sport ? `<p class="elite-admin-sport">[ ${esc(p.sport)} ]</p>` : ''}
+                </div>
+                <div class="elite-admin-actions">
+                    <button class="sched-slot-delete-btn" onclick="deleteElitePlayer(${p.id})">Remove</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        list.innerHTML = '<p class="emp-loading">Failed to load.</p>';
+    }
+}
+
+async function deleteElitePlayer(id) {
+    if (!confirm('Remove this athlete from the homepage?')) return;
+    try {
+        await fetch(`/api/elite-players/${id}`, { method: 'DELETE' });
+        loadElitePlayers();
+    } catch (e) { alert('Failed to remove.'); }
+}
+
+// Image compression for elite player photos
+function compressEliteImage(file) {
+    return new Promise((resolve, reject) => {
+        if (!file.type.startsWith('image/')) { reject(new Error('Must be an image')); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                const W = 900, H = 675, canvas = document.createElement('canvas');
+                canvas.width = W; canvas.height = H;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#0D0E10'; ctx.fillRect(0,0,W,H);
+                const sr = img.width/img.height, dr = W/H;
+                let sx,sy,sw,sh;
+                if (sr > dr) { sh=img.height; sw=sh*dr; sx=(img.width-sw)/2; sy=0; }
+                else { sw=img.width; sh=sw/dr; sx=0; sy=(img.height-sh)/2; }
+                ctx.drawImage(img,sx,sy,sw,sh,0,0,W,H);
+                resolve(canvas.toDataURL('image/jpeg', 0.78));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+let eliteImageData = null;
+
+document.getElementById('elite-photo-drop')?.addEventListener('click', () => {
+    document.getElementById('elite-photo-input')?.click();
+});
+
+document.getElementById('elite-photo-input')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('elite-photo-label').textContent = 'Processing...';
+    try {
+        eliteImageData = await compressEliteImage(file);
+        const prev = document.getElementById('elite-photo-preview');
+        prev.src = eliteImageData; prev.style.display = 'block';
+        document.getElementById('elite-photo-label').textContent = 'Photo ready ✓';
+    } catch (err) {
+        document.getElementById('elite-photo-label').textContent = 'Error: ' + err.message;
+    }
+});
+
+document.getElementById('elite-add-toggle')?.addEventListener('click', () => {
+    const form = document.getElementById('elite-add-form');
+    form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+});
+
+document.getElementById('elite-cancel-btn')?.addEventListener('click', () => {
+    document.getElementById('elite-add-form').style.display = 'none';
+});
+
+document.getElementById('elite-save-btn')?.addEventListener('click', async () => {
+    const name = document.getElementById('elite-name').value.trim();
+    const errorEl = document.getElementById('elite-error');
+    errorEl.style.display = 'none';
+    if (!name) { errorEl.textContent = 'Name is required.'; errorEl.style.display = 'block'; return; }
+
+    const btn = document.getElementById('elite-save-btn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+
+    try {
+        const res = await fetch('/api/elite-players', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name,
+                sport:       document.getElementById('elite-sport').value.trim(),
+                description: document.getElementById('elite-description').value.trim(),
+                achievement: document.getElementById('elite-achievement').value.trim(),
+                imageData:   eliteImageData,
+                displayOrder:parseInt(document.getElementById('elite-order').value)||0
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) { errorEl.textContent = data.error||'Error.'; errorEl.style.display='block'; }
+        else {
+            document.getElementById('elite-add-form').style.display = 'none';
+            // Reset form
+            ['elite-name','elite-sport','elite-achievement','elite-description'].forEach(id=>{
+                const el = document.getElementById(id); if(el) el.value='';
+            });
+            eliteImageData = null;
+            document.getElementById('elite-photo-preview').style.display = 'none';
+            document.getElementById('elite-photo-label').textContent = 'Click to upload a photo';
+            loadElitePlayers();
+        }
+    } catch (e) { errorEl.textContent = "Couldn't reach server."; errorEl.style.display='block'; }
+    btn.disabled = false; btn.textContent = 'Save Player';
+});
+
 // ---- Admin gate + load everything ----
 document.addEventListener("DOMContentLoaded", () => {
     fetch('/api/auth/me')
@@ -563,6 +746,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             loadSchedule();
             loadAppointments();
+            loadElitePlayers();
             loadUsers();
         })
         .catch(() => { window.location.href = "index.html"; });
