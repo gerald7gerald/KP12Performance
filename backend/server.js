@@ -607,6 +607,128 @@ app.post('/api/bookings', async (req, res) => {
       // Don't fail the booking if email fails — log and continue
     }
 
+    // ---- Employee notification email ----
+    // Sends to both admin emails whenever anyone books a session
+    try {
+      const notifUserResult = await pool.query(
+        "SELECT username, email, phone, age, role FROM users WHERE id = $1", [userId]
+      );
+      const notifUser = notifUserResult.rows[0];
+
+      if (notifUser) {
+        const notifSlotLines = slots
+          .slice()
+          .sort((a, b) => ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(a.day) - ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(b.day))
+          .map(s => `<tr>
+            <td style="padding:9px 14px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:12px;color:#3D9EFF;">${s.day}</td>
+            <td style="padding:9px 14px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:12px;color:#F5F4F0;">${s.start} – ${s.end}</td>
+          </tr>`)
+          .join('');
+
+        // Fetch athletes if parent booking
+        let athleteSection = '';
+        if (Array.isArray(selectedAthletes) && selectedAthletes.length > 0) {
+          const athleteRows = selectedAthletes
+            .map(a => `<tr>
+              <td style="padding:8px 14px;border-bottom:1px solid #232529;color:#F5F4F0;font-size:13px;">${a.name || '—'}</td>
+              <td style="padding:8px 14px;border-bottom:1px solid #232529;color:#8C8F96;font-size:13px;">${a.age || '—'}</td>
+              <td style="padding:8px 14px;border-bottom:1px solid #232529;color:#8C8F96;font-size:13px;">${a.gender || '—'}</td>
+            </tr>`)
+            .join('');
+          athleteSection = `
+            <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:20px 0 8px;">ATTENDING ATHLETES</p>
+            <table style="width:100%;border-collapse:collapse;background:#15171A;border:1px solid #232529;">
+              <thead>
+                <tr style="background:#1d1f23;">
+                  <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">NAME</th>
+                  <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">AGE</th>
+                  <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">GENDER</th>
+                </tr>
+              </thead>
+              <tbody>${athleteRows}</tbody>
+            </table>`;
+        }
+
+        await resend.emails.send({
+          from: 'support@kp12performance.com',
+          to: ['performancekp12@gmail.com', 'geraldcgarcia7@gmail.com'],
+          subject: `[NEW BOOKING] ${notifUser.username} — ${serviceTitle}`,
+          html: `
+            <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
+              <div style="background:#15171A;padding:24px 32px;border-bottom:3px solid #FF5630;">
+                <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:28px;display:block;margin-bottom:12px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#FF5630;margin:0;">[ NEW BOOKING ALERT ]</p>
+              </div>
+              <div style="padding:28px 32px;">
+                <h2 style="font-size:20px;font-weight:700;text-transform:uppercase;margin:0 0 20px;line-height:1.2;">
+                  ${notifUser.username} just booked a session.
+                </h2>
+
+                <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #FF5630;padding:18px 20px;margin-bottom:20px;">
+                  <table style="width:100%;border-collapse:collapse;">
+                    <tr>
+                      <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;width:110px;">SERVICE</td>
+                      <td style="padding:6px 0;font-size:14px;font-weight:600;color:#F5F4F0;">${serviceTitle}</td>
+                    </tr>
+                    ${packageLabel ? `<tr>
+                      <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;">PACKAGE</td>
+                      <td style="padding:6px 0;font-size:14px;color:#F5F4F0;">${packageLabel}</td>
+                    </tr>` : ''}
+                    <tr>
+                      <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;">ROLE</td>
+                      <td style="padding:6px 0;font-size:14px;color:#F5F4F0;">${notifUser.role === 'parent_guardian' ? 'Parent / Guardian' : 'Athlete'}</td>
+                    </tr>
+                  </table>
+                </div>
+
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 8px;">CONTACT INFO</p>
+                <div style="background:#15171A;border:1px solid #232529;padding:16px 20px;margin-bottom:20px;">
+                  <table style="width:100%;border-collapse:collapse;">
+                    <tr>
+                      <td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;width:70px;">EMAIL</td>
+                      <td style="padding:5px 0;font-size:13px;"><a href="mailto:${notifUser.email}" style="color:#3D9EFF;">${notifUser.email}</a></td>
+                    </tr>
+                    ${notifUser.phone ? `<tr>
+                      <td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">PHONE</td>
+                      <td style="padding:5px 0;font-size:13px;"><a href="tel:${notifUser.phone}" style="color:#3D9EFF;">${notifUser.phone}</a></td>
+                    </tr>` : ''}
+                    ${notifUser.age ? `<tr>
+                      <td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">AGE</td>
+                      <td style="padding:5px 0;font-size:13px;color:#F5F4F0;">${notifUser.age}</td>
+                    </tr>` : ''}
+                  </table>
+                </div>
+
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 8px;">SELECTED TIMES</p>
+                <table style="width:100%;border-collapse:collapse;background:#15171A;border:1px solid #232529;margin-bottom:4px;">
+                  <thead>
+                    <tr style="background:#1d1f23;">
+                      <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">DAY</th>
+                      <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">TIME</th>
+                    </tr>
+                  </thead>
+                  <tbody>${notifSlotLines}</tbody>
+                </table>
+
+                ${athleteSection}
+
+                <div style="margin-top:24px;padding-top:20px;border-top:1px solid #232529;text-align:center;">
+                  <a href="https://kp12performance.com/employee.html" style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 24px;font-weight:600;">View in Employee Dashboard →</a>
+                </div>
+              </div>
+              <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">KP12 Performance · Internal Notification</p>
+              </div>
+            </div>
+          `
+        });
+        console.log(`Employee notification sent for booking by ${notifUser.username}`);
+      }
+    } catch (notifErr) {
+      console.error('Employee notification email error:', notifErr);
+      // Don't fail the booking if notification fails
+    }
+
     res.status(201).json({ message: "Booking confirmed!", bookingId });
   } catch (err) { console.error(err); res.status(500).json({ error: "Error creating booking." }); }
 });
