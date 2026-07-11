@@ -6063,14 +6063,19 @@ transform:translateY(70px);
 
 .abt-mission-quote {
     font-family: var(--font-display);
-    font-size: clamp(20px, 3vw, 30px);
+    font-size: clamp(36px, 5.5vw, 72px);
     text-transform: uppercase;
-    line-height: 1.35;
+    line-height: 1.05;
     color: var(--text);
-    margin: 16px 0 0;
-    border-left: 3px solid var(--training);
-    padding-left: 28px;
-    max-width: 780px;
+    margin: 24px 0 0;
+    max-width: 900px;
+    letter-spacing: 0.01em;
+}
+
+/* Pull the quotes out so they don't break the line rhythm */
+.abt-mission-quote::before,
+.abt-mission-quote::after {
+    content: none;
 }
 
 /* Timeline */
