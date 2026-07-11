@@ -12,89 +12,207 @@
 </head>
 <body>
 
-    <header class="nav">
-        <a href="index.html" class="nav-brand">
-            <img src="logo.png" alt="KP12 Performance" class="nav-logo">
-        </a>
-        <ul class="nav-links">
-            <li><a href="my-schedule.html">My Schedule</a></li>
-            <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
-            <li><a href="abt.html">About Us</a></li>
-            <li><a href="shop.html">Shop</a></li>
-        </ul>
-    </header>
+<header class="nav">
+    <a href="index.html" class="nav-brand">
+        <img src="logo.png" alt="KP12 Performance" class="nav-logo">
+    </a>
+    <ul class="nav-links">
+        <li><a href="my-schedule.html">My Schedule</a></li>
+        <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
+        <li><a href="abt.html">About Us</a></li>
+        <li><a href="shop.html">Shop</a></li>
+    </ul>
+</header>
 
-    <section class="review-page">
+<section class="review-page">
+    <div class="review-page-inner">
 
-        <div class="review-page-header fade-up" style="--d:0s">
-            <p class="eyebrow">[ LEAVE A REVIEW ]</p>
-            <h1 class="review-page-title">HOW DID<br>WE DO?</h1>
-            <p class="review-page-sub">Tell us about your experience — it helps other athletes find the right program.</p>
-        </div>
+        <!-- Leave a review form -->
+        <div class="review-form-section" id="review-form-section">
+            <p class="eyebrow">[ SHARE YOUR EXPERIENCE ]</p>
+            <h1 class="review-title">Leave a Review</h1>
+            <p class="review-subtitle">Your feedback helps us improve and helps other athletes know what to expect.</p>
 
-        <form id="review-form" class="review-form fade-up" style="--d:0.1s">
-
-            <div class="field">
-                <label for="training-type">What type of training did you have?</label>
-                <select id="training-type" required>
-                    <option value="" disabled selected>Select a program</option>
-                    <option value="Sports Performance Training">Sports Performance Training</option>
-                    <option value="Swim Lessons">Swim Lessons</option>
-                    <option value="Private Training">Private Training</option>
-                    <option value="Swim Clinics/Team">Swim Clinics/Team</option>
-                </select>
-            </div>
-
-            <div id="review-details" class="review-details">
+            <form id="review-form" class="review-form-wrap">
 
                 <div class="field">
-                    <label for="review-comment">How did we do?</label>
-                    <textarea id="review-comment" rows="4" placeholder="Tell us about your experience..." required></textarea>
+                    <label for="review-service">Which service did you use?</label>
+                    <select id="review-service" required>
+                        <option value="" disabled selected>Select a service</option>
+                        <optgroup label="Training">
+                            <option value="Sports Performance Training">Sports Performance Training</option>
+                            <option value="Personal Training">Personal Training</option>
+                            <option value="Youth Performance Training">Youth Performance Training</option>
+                            <option value="Adult Training">Adult Training</option>
+                            <option value="Remote Training">Remote Training</option>
+                        </optgroup>
+                        <optgroup label="Athletics">
+                            <option value="Swim Lessons">Swim Lessons</option>
+                            <option value="Speed / Agility / COD">Speed / Agility / COD</option>
+                            <option value="Beach / Indoor Volleyball">Beach / Indoor Volleyball</option>
+                        </optgroup>
+                        <optgroup label="Nutrition">
+                            <option value="Sports Nutrition Consult">Sports Nutrition Consult</option>
+                            <option value="Intro to Dieting & Nutrition">Intro to Dieting &amp; Nutrition</option>
+                            <option value="Nutrition Check-Ins">Nutrition Check-Ins</option>
+                        </optgroup>
+                    </select>
                 </div>
 
                 <div class="field">
-                    <label>Rate your experience</label>
-                    <div id="star-rating" class="star-rating" role="radiogroup" aria-label="Rating out of 5 stars">
+                    <label for="review-comment">Your Review</label>
+                    <textarea id="review-comment" rows="4" placeholder="Tell us about your experience..." required></textarea>
+                </div>
+
+                <!-- Star rating -->
+                <div class="field">
+                    <label>Rating</label>
+                    <div class="star-rating" id="star-rating">
                         <button type="button" class="star-btn" data-value="1" aria-label="1 star">★</button>
                         <button type="button" class="star-btn" data-value="2" aria-label="2 stars">★</button>
                         <button type="button" class="star-btn" data-value="3" aria-label="3 stars">★</button>
                         <button type="button" class="star-btn" data-value="4" aria-label="4 stars">★</button>
                         <button type="button" class="star-btn" data-value="5" aria-label="5 stars">★</button>
                     </div>
-                    <input type="hidden" id="rating-value" value="">
+                    <input type="hidden" id="review-rating" value="">
                 </div>
 
-            </div>
+                <!-- Optional photo upload -->
+                <div class="field">
+                    <label>
+                        Photo <span class="field-optional">— Optional</span>
+                    </label>
+                    <p class="field-hint">Add a photo of you in action. It'll appear alongside your review.</p>
 
-            <p class="review-form-error" id="review-form-error"></p>
+                    <div class="review-photo-drop" id="review-photo-drop">
+                        <input type="file" id="review-photo-input" accept="image/*" style="display:none;">
+                        <img id="review-photo-preview" src="" alt="" class="review-photo-preview" style="display:none;">
+                        <div class="review-photo-placeholder" id="review-photo-placeholder">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#5A5D63;margin-bottom:10px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <p class="review-photo-hint">Click or drag a photo here</p>
+                            <p class="review-photo-hint-sub">JPG, PNG — will be cropped to 4:3</p>
+                        </div>
+                        <button type="button" class="review-photo-remove" id="review-photo-remove" style="display:none;">✕ Remove photo</button>
+                    </div>
+                    <p class="review-photo-status" id="review-photo-status"></p>
+                </div>
 
-            <button type="submit" id="review-submit-btn" class="review-submit-btn" disabled>Submit Review</button>
+                <!-- Hidden field to carry the compressed image into the submit handler -->
+                <input type="hidden" id="review-image-data" name="imageData">
 
-        </form>
+                <p class="auth-error" id="review-error" style="display:none;"></p>
+                <p class="auth-success" id="review-success" style="display:none;"></p>
 
-        <div id="review-success" class="review-success">
-            <p class="eyebrow">[ THANK YOU ]</p>
-            <h2>Review submitted.</h2>
-            <p>Appreciate you taking the time — taking you back home shortly.</p>
+                <button type="submit" id="review-submit-btn">Submit Review</button>
+            </form>
         </div>
 
+        <!-- Recent reviews -->
         <div class="review-list-section">
-            <p class="eyebrow fade-up" style="--d:0s">[ RECENT REVIEWS ]</p>
-            <h2 class="section-title fade-up" style="--d:0.1s">From Our Athletes</h2>
-            <div id="review-list" class="review-list">
-                <p class="review-list-empty">Loading reviews…</p>
+            <p class="eyebrow">[ RECENT REVIEWS ]</p>
+            <h2 class="review-title" style="font-size:clamp(24px,3.5vw,36px);">What Athletes Are Saying</h2>
+            <div id="review-list" class="review-list-wrap">
+                <p class="review-list-empty">Loading reviews...</p>
             </div>
         </div>
 
-    </section>
+    </div>
+</section>
 
-    <footer class="status-bar">
-        <span class="status-label">[ SYSTEM ]</span>
-        <div id="data-container">Loading data from backend...</div>
-    </footer>
+<footer class="site-footer">
+    <div class="site-footer-inner">
+        <a href="index.html" class="site-footer-brand"><img src="logo.png" alt="KP12 Performance" class="site-footer-logo"></a>
+        <div class="site-footer-socials">
+            <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+                <span>Instagram</span>
+            </a>
+            <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
+                <span>TikTok</span>
+            </a>
+            <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/></svg>
+                <span>YouTube</span>
+            </a>
+        </div>
+        <p class="site-footer-copy">© 2025 KP12 Performance. All rights reserved.</p>
+    </div>
+</footer>
 
-    <script src="script.js"></script>
-    <script src="nav.js"></script>
-    <script src="review-form.js"></script>
+<script src="nav.js"></script>
+<script src="review-form.js"></script>
+<script>
+// ---- Star rating UI ----
+const stars = document.querySelectorAll('.star-btn');
+const ratingInput = document.getElementById('review-rating');
+
+stars.forEach(star => {
+    star.addEventListener('click', () => {
+        const val = parseInt(star.dataset.value);
+        ratingInput.value = val;
+        stars.forEach((s, i) => s.classList.toggle('is-active', i < val));
+    });
+    star.addEventListener('mouseenter', () => {
+        const val = parseInt(star.dataset.value);
+        stars.forEach((s, i) => s.classList.toggle('is-hover', i < val));
+    });
+});
+document.getElementById('star-rating').addEventListener('mouseleave', () => {
+    stars.forEach(s => s.classList.remove('is-hover'));
+});
+
+// ---- Form submission ----
+document.getElementById('review-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const errorEl   = document.getElementById('review-error');
+    const successEl = document.getElementById('review-success');
+    const btn       = document.getElementById('review-submit-btn');
+
+    errorEl.style.display   = 'none';
+    successEl.style.display = 'none';
+
+    const trainingType = document.getElementById('review-service').value;
+    const comment      = document.getElementById('review-comment').value.trim();
+    const rating       = document.getElementById('review-rating').value;
+    const imageData    = document.getElementById('review-image-data').value || null;
+
+    if (!trainingType) { errorEl.textContent = 'Please select a service.'; errorEl.style.display = 'block'; return; }
+    if (!comment)      { errorEl.textContent = 'Please write something before submitting.'; errorEl.style.display = 'block'; return; }
+    if (!rating)       { errorEl.textContent = 'Please select a star rating.'; errorEl.style.display = 'block'; return; }
+
+    btn.disabled    = true;
+    btn.textContent = 'Submitting…';
+
+    try {
+        const res  = await fetch('/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ trainingType, comment, rating, imageData })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            errorEl.textContent  = data.error || 'Something went wrong.';
+            errorEl.style.display= 'block';
+            btn.disabled         = false;
+            btn.textContent      = 'Submit Review';
+            return;
+        }
+
+        successEl.textContent  = 'Thank you! Your review has been submitted.';
+        successEl.style.display= 'block';
+        e.target.style.display = 'none';
+
+    } catch (err) {
+        errorEl.textContent  = 'Couldn\'t reach the server. Please try again.';
+        errorEl.style.display= 'block';
+        btn.disabled         = false;
+        btn.textContent      = 'Submit Review';
+    }
+});
+</script>
+
 </body>
 </html>

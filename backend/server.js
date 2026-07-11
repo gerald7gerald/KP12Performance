@@ -118,9 +118,11 @@ pool.query(`
     training_type VARCHAR(50) NOT NULL,
     comment TEXT NOT NULL,
     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    image_data TEXT,
     created_at TIMESTAMP DEFAULT NOW()
   );
-`).catch(err => console.error("Reviews:", err));
+`).then(() => pool.query(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS image_data TEXT;`))
+  .catch(err => console.error("Reviews:", err));
 
 pool.query(`
   CREATE TABLE IF NOT EXISTS password_resets (
@@ -789,13 +791,14 @@ app.delete('/api/bookings/:id', requireAdmin, async (req, res) => {
 app.post('/api/reviews', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Sign in first." });
-  const { trainingType, comment, rating } = req.body;
+  const { trainingType, comment, rating, imageData } = req.body;
   if (!trainingType || !comment || !rating) return res.status(400).json({ error: "Fill all fields." });
   const rNum = parseInt(rating);
   if (isNaN(rNum) || rNum < 1 || rNum > 5) return res.status(400).json({ error: "Rating must be 1–5." });
+  const cleanImage = (imageData && typeof imageData === 'string' && imageData.startsWith('data:image/')) ? imageData : null;
   try {
-    await pool.query("INSERT INTO reviews (user_id,training_type,comment,rating) VALUES ($1,$2,$3,$4)",
-      [userId, trainingType, comment, rNum]);
+    await pool.query("INSERT INTO reviews (user_id,training_type,comment,rating,image_data) VALUES ($1,$2,$3,$4,$5)",
+      [userId, trainingType, comment, rNum, cleanImage]);
     // Notify employees of the new review
     try {
       const userResult = await pool.query("SELECT username, email FROM users WHERE id=$1", [userId]);
@@ -816,7 +819,7 @@ app.post('/api/reviews', async (req, res) => {
 app.get('/api/reviews', async (req, res) => {
   try {
     const r = await pool.query(
-      `SELECT reviews.id,reviews.training_type,reviews.comment,reviews.rating,reviews.created_at,users.username
+      `SELECT reviews.id,reviews.training_type,reviews.comment,reviews.rating,reviews.image_data,reviews.created_at,users.username
        FROM reviews JOIN users ON reviews.user_id=users.id ORDER BY reviews.created_at DESC LIMIT 20`
     );
     res.json(r.rows);

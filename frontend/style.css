@@ -6385,3 +6385,330 @@ transform:translateY(70px);
         padding: 72px 0;
     }
 }
+/* ---------- REVIEW PAGE LAYOUT ---------- */
+.review-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 140px 6vw 100px;
+}
+
+.review-page-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 80px;
+}
+
+.review-title {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 5vw, 52px);
+    text-transform: uppercase;
+    margin: 14px 0 20px;
+    line-height: 1.05;
+}
+
+.review-subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+    max-width: 540px;
+}
+
+.review-form-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 580px;
+}
+
+.review-form-wrap .field label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 8px;
+}
+
+.review-form-wrap select,
+.review-form-wrap textarea {
+    width: 100%;
+    background: var(--bg-panel);
+    border: 1px solid #2A2D31;
+    color: var(--text);
+    padding: 13px 16px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    border-radius: 2px;
+    transition: border-color 0.25s ease;
+    resize: vertical;
+}
+
+.review-form-wrap select:focus,
+.review-form-wrap textarea:focus {
+    outline: none;
+    border-color: var(--athletics);
+}
+
+.review-form-wrap select option { background: var(--bg-panel); }
+
+.review-form-wrap button[type="submit"] {
+    background: var(--athletics);
+    color: var(--athletics-dark);
+    border: none;
+    padding: 15px 32px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: filter 0.25s ease;
+    align-self: flex-start;
+}
+
+.review-form-wrap button[type="submit"]:hover { filter: brightness(1.08); }
+.review-form-wrap button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Optional field label */
+.field-optional {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.field-hint {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+/* Star rating */
+.star-rating {
+    display: flex;
+    gap: 4px;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #3A3D42;
+    cursor: pointer;
+    padding: 2px;
+    line-height: 1;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.star-btn.is-active,
+.star-btn.is-hover {
+    color: var(--athletics);
+}
+
+.star-btn:hover {
+    transform: scale(1.15);
+}
+
+/* ---------- PHOTO UPLOAD DROP ZONE ---------- */
+.review-photo-drop {
+    position: relative;
+    border: 2px dashed #2A2D31;
+    background: var(--bg-panel);
+    border-radius: 2px;
+    min-height: 140px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.review-photo-drop:hover,
+.review-photo-drop.drag-over {
+    border-color: var(--athletics);
+    background: rgba(61,158,255,0.05);
+}
+
+.review-photo-drop.has-image {
+    border-style: solid;
+    border-color: var(--athletics);
+    min-height: 200px;
+}
+
+.review-photo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    pointer-events: none;
+}
+
+.review-photo-hint {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.review-photo-hint-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #5A5D63;
+    margin: 6px 0 0;
+}
+
+.review-photo-preview {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    display: block;
+}
+
+.review-photo-drop.has-image .review-photo-placeholder {
+    display: none;
+}
+
+.review-photo-remove {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(13,14,16,0.8);
+    border: 1px solid rgba(255,86,48,0.5);
+    color: var(--training);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 5px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    backdrop-filter: blur(4px);
+    transition: background 0.2s ease;
+}
+
+.review-photo-remove:hover {
+    background: var(--training);
+    color: var(--training-dark);
+}
+
+.review-photo-status {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-top: 6px;
+    min-height: 16px;
+}
+
+/* ---------- REVIEW LIST — with optional image ---------- */
+.review-list-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.review-list-item {
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.review-list-item:hover {
+    transform: translateY(-2px);
+}
+
+.review-list-img-wrap {
+    width: 100%;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+}
+
+.review-list-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+}
+
+.review-list-item:hover .review-list-img {
+    transform: scale(1.03);
+}
+
+.review-list-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 0;
+}
+
+.review-list-stars {
+    color: var(--athletics);
+    font-size: 16px;
+    letter-spacing: 3px;
+}
+
+.review-list-comment {
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text);
+    padding: 12px 20px 6px;
+}
+
+.review-list-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 0 20px 18px;
+}
+
+.review-list-type {
+    opacity: 0.65;
+}
+
+.review-list-empty {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 24px 0;
+    text-align: center;
+}
+
+/* ---------- HOMEPAGE SLIDESHOW — with optional image ---------- */
+.review-card-slide--has-img {
+    padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.review-slide-img-wrap {
+    width: 100%;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.review-slide-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.review-slide-body {
+    padding: 20px 24px 24px;
+}
+
+.review-card-slide--has-img .stars {
+    margin-bottom: 8px;
+}
