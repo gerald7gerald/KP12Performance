@@ -197,6 +197,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="mys-session-info">
                             <p class="mys-service-name">${esc(b.service_title)}</p>
                             ${b.package_label ? `<p class="mys-package">${esc(b.package_label)}</p>` : ''}
+                            ${Array.isArray(b.attending_athletes) && b.attending_athletes.length
+                                ? `<div class="mys-athletes">
+                                    ${b.attending_athletes.map(a =>
+                                        `<span class="mys-athlete-tag">${esc(a.name)}${a.age ? ', age ' + a.age : ''}</span>`
+                                    ).join('')}
+                                   </div>`
+                                : ''}
                         </div>
                         <div class="mys-session-badge" style="background:${accentColor}20;border-color:${accentColor}40;color:${accentColor}">
                             ${isAthletics ? 'ATHLETICS' : 'TRAINING'}

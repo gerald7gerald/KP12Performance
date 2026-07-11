@@ -210,6 +210,18 @@ pool.query(`
 `).then(() => console.log("Booking slots table ready!"))
   .catch(err => console.error("Booking slots:", err));
 
+// Tracks which registered athletes (children) are attending a parent's booking
+pool.query(`
+  CREATE TABLE IF NOT EXISTS booking_athletes (
+    id SERIAL PRIMARY KEY,
+    booking_id INTEGER REFERENCES bookings(id) ON DELETE CASCADE,
+    athlete_name VARCHAR(100),
+    athlete_age INTEGER,
+    athlete_gender VARCHAR(30)
+  );
+`).then(() => console.log("Booking athletes table ready!"))
+  .catch(err => console.error("Booking athletes:", err));
+
 // ---- Static ----
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, '..', 'frontend', 'index.html')));
 app.get('/abt.html', (req, res) => res.sendFile(path.resolve(__dirname, '..', 'frontend', 'abt.html')));
@@ -265,6 +277,22 @@ app.get('/api/auth/me', async (req, res) => {
     if (!r.rows.length) return res.status(401).json({ error: "Not logged in." });
     res.json({ user: r.rows[0] });
   } catch (err) { res.status(500).json({ error: "Error." }); }
+});
+
+// GET /api/auth/my-athletes — returns logged-in user's registered athletes
+app.get('/api/auth/my-athletes', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: "Not logged in." });
+  try {
+    const result = await pool.query(
+      "SELECT id, name, age, gender FROM athletes WHERE user_id = $1 ORDER BY id ASC",
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching athletes." });
+  }
 });
 
 app.patch('/api/auth/profile', async (req, res) => {
@@ -396,7 +424,7 @@ app.post('/api/bookings', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Please sign in to book a session." });
 
-  const { serviceKey, serviceTitle, packageLabel, slots } = req.body;
+  const { serviceKey, serviceTitle, packageLabel, slots, selectedAthletes } = req.body;
 
   if (!serviceKey || !serviceTitle || !slots || !slots.length)
     return res.status(400).json({ error: "Missing booking details." });
@@ -508,6 +536,16 @@ app.post('/api/bookings', async (req, res) => {
       // Don't fail the whole request just because email failed
     }
 
+    // Save which athletes are attending (for parent/guardian bookings)
+    if (Array.isArray(selectedAthletes) && selectedAthletes.length > 0) {
+      for (const athlete of selectedAthletes) {
+        await pool.query(
+          "INSERT INTO booking_athletes (booking_id, athlete_name, athlete_age, athlete_gender) VALUES ($1,$2,$3,$4)",
+          [bookingId, athlete.name || null, athlete.age ? parseInt(athlete.age) : null, athlete.gender || null]
+        );
+      }
+    }
+
     // Send booking confirmation email
     try {
       const userResult = await pool.query("SELECT username, email FROM users WHERE id = $1", [userId]);
@@ -575,9 +613,13 @@ app.get('/api/bookings/mine', async (req, res) => {
   try {
     const r = await pool.query(
       `SELECT b.id,b.service_title,b.package_label,b.sessions_remaining,b.week_of,b.status,b.created_at,
-              COALESCE(json_agg(json_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
-                FILTER (WHERE bs.id IS NOT NULL),'[]') AS slots
-       FROM bookings b LEFT JOIN booking_slots bs ON bs.booking_id=b.id
+              COALESCE(json_agg(DISTINCT jsonb_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
+                FILTER (WHERE bs.id IS NOT NULL),'[]') AS slots,
+              COALESCE(json_agg(DISTINCT jsonb_build_object('name',ba.athlete_name,'age',ba.athlete_age,'gender',ba.athlete_gender))
+                FILTER (WHERE ba.id IS NOT NULL),'[]') AS attending_athletes
+       FROM bookings b
+       LEFT JOIN booking_slots bs ON bs.booking_id=b.id
+       LEFT JOIN booking_athletes ba ON ba.booking_id=b.id
        WHERE b.user_id=$1 AND b.status='confirmed' GROUP BY b.id ORDER BY b.created_at DESC`,
       [userId]
     );
@@ -591,14 +633,17 @@ app.get('/api/bookings', requireAdmin, async (req, res) => {
     const weekOf = currentWeekMonday();
     const r = await pool.query(
       `SELECT b.id,b.service_key,b.service_title,b.package_label,b.sessions_remaining,b.status,b.created_at,
-              u.username, u.email, u.phone, u.age,
-              COALESCE(json_agg(json_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
-                FILTER (WHERE bs.id IS NOT NULL),'[]') AS slots
+              u.username, u.email, u.phone, u.age, u.role,
+              COALESCE(json_agg(DISTINCT jsonb_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
+                FILTER (WHERE bs.id IS NOT NULL),'[]') AS slots,
+              COALESCE(json_agg(DISTINCT jsonb_build_object('name',ba.athlete_name,'age',ba.athlete_age,'gender',ba.athlete_gender))
+                FILTER (WHERE ba.id IS NOT NULL),'[]') AS attending_athletes
        FROM bookings b
        JOIN users u ON b.user_id=u.id
        LEFT JOIN booking_slots bs ON bs.booking_id=b.id
+       LEFT JOIN booking_athletes ba ON ba.booking_id=b.id
        WHERE b.week_of=$1 AND b.status='confirmed'
-       GROUP BY b.id,u.username,u.email,u.phone,u.age ORDER BY b.created_at DESC`,
+       GROUP BY b.id,u.username,u.email,u.phone,u.age,u.role ORDER BY b.created_at DESC`,
       [weekOf]
     );
     res.json(r.rows);

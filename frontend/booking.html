@@ -17,7 +17,6 @@
         <img src="logo.png" alt="KP12 Performance" class="nav-logo">
     </a>
     <ul class="nav-links">
-        <li><a href="my-schedule.html">My Schedule</a></li>
         <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
         <li><a href="abt.html">About Us</a></li>
         <li><a href="shop.html">Shop</a></li>
@@ -56,7 +55,16 @@
     </div>
 
     <div class="booking-step booking-step--schedule" id="step-2" style="display:none;">
-        <div class="booking-section-label">
+
+        <!-- Athlete selection — only shown for parent/guardian accounts -->
+        <div id="athlete-selection-wrap" style="display:none;">
+            <div class="booking-section-label">Who's attending?</div>
+            <p class="booking-schedule-sub">Select the child or children who will be attending these sessions.</p>
+            <div id="athlete-checkboxes" class="athlete-checkbox-list"></div>
+            <p id="booking-athlete-error" style="display:none;color:var(--training);font-family:var(--font-mono);font-size:12px;margin-top:8px;"></p>
+        </div>
+
+        <div class="booking-section-label" style="margin-top:0;">
             Pick your sessions
             <span class="booking-selected-count" id="booking-selected-count"></span>
         </div>
@@ -192,10 +200,19 @@ let selectedSlots = new Set(); // Set of slot IDs
 let slotDataMap  = {};         // id -> slot object
 let isLoggedIn   = false;
 
-// Check login state
-fetch('/api/auth/status')
-    .then(r => r.json())
-    .then(d => { isLoggedIn = !!d.loggedIn; });
+// Check login state and role
+let userRole = null;
+let userAthletes = [];
+
+fetch('/api/auth/me')
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+        if (d && d.user) {
+            isLoggedIn = true;
+            userRole = d.user.role;
+        }
+    })
+    .catch(() => {});
 
 if (!service) {
     document.getElementById('booking-not-found').style.display = 'block';
@@ -327,6 +344,11 @@ function showScheduleStep() {
     step2.style.display = 'block';
     step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
+    // If parent/guardian, load their athletes for selection
+    if (userRole === 'parent_guardian') {
+        loadAthleteSelection();
+    }
+
     const weekNote = document.getElementById('booking-week-note');
     weekNote.textContent = todayJSDay === 0
         ? 'Showing all sessions this week. Select as many as you need.'
@@ -405,12 +427,91 @@ function showScheduleStep() {
         });
 }
 
+// ---- Athlete selection loader ----
+function loadAthleteSelection() {
+    const wrap = document.getElementById('athlete-selection-wrap');
+    const checkboxList = document.getElementById('athlete-checkboxes');
+
+    if (!wrap || !checkboxList) return;
+
+    // If already loaded, just show
+    if (userAthletes.length > 0) {
+        wrap.style.display = 'block';
+        return;
+    }
+
+    fetch('/api/auth/my-athletes')
+        .then(r => r.ok ? r.json() : [])
+        .then(athletes => {
+            userAthletes = athletes;
+            if (!athletes.length) {
+                // Parent but no athletes registered yet
+                checkboxList.innerHTML = `
+                    <p style="color:var(--text-muted);font-family:var(--font-mono);font-size:12px;padding:12px 0;">
+                        No athletes registered on your account yet.
+                        <a href="acc.html" style="color:var(--athletics);">Update your profile</a> to add them.
+                    </p>`;
+                wrap.style.display = 'block';
+                return;
+            }
+
+            checkboxList.innerHTML = athletes.map((a, i) => `
+                <label class="athlete-checkbox-item" for="ath-check-${i}">
+                    <input type="checkbox" id="ath-check-${i}" class="athlete-checkbox"
+                        data-name="${a.name || ''}"
+                        data-age="${a.age || ''}"
+                        data-gender="${a.gender || ''}"
+                        checked>
+                    <span class="athlete-checkbox-info">
+                        <span class="athlete-checkbox-name">${esc(a.name) || 'Athlete'}</span>
+                        <span class="athlete-checkbox-meta">${a.age ? 'Age ' + a.age : ''}${a.age && a.gender ? ' · ' : ''}${a.gender || ''}</span>
+                    </span>
+                </label>
+            `).join('');
+
+            wrap.style.display = 'block';
+        })
+        .catch(() => {
+            wrap.style.display = 'none';
+        });
+}
+
+function getSelectedAthletes() {
+    return [...document.querySelectorAll('.athlete-checkbox:checked')].map(cb => ({
+        name:   cb.dataset.name,
+        age:    cb.dataset.age,
+        gender: cb.dataset.gender
+    }));
+}
+
+function esc(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+}
+
 // Confirm booking
 document.getElementById('booking-confirm-btn').addEventListener('click', async () => {
     const errorEl = document.getElementById('booking-error');
     errorEl.style.display = 'none';
 
     if (selectedSlots.size === 0) return;
+
+    // Validate athlete selection for parent accounts
+    if (userRole === 'parent_guardian' && userAthletes.length > 0) {
+        const chosen = getSelectedAthletes();
+        const athleteErr = document.getElementById('booking-athlete-error');
+        if (chosen.length === 0) {
+            if (athleteErr) {
+                athleteErr.textContent = 'Please select at least one athlete attending.';
+                athleteErr.style.display = 'block';
+                document.getElementById('athlete-selection-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            return;
+        }
+        if (athleteErr) athleteErr.style.display = 'none';
+    }
 
     const btn = document.getElementById('booking-confirm-btn');
     btn.disabled = true;
@@ -429,7 +530,8 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
                 serviceKey,
                 serviceTitle: service.title,
                 packageLabel: selectedPkg ? selectedPkg.label : '',
-                slots
+                slots,
+                selectedAthletes: (userRole === 'parent_guardian') ? getSelectedAthletes() : []
             })
         });
         const data = await res.json();
