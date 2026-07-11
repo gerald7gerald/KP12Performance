@@ -454,6 +454,9 @@ async function loadAppointments() {
                                     min="0" max="99" placeholder="—">
                                 <button class="sched-slot-edit-btn" onclick="updateSessions(${b.id})">Save</button>
                             </div>
+                            <button class="appt-complete-btn" onclick="completeBooking(${b.id}, this)">
+                                ✓ Complete
+                            </button>
                         </div>
                     </div>`;
             });
@@ -465,6 +468,48 @@ async function loadAppointments() {
     } catch (err) {
         console.error(err);
         wrap.innerHTML = '<p class="emp-loading">Couldn\'t load appointments.</p>';
+    }
+}
+
+// ---- Mark booking complete ----
+async function completeBooking(bookingId, btn) {
+    if (!confirm('Mark this booking as complete? This will remove it from appointments and send the client a thank-you email.')) return;
+    btn.disabled = true;
+    btn.textContent = 'Completing...';
+    try {
+        const res = await fetch(`/api/bookings/${bookingId}/complete`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.error || 'Failed to complete booking.');
+            btn.disabled = false;
+            btn.textContent = '✓ Complete';
+            return;
+        }
+        // Animate out the card
+        const card = document.getElementById(`appt-booking-${bookingId}`);
+        if (card) {
+            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(20px)';
+            setTimeout(() => {
+                // Remove the whole day group if this was the only card
+                const dayCards = card.closest('.appt-cards');
+                card.remove();
+                if (dayCards && !dayCards.children.length) {
+                    dayCards.closest('.appt-day-group').remove();
+                }
+                // If no more appointments at all, show empty state
+                const wrap = document.getElementById('appt-wrap');
+                if (wrap && !wrap.querySelector('.appt-day-group')) {
+                    wrap.innerHTML = '<p class="emp-loading">No bookings this week yet.</p>';
+                }
+            }, 400);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Couldn't reach the server.");
+        btn.disabled = false;
+        btn.textContent = '✓ Complete';
     }
 }
 

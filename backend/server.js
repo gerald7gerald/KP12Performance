@@ -445,6 +445,125 @@ app.post('/api/bookings', async (req, res) => {
       );
     }
 
+    // ---- Send booking confirmation email ----
+    try {
+      const userResult = await pool.query("SELECT email, username FROM users WHERE id=$1", [userId]);
+      if (userResult.rows.length > 0) {
+        const userEmail = userResult.rows[0].email;
+        const userName  = userResult.rows[0].username;
+
+        const slotLines = slots
+          .slice()
+          .sort((a,b) => ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(a.day)
+                       - ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(b.day))
+          .map(s => `<tr>
+              <td style="padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#F5F4F0;border-bottom:1px solid #232529;">${s.day}</td>
+              <td style="padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#8C8F96;border-bottom:1px solid #232529;">${s.start} – ${s.end}</td>
+            </tr>`)
+          .join('');
+
+        await resend.emails.send({
+          from: 'support@kp12performance.com',
+          to: userEmail,
+          subject: `You're booked! — ${serviceTitle}`,
+          html: `
+            <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:48px 40px;border:1px solid #232529;">
+              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#B8FF3F;margin-bottom:16px;">[ BOOKING CONFIRMED ]</p>
+              <h1 style="font-size:30px;font-weight:900;text-transform:uppercase;margin:0 0 8px;line-height:1.1;">You're Booked,<br>${userName}!</h1>
+              <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin-bottom:32px;">
+                Your session${slots.length > 1 ? 's are' : ' is'} confirmed. Here's what to expect this week — show up ready to work.
+              </p>
+
+              <div style="background:#15171A;border:1px solid #232529;border-top:3px solid #B8FF3F;padding:24px;margin-bottom:28px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#B8FF3F;margin:0 0 16px;">[ YOUR SESSIONS ]</p>
+                <p style="font-size:16px;font-weight:700;text-transform:uppercase;margin:0 0 16px;">${serviceTitle}</p>
+                ${packageLabel ? `<p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;margin:0 0 20px;">${packageLabel}</p>` : ''}
+                <table style="width:100%;border-collapse:collapse;border:1px solid #232529;">
+                  <thead>
+                    <tr style="background:#0D0E10;">
+                      <th style="padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;text-align:left;border-bottom:1px solid #232529;">DAY</th>
+                      <th style="padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;text-align:left;border-bottom:1px solid #232529;">TIME</th>
+                    </tr>
+                  </thead>
+                  <tbody>${slotLines}</tbody>
+                </table>
+              </div>
+
+              <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin-bottom:24px;">
+                You can view and manage your schedule anytime by visiting your account at
+                <a href="https://kp12performance.com/my-schedule.html" style="color:#B8FF3F;">kp12performance.com/my-schedule.html</a>.
+              </p>
+
+              <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">
+                Questions? Reach us at
+                <a href="mailto:support@kp12performance.com" style="color:#B8FF3F;">support@kp12performance.com</a><br>
+                © 2025 KP12 Performance. Let's get to work.
+              </p>
+            </div>`
+        });
+      }
+    } catch (emailErr) {
+      console.error("Booking confirmation email failed:", emailErr);
+      // Don't fail the whole request just because email failed
+    }
+
+    // Send booking confirmation email
+    try {
+      const userResult = await pool.query("SELECT username, email FROM users WHERE id = $1", [userId]);
+      const userInfo = userResult.rows[0];
+      if (userInfo && userInfo.email) {
+        const slotLines = slots
+          .slice()
+          .sort((a, b) => ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(a.day) - ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(b.day))
+          .map(s => `<tr><td style="padding:10px 16px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:13px;color:#B8FF3F;">${s.day}</td><td style="padding:10px 16px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:13px;color:#F5F4F0;">${s.start} – ${s.end}</td></tr>`)
+          .join('');
+
+        await resend.emails.send({
+          from: 'support@kp12performance.com',
+          to: userInfo.email,
+          subject: `You're booked — ${serviceTitle} | KP12 Performance`,
+          html: `
+            <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
+              <div style="background:#15171A;padding:32px 40px;border-bottom:1px solid #232529;">
+                <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:36px;display:block;">
+              </div>
+              <div style="padding:40px 40px 32px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#8C8F96;margin:0 0 16px;">[ BOOKING CONFIRMED ]</p>
+                <h1 style="font-size:28px;font-weight:800;text-transform:uppercase;margin:0 0 8px;line-height:1.1;">You're Booked,<br>${userInfo.username}.</h1>
+                <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin:16px 0 32px;">Your sessions are locked in and we're ready to work. Here's a summary of what you've registered for this week.</p>
+
+                <div style="background:#15171A;border:1px solid #232529;border-top:3px solid #B8FF3F;padding:24px;margin-bottom:28px;">
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 6px;">SERVICE</p>
+                  <p style="font-size:17px;font-weight:700;margin:0 0 16px;">${serviceTitle}</p>
+                  ${packageLabel ? `<p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 6px;">PACKAGE</p><p style="font-size:15px;margin:0;">${packageLabel}</p>` : ''}
+                </div>
+
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 12px;">YOUR SESSIONS THIS WEEK</p>
+                <table style="width:100%;border-collapse:collapse;background:#15171A;border:1px solid #232529;">
+                  <thead>
+                    <tr style="background:#1d1f23;">
+                      <th style="padding:10px 16px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;">DAY</th>
+                      <th style="padding:10px 16px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;">TIME</th>
+                    </tr>
+                  </thead>
+                  <tbody>${slotLines}</tbody>
+                </table>
+
+                <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:28px 0 0;">If you need to make any changes or have questions before your session, reply to this email or reach out at <a href="mailto:support@kp12performance.com" style="color:#B8FF3F;">support@kp12performance.com</a>.</p>
+              </div>
+              <div style="padding:20px 40px;border-top:1px solid #232529;text-align:center;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
+              </div>
+            </div>
+          `
+        });
+      }
+    } catch (emailErr) {
+      console.error('Booking confirmation email error:', emailErr);
+      // Don't fail the booking if email fails — log and continue
+    }
+
     res.status(201).json({ message: "Booking confirmed!", bookingId });
   } catch (err) { console.error(err); res.status(500).json({ error: "Error creating booking." }); }
 });
@@ -459,7 +578,7 @@ app.get('/api/bookings/mine', async (req, res) => {
               COALESCE(json_agg(json_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
                 FILTER (WHERE bs.id IS NOT NULL),'[]') AS slots
        FROM bookings b LEFT JOIN booking_slots bs ON bs.booking_id=b.id
-       WHERE b.user_id=$1 GROUP BY b.id ORDER BY b.created_at DESC`,
+       WHERE b.user_id=$1 AND b.status='confirmed' GROUP BY b.id ORDER BY b.created_at DESC`,
       [userId]
     );
     res.json(r.rows);
@@ -478,7 +597,7 @@ app.get('/api/bookings', requireAdmin, async (req, res) => {
        FROM bookings b
        JOIN users u ON b.user_id=u.id
        LEFT JOIN booking_slots bs ON bs.booking_id=b.id
-       WHERE b.week_of=$1
+       WHERE b.week_of=$1 AND b.status='confirmed'
        GROUP BY b.id,u.username,u.email,u.phone,u.age ORDER BY b.created_at DESC`,
       [weekOf]
     );
@@ -565,6 +684,93 @@ app.post('/api/auth/reset-password', async (req, res) => {
   } catch (err) { res.status(500).json({ error: "Error." }); }
 });
 
+// POST /api/bookings/:id/complete — admin marks a booking as complete,
+// sends a thank-you email, and frees up the capacity slot
+app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Get booking + user details before updating
+    const bookingResult = await pool.query(
+      `SELECT b.id, b.service_title, b.package_label,
+              u.email, u.username
+       FROM bookings b
+       JOIN users u ON b.user_id = u.id
+       WHERE b.id = $1`,
+      [id]
+    );
+
+    if (!bookingResult.rows.length) {
+      return res.status(404).json({ error: "Booking not found." });
+    }
+
+    const booking = bookingResult.rows[0];
+
+    // Mark as completed (frees up the capacity slot since count queries only look at 'confirmed')
+    await pool.query(
+      "UPDATE bookings SET status='completed', sessions_remaining=0 WHERE id=$1",
+      [id]
+    );
+
+    // Send professional thank-you + review encouragement email
+    try {
+      await resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: booking.email,
+        subject: `Training Complete — Great Work, ${booking.username}!`,
+        html: `
+          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:48px 40px;border:1px solid #232529;">
+            <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#B8FF3F;margin-bottom:16px;">[ SESSION COMPLETE ]</p>
+            <h1 style="font-size:30px;font-weight:900;text-transform:uppercase;margin:0 0 8px;line-height:1.1;">You Put In<br>The Work, ${booking.username}.</h1>
+            <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin:20px 0 28px;">
+              We want to take a moment to recognize your commitment. Completing your
+              <strong style="color:#F5F4F0;">${booking.service_title}</strong> program
+              ${booking.package_label ? '(' + booking.package_label + ')' : ''}
+              takes consistency and dedication — and you showed up every time.
+            </p>
+
+            <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #B8FF3F;padding:24px;margin-bottom:28px;">
+              <p style="font-size:16px;font-weight:700;color:#F5F4F0;margin:0 0 10px;">What's next?</p>
+              <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0;">
+                Progress doesn't stop here. Whether you're looking to level up your current program,
+                try something new, or bring in a teammate — we're ready when you are.
+                <br><br>
+                <a href="https://kp12performance.com/tra.html" style="color:#B8FF3F;text-decoration:none;font-weight:600;">Browse Training Programs →</a>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                <a href="https://kp12performance.com/ath.html" style="color:#B8FF3F;text-decoration:none;font-weight:600;">Explore Athletics →</a>
+              </p>
+            </div>
+
+            <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #FF5630;padding:24px;margin-bottom:28px;">
+              <p style="font-size:15px;font-weight:700;color:#F5F4F0;margin:0 0 10px;">How did we do?</p>
+              <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 16px;">
+                Your feedback helps us improve and helps other athletes find the right program.
+                It only takes 60 seconds and means a lot to our team.
+              </p>
+              <a href="https://kp12performance.com/review.html"
+                 style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:14px 24px;font-weight:700;">
+                Leave a Review →
+              </a>
+            </div>
+
+            <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">
+              Thank you for training with KP12 Performance. We'll see you on the other side of the next goal.<br><br>
+              — The KP12 Team<br>
+              <a href="mailto:support@kp12performance.com" style="color:#B8FF3F;">support@kp12performance.com</a>
+            </p>
+          </div>`
+      });
+    } catch (emailErr) {
+      console.error("Completion email failed:", emailErr);
+    }
+
+    res.json({ message: "Booking marked complete and user notified." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error completing booking." });
+  }
+});
+
 // ---- Auto-decrement sessions for today's day ----
 // Runs once at server startup. Since Render keeps the server running,
 // this fires once per deployment/restart. For fully automatic daily runs,
@@ -614,6 +820,88 @@ async function autoDecrementSessions() {
     console.error('Auto-decrement error:', err);
   }
 }
+
+// POST /api/bookings/:id/complete — admin marks a booking complete
+// Sends a thank-you email and frees the capacity slot
+app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Mark as completed
+    const bookingResult = await pool.query(
+      `UPDATE bookings SET status='completed', sessions_remaining=0 WHERE id=$1
+       RETURNING user_id, service_title, package_label, service_key`,
+      [id]
+    );
+    if (!bookingResult.rows.length) {
+      return res.status(404).json({ error: "Booking not found." });
+    }
+    const booking = bookingResult.rows[0];
+
+    // Fetch the user's email + username for the thank-you email
+    const userResult = await pool.query(
+      "SELECT username, email FROM users WHERE id = $1",
+      [booking.user_id]
+    );
+    const user = userResult.rows[0];
+
+    // Send the professional thank-you email
+    if (user && user.email) {
+      try {
+        await resend.emails.send({
+          from: 'support@kp12performance.com',
+          to: user.email,
+          subject: `Thank You for Training with KP12 Performance — We'd Love Your Feedback`,
+          html: `
+            <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
+              <div style="background:#15171A;padding:32px 40px;border-bottom:1px solid #232529;">
+                <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:36px;display:block;">
+              </div>
+              <div style="padding:40px 40px 32px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#B8FF3F;margin:0 0 16px;">[ SESSION COMPLETE ]</p>
+                <h1 style="font-size:26px;font-weight:800;text-transform:uppercase;margin:0 0 20px;line-height:1.15;">Thank You for<br>Training with Us,<br>${user.username}.</h1>
+
+                <p style="color:#F5F4F0;font-size:15px;line-height:1.7;margin:0 0 16px;">
+                  It was an honor working alongside you this week. Every rep, every session, and every moment of effort you put in is an investment in the athlete you're becoming — and that dedication doesn't go unnoticed.
+                </p>
+                <p style="color:#8C8F96;font-size:15px;line-height:1.7;margin:0 0 28px;">
+                  We hope your experience with <strong style="color:#F5F4F0;">${booking.service_title}</strong> pushed you closer to your goals. Our coaches are committed to helping you reach the next level, and we'd love to keep that momentum going with you.
+                </p>
+
+                <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #B8FF3F;padding:24px;margin-bottom:28px;">
+                  <p style="font-size:16px;font-weight:600;margin:0 0 8px;">How did we do?</p>
+                  <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 16px;">Your feedback means everything to us. A quick review helps us improve and lets other athletes know what to expect.</p>
+                  <a href="https://kp12performance.com/review.html" style="display:inline-block;background:#B8FF3F;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:13px 24px;font-weight:600;">Leave a Review →</a>
+                </div>
+
+                <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #232529;padding:24px;margin-bottom:28px;">
+                  <p style="font-size:15px;font-weight:600;margin:0 0 8px;">Ready for Your Next Block?</p>
+                  <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 16px;">Don't lose the momentum you've built. Book your next sessions now and keep making progress toward your goals.</p>
+                  <a href="https://kp12performance.com/tra.html" style="display:inline-block;background:transparent;color:#F5F4F0;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:13px 24px;border:1px solid #3a3d42;">Book Again →</a>
+                </div>
+
+                <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:0;">
+                  Questions or want to talk about what's next for your training? We're always here —
+                  <a href="mailto:support@kp12performance.com" style="color:#B8FF3F;">support@kp12performance.com</a>
+                </p>
+              </div>
+              <div style="padding:20px 40px;border-top:1px solid #232529;text-align:center;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
+              </div>
+            </div>
+          `
+        });
+      } catch (emailErr) {
+        console.error('Thank-you email error:', emailErr);
+        // Don't fail the complete action if email fails
+      }
+    }
+
+    res.json({ message: "Booking marked complete. Thank-you email sent." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error completing booking." });
+  }
+});
 
 // PATCH /api/bookings/:id/sessions — admin adjusts sessions_remaining for a user
 app.patch('/api/bookings/:id/sessions', requireAdmin, async (req, res) => {
