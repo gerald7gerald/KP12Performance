@@ -6014,10 +6014,11 @@ transform:translateY(70px);
 
 .about-hero-title {
     font-family: var(--font-display);
-    font-size: clamp(48px, 9vw, 100px);
-    line-height: 0.98;
+    font-size: clamp(36px, 7vw, 88px);
+    line-height: 1.0;
     text-transform: uppercase;
     margin-top: 16px;
+    max-width: 700px;
 }
 
 /* Shared section wrapper */

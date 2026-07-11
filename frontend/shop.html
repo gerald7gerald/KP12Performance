@@ -1,95 +1,382 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop | KP12 Performance</title>
+    <link rel="icon" href="favicon-32x32.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ---- Shop page — self-contained so no external shop.js needed ---- */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+        body.shop-page {
+            background: #0D0E10;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
 
-<title>Shop | KP12 Performance</title>
+        /* Animated background orbs */
+        .shop-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0;
+            animation: orbFloat 6s ease-in-out infinite, orbFadeIn 1.2s ease forwards;
+        }
 
-<link rel="icon" href="favicon-32x32.png">
+        .shop-orb--blue {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(61,158,255,0.22), transparent 70%);
+            top: -120px;
+            left: -120px;
+            animation-delay: 0s, 0.3s;
+        }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        .shop-orb--red {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255,86,48,0.18), transparent 70%);
+            bottom: 0;
+            right: -80px;
+            animation-delay: 2s, 0.6s;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+        .shop-orb--green {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(46,204,113,0.14), transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: 4s, 0.9s;
+        }
 
-<link rel="stylesheet" href="style.css">
+        @keyframes orbFadeIn {
+            to { opacity: 1; }
+        }
 
+        @keyframes orbFloat {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50%       { transform: translateY(-30px) scale(1.05); }
+        }
+
+        /* Subtle dot grid */
+        .shop-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+            background-size: 36px 36px;
+            pointer-events: none;
+        }
+
+        /* Giant background word */
+        .shop-wordmark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Anton', sans-serif;
+            font-size: clamp(200px, 38vw, 520px);
+            line-height: 1;
+            text-transform: uppercase;
+            color: transparent;
+            -webkit-text-stroke: 1px rgba(255,255,255,0.045);
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+        }
+
+        /* Main content */
+        .shop-content {
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 160px 6vw 100px;
+        }
+
+        .shop-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #8C8F96;
+            border: 1px solid #2A2D31;
+            background: rgba(255,255,255,0.03);
+            padding: 8px 18px;
+            border-radius: 100px;
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: slideUp 0.7s ease 0.4s forwards;
+        }
+
+        .shop-status-dot {
+            width: 7px;
+            height: 7px;
+            background: #FF5630;
+            border-radius: 50%;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        .shop-title {
+            font-family: 'Anton', sans-serif;
+            font-size: clamp(64px, 13vw, 160px);
+            line-height: 0.95;
+            text-transform: uppercase;
+            color: #F5F4F0;
+            letter-spacing: -0.01em;
+            margin-bottom: 28px;
+            opacity: 0;
+            animation: slideUp 0.7s ease 0.6s forwards;
+        }
+
+        .shop-title-accent {
+            display: block;
+            color: transparent;
+            -webkit-text-stroke: 2px #F5F4F0;
+        }
+
+        .shop-sub {
+            font-family: 'Work Sans', sans-serif;
+            font-size: clamp(15px, 1.6vw, 18px);
+            line-height: 1.65;
+            color: #8C8F96;
+            max-width: 500px;
+            margin-bottom: 48px;
+            opacity: 0;
+            animation: slideUp 0.7s ease 0.8s forwards;
+        }
+
+        /* Three category teasers */
+        .shop-categories {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 52px;
+            opacity: 0;
+            animation: slideUp 0.7s ease 1s forwards;
+        }
+
+        .shop-cat-pill {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 9px 20px;
+            border-radius: 100px;
+            border: 1px solid;
+        }
+
+        .shop-cat-pill--blue {
+            color: #3D9EFF;
+            border-color: rgba(61,158,255,0.4);
+            background: rgba(61,158,255,0.07);
+        }
+
+        .shop-cat-pill--red {
+            color: #FF5630;
+            border-color: rgba(255,86,48,0.4);
+            background: rgba(255,86,48,0.07);
+        }
+
+        .shop-cat-pill--green {
+            color: #2ECC71;
+            border-color: rgba(46,204,113,0.4);
+            background: rgba(46,204,113,0.07);
+        }
+
+        /* Notify button */
+        .shop-notify-row {
+            display: flex;
+            gap: 0;
+            max-width: 420px;
+            width: 100%;
+            opacity: 0;
+            animation: slideUp 0.7s ease 1.1s forwards;
+        }
+
+        .shop-notify-input {
+            flex: 1;
+            background: #15171A;
+            border: 1px solid #2A2D31;
+            border-right: none;
+            color: #F5F4F0;
+            padding: 14px 18px;
+            font-family: 'Work Sans', sans-serif;
+            font-size: 14px;
+            border-radius: 2px 0 0 2px;
+            outline: none;
+            transition: border-color 0.25s ease;
+        }
+
+        .shop-notify-input:focus {
+            border-color: #3D9EFF;
+        }
+
+        .shop-notify-input::placeholder {
+            color: #5A5D63;
+        }
+
+        .shop-notify-btn {
+            background: #F5F4F0;
+            color: #0D0E10;
+            border: none;
+            padding: 14px 22px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 0 2px 2px 0;
+            white-space: nowrap;
+            transition: background 0.25s ease;
+        }
+
+        .shop-notify-btn:hover {
+            background: #3D9EFF;
+            color: #0D0E10;
+        }
+
+        .shop-notify-success {
+            display: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            color: #2ECC71;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* Back link */
+        .shop-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #8C8F96;
+            margin-top: 40px;
+            text-decoration: none;
+            transition: color 0.25s ease;
+            opacity: 0;
+            animation: slideUp 0.7s ease 1.2s forwards;
+        }
+
+        .shop-back:hover { color: #F5F4F0; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 540px) {
+            .shop-notify-row { flex-direction: column; }
+            .shop-notify-input { border-right: 1px solid #2A2D31; border-bottom: none; border-radius: 2px 2px 0 0; }
+            .shop-notify-btn { border-radius: 0 0 2px 2px; padding: 13px; }
+        }
+    </style>
 </head>
+<body class="shop-page">
 
-<body class="coming-page">
+    <!-- Background layers -->
+    <div class="shop-grid"></div>
+    <div class="shop-orb shop-orb--blue"></div>
+    <div class="shop-orb shop-orb--red"></div>
+    <div class="shop-orb shop-orb--green"></div>
+    <div class="shop-wordmark">SHOP</div>
 
-<!-- NAV -->
+    <!-- Nav -->
+    <header class="nav" style="position:fixed;z-index:10;">
+        <a href="index.html" class="nav-brand">
+            <img src="logo.png" alt="KP12 Performance" class="nav-logo">
+        </a>
+        <ul class="nav-links">
+            <li><a href="my-schedule.html">My Schedule</a></li>
+            <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
+            <li><a href="abt.html">About Us</a></li>
+            <li><a href="shop.html">Shop</a></li>
+        </ul>
+    </header>
 
-<header class="nav">
+    <!-- Main content -->
+    <main class="shop-content">
 
-<a href="index.html" class="nav-brand">
-<img src="logo.png" class="nav-logo">
-</a>
+        <div class="shop-status">
+            <span class="shop-status-dot"></span>
+            Store in development
+        </div>
 
-<ul class="nav-links">
-<li><a href="index.html">Home</a></li>
-<li><a href="abt.html">About</a></li>
-<li><a href="ath.html">Athletics</a></li>
-<li><a href="tra.html">Training</a></li>
-<li><a href="shop.html">Shop</a></li>
-</ul>
+        <h1 class="shop-title">
+            COMING
+            <span class="shop-title-accent">SOON</span>
+        </h1>
 
-</header>
+        <p class="shop-sub">
+            Premium KP12 Performance apparel is on the way — designed with the same attention to detail we bring to every athlete we work with.
+        </p>
 
+        <div class="shop-categories">
+            <span class="shop-cat-pill shop-cat-pill--blue">Athletics Gear</span>
+            <span class="shop-cat-pill shop-cat-pill--red">Training Apparel</span>
+            <span class="shop-cat-pill shop-cat-pill--green">Performance Wear</span>
+        </div>
 
-<div class="bg-grid"></div>
+        <div style="width:100%;display:flex;flex-direction:column;align-items:center;">
+            <div class="shop-notify-row">
+                <input type="email" class="shop-notify-input" id="notify-email" placeholder="Enter your email to be notified">
+                <button class="shop-notify-btn" id="notify-btn">Notify Me</button>
+            </div>
+            <p class="shop-notify-success" id="notify-success">✓ You're on the list. We'll let you know when we launch.</p>
+        </div>
 
-<div class="bg-glow glow-green"></div>
-<div class="bg-glow glow-orange"></div>
+        <a href="index.html" class="shop-back">← Return Home</a>
 
-<div class="shop-word">
-SHOP
-</div>
+    </main>
 
+    <script src="nav.js"></script>
+    <script>
+    document.getElementById('notify-btn').addEventListener('click', () => {
+        const email = document.getElementById('notify-email').value.trim();
+        if (!email || !email.includes('@')) {
+            document.getElementById('notify-email').style.borderColor = '#FF5630';
+            return;
+        }
+        document.getElementById('notify-email').style.borderColor = '#2ECC71';
+        document.querySelector('.shop-notify-row').style.display = 'none';
+        document.getElementById('notify-success').style.display = 'block';
+    });
 
-<section class="coming-wrapper">
-
-<div class="coming-status">
-
-<span></span>
-
-STORE IN DEVELOPMENT
-
-</div>
-
-
-<h1 class="coming-title">
-
-COMING
-
-SOON
-
-</h1>
-
-
-<p class="coming-sub">
-
-Premium KP12 Performance apparel is currently in development.
-
-Every product is being designed with the same attention to detail
-we bring to our athletes.
-
-</p>
-
-
-<a href="index.html" class="coming-btn">
-
-← RETURN HOME
-
-</a>
-
-</section>
-
-<script src="shop.js"></script>
+    document.getElementById('notify-email').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('notify-btn').click();
+    });
+    </script>
 
 </body>
-
 </html>
