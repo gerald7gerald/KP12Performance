@@ -273,7 +273,7 @@ app.get('/api/auth/me', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Not logged in." });
   try {
-    const r = await pool.query("SELECT id,username,email,phone,age,gender,is_admin FROM users WHERE id=$1", [userId]);
+    const r = await pool.query("SELECT id,username,email,phone,age,gender,role,is_admin FROM users WHERE id=$1", [userId]);
     if (!r.rows.length) return res.status(401).json({ error: "Not logged in." });
     res.json({ user: r.rows[0] });
   } catch (err) { res.status(500).json({ error: "Error." }); }
