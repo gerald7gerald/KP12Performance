@@ -8,187 +8,226 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png">
 </head>
 <body>
 
-    <header class="nav">
-        <a href="index.html" class="nav-brand">
-            <img src="logo.png" alt="KP12 Performance" class="nav-logo">
-        </a>
-        <ul class="nav-links">
-            <li><a href="my-schedule.html">My Schedule</a></li>
-            <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
-            <li><a href="abt.html">About Us</a></li>
-            <li><a href="shop.html">Shop</a></li>
-        </ul>
-    </header>
+<header class="nav">
+    <a href="index.html" class="nav-brand">
+        <img src="logo.png" alt="KP12 Performance" class="nav-logo">
+    </a>
+    <ul class="nav-links">
+        <li><a href="my-schedule.html">My Schedule</a></li>
+        <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
+        <li><a href="abt.html">About Us</a></li>
+        <li><a href="shop.html">Shop</a></li>
+    </ul>
+</header>
 
-    <!-- Hero -->
-    <section class="about-hero">
-        <img src="about-hero.jpg" alt="KP12 Performance coach watching a volleyball on the court at night" class="about-hero-img">
-        <div class="about-hero-overlay"></div>
-        <div class="about-hero-content">
-            <p class="eyebrow">[ MISSION STATEMENT ]</p>
-            <p class="mission-text">To optimize the quality of human life through the integration of science-based strategies for human movement, athletic performance, and health and wellness.</p>
-        </div>
-        <div class="scroll-cue" aria-hidden="true"><span></span></div>
-    </section>
+<!-- Hero -->
+<section class="about-hero">
+    <img src="about-hero.jpg" alt="KP12 Performance" class="about-hero-img">
+    <div class="about-hero-overlay"></div>
+    <div class="about-hero-content">
+        <p class="eyebrow">[ KP12 PERFORMANCE ]</p>
+        <h1 class="about-hero-title">BUILT ON<br>SCIENCE.<br>DRIVEN BY<br>RESULTS.</h1>
+    </div>
+</section>
 
-    <!-- Story timeline -->
-    <section class="story reveal">
+<!-- Mission -->
+<section class="abt-mission reveal">
+    <div class="abt-section-inner">
+        <p class="eyebrow">[ MISSION STATEMENT ]</p>
+        <blockquote class="abt-mission-quote">
+            "To optimize the quality of human life through the integration of science-based strategies for human movement, athletic performance, and health and wellness."
+        </blockquote>
+    </div>
+</section>
+
+<!-- Story -->
+<section class="abt-section reveal">
+    <div class="abt-section-inner">
         <p class="eyebrow">[ OUR STORY ]</p>
-        <h2 class="section-title">A Quick Story of How It Started</h2>
-        <div class="timeline">
-            <div class="timeline-item">
-                <span class="timeline-year">2021</span>
-                <p class="timeline-text">It started small — training college friends who just wanted to move and perform better, with no business plan, just reps and results.</p>
+        <h2 class="abt-heading">How It Started</h2>
+        <div class="abt-timeline">
+            <div class="abt-timeline-item">
+                <span class="abt-year">2021</span>
+                <p class="abt-timeline-text">It started small — training college friends who just wanted to move and perform better, with no business plan, just reps and results.</p>
             </div>
-            <div class="timeline-item">
-                <span class="timeline-year">2025</span>
-                <p class="timeline-text">What started as helping friends train turned into something bigger: KP12 Performance was established to bring that same standard to every athlete who walks through the door.</p>
+            <div class="abt-timeline-item">
+                <span class="abt-year">2025</span>
+                <p class="abt-timeline-text">What started as helping friends train turned into something bigger: KP12 Performance was established to bring that same standard to every athlete who walks through the door.</p>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- What we offer -->
-    <section class="offer reveal">
+<!-- What We Offer -->
+<section class="abt-offer reveal">
+    <div class="abt-section-inner">
         <p class="eyebrow">[ WHAT WE OFFER ]</p>
-        <h2 class="section-title">What We Offer</h2>
-        <div class="offer-grid">
-            <div class="offer-card offer-athletics">
-                <h3>Athletics Performance</h3>
-                <p>Speed, agility, and in-season conditioning built for the demands of competition.</p>
-            </div>
-            <div class="offer-card offer-training">
+        <h2 class="abt-heading">Three Lanes, One Standard</h2>
+        <div class="abt-offer-grid">
+            <a href="ath.html" class="abt-offer-card abt-offer-card--athletics">
+                <span class="abt-offer-tag">Athletics</span>
+                <h3>Sport Performance</h3>
+                <p>Speed, agility, and sport-specific conditioning built for the demands of competition.</p>
+                <span class="abt-offer-cta">Explore →</span>
+            </a>
+            <a href="tra.html" class="abt-offer-card abt-offer-card--training">
+                <span class="abt-offer-tag">Training</span>
                 <h3>Strength &amp; Conditioning</h3>
                 <p>Off-season programming that builds the strength and durability everything else is built on.</p>
-            </div>
-            <div class="offer-card offer-neutral">
-                <h3>Recovery &amp; Wellness</h3>
-                <p>Mobility, recovery, and habit coaching so progress holds up outside the gym too.</p>
-            </div>
+                <span class="abt-offer-cta">Explore →</span>
+            </a>
+            <a href="nut.html" class="abt-offer-card abt-offer-card--nutrition">
+                <span class="abt-offer-tag">Nutrition</span>
+                <h3>Nutrition Consulting</h3>
+                <p>One-on-one guidance to fuel your training, manage your weight, and build sustainable habits.</p>
+                <span class="abt-offer-cta">Explore →</span>
+            </a>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Who I am -->
-    <section class="bio reveal">
-        <div class="bio-photo">
-            <img src="kyle-bio.jpg" alt="Kyle Perera">
+<!-- Bio — Kyle -->
+<section class="abt-bio reveal">
+    <div class="abt-section-inner abt-bio-inner">
+        <div class="abt-bio-photo">
+            <img src="kyle-bio.jpg" alt="Kyle Perera, Founder">
         </div>
-        <div class="bio-text">
-            <p class="eyebrow">[ WHO I AM ]</p>
-            <h2 class="section-title">Who I Am</h2>
-            <p>I'm Kyle Perera, the founder of KP12 Performance. My background is in kinesiology — I earned my B.S. from Cal State Fullerton and I'm finishing my Master's in Applied Exercise Science at Concordia University Chicago. Outside of KP12, I teach kinesiology and head coach the swim and water polo programs at St. John Bosco High School, and I spent years coaching competitive swimmers at the Los Cerritos YMCA. KP12 Performance is where all of that comes together — real science, real coaching experience, and a genuine belief that performance is built through consistency, not shortcuts.</p>
-            <div class="bio-stats">
+        <div class="abt-bio-text">
+            <p class="eyebrow">[ FOUNDER ]</p>
+            <h2 class="abt-heading">Kyle Perera</h2>
+            <p class="abt-body">My background is in kinesiology — I earned my B.S. from Cal State Fullerton and I'm finishing my Master's in Applied Exercise Science at Concordia University Chicago. Outside of KP12, I teach kinesiology and head coach the swim and water polo programs at St. John Bosco High School, and I spent years coaching competitive swimmers at the Los Cerritos YMCA.</p>
+            <p class="abt-body" style="margin-top:16px;">KP12 Performance is where all of that comes together — real science, real coaching experience, and a genuine belief that performance is built through consistency, not shortcuts.</p>
+            <div class="abt-chips">
                 <span class="stat-chip">B.S. KINESIOLOGY — CSUF</span>
-                <span class="stat-chip">M.S. SPORTS PERFORMANCE — CONCORDIA</span>
+                <span class="stat-chip">M.S. SPORTS PERFORMANCE</span>
                 <span class="stat-chip">NASM-PES CERTIFIED</span>
                 <span class="stat-chip">CERTIFIED PERSONAL TRAINER</span>
                 <span class="stat-chip">HEAD SWIM &amp; WATER POLO COACH</span>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Team -->
-    <section class="team reveal">
+<!-- Team -->
+<section class="abt-section abt-team reveal">
+    <div class="abt-section-inner">
         <p class="eyebrow">[ THE TEAM ]</p>
-        <h2 class="section-title">Who Our Employees Are</h2>
-        <div class="team-grid">
+        <h2 class="abt-heading">The People Behind KP12</h2>
+        <div class="abt-team-grid">
 
-            <div class="player-card">
-                <div class="player-photo">
-                    <img src="gerald-headshot.jpg" alt="Gerald Garcia">
+            <div class="abt-team-card">
+                <div class="abt-team-photo">
+                    <img src="kyle-bio.jpg" alt="Kyle Perera">
                 </div>
-                <div class="player-info">
-                    <h3 class="player-name">Gerald Garcia</h3>
-                    <p class="player-role">[ Head Web Developer / Swim Instructor ]</p>
-                    <p class="player-bio">Hey! I'm currently a student at Cal Poly Pomona and I swam competitively for more than 10 years. I love hiking, being at the beach, and most of all, playing volleyball.</p>
-                    <div class="player-stats">
-                        <span class="stat-chip">10+ YRS SWIMMING</span>
-                        <span class="stat-chip">CAL POLY POMONA</span>
-                        <span class="stat-chip">HIKING</span>
-                        <span class="stat-chip">BEACH</span>
-                        <span class="stat-chip">VOLLEYBALL</span>
+                <div class="abt-team-info">
+                    <h3 class="abt-team-name">Kyle Perera</h3>
+                    <p class="abt-team-role">[ Founder / Head Coach ]</p>
+                    <p class="abt-team-bio">Kinesiologist, coach, and the driving force behind KP12. Dedicated to bringing evidence-based training to every athlete who walks through the door.</p>
+                    <div class="abt-chips" style="margin-top:12px;">
+                        <span class="stat-chip">FOUNDER</span>
+                        <span class="stat-chip">KINESIOLOGY</span>
+                        <span class="stat-chip">HEAD COACH</span>
                     </div>
                 </div>
             </div>
 
-            <div class="team-card-placeholder">
-                <div class="team-avatar-placeholder">+</div>
-                <p>Add a team member</p>
+            <div class="abt-team-card">
+                <div class="abt-team-photo">
+                    <img src="gerald-headshot.jpg" alt="Gerald Garcia">
+                </div>
+                <div class="abt-team-info">
+                    <h3 class="abt-team-name">Gerald Garcia</h3>
+                    <p class="abt-team-role">[ Head Web Developer / Swim Instructor ]</p>
+                    <p class="abt-team-bio">Currently studying at Cal Poly Pomona with 10+ years of competitive swimming. Gerald built and maintains the KP12 digital platform and teaches swim lessons.</p>
+                    <div class="abt-chips" style="margin-top:12px;">
+                        <span class="stat-chip">WEB DEVELOPER</span>
+                        <span class="stat-chip">10+ YRS SWIMMING</span>
+                        <span class="stat-chip">CAL POLY POMONA</span>
+                    </div>
+                </div>
             </div>
 
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Partnerships -->
-    <section class="partners reveal">
+<!-- Partnerships -->
+<section class="abt-section abt-partners reveal">
+    <div class="abt-section-inner">
         <p class="eyebrow">[ PARTNERSHIPS ]</p>
-        <h2 class="section-title">Partnerships</h2>
-        <div class="partner-strip">
-
-            <a href="https://app.letsponey.com/h/kp12-performance" class="partner-logo-card" target="_blank" rel="noopener">
+        <h2 class="abt-heading">Our Partners</h2>
+        <div class="abt-partner-strip">
+            <a href="https://app.letsponey.com/h/kp12-performance" class="abt-partner-card" target="_blank" rel="noopener">
                 <img src="poney-logo.png" alt="Poney">
             </a>
-
-            <div class="partner-logo-card">
+            <div class="abt-partner-card">
                 <img src="sjb-logo.png" alt="St. John Bosco High School">
             </div>
-
-            <div class="partner-placeholder">Partner Logo</div>
-
         </div>
-    </section>
+    </div>
+</section>
 
-    
-    <!-- FOOTER: replace the old <footer class="status-bar"> block with this on every page -->
+<!-- CTA Band -->
+<section class="abt-band reveal">
+    <div class="abt-section-inner" style="text-align:center;">
+        <p class="eyebrow">[ GET STARTED ]</p>
+        <h2 class="abt-band-title">READY TO START?</h2>
+        <p class="abt-body" style="max-width:480px;margin:16px auto 32px;color:var(--text-muted);">Browse our programs and book a session. Whatever your level, whatever your goal — we have a lane for you.</p>
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+            <a href="tra.html" class="abt-cta-btn" style="color:var(--training);border-color:var(--training);">Training →</a>
+            <a href="ath.html" class="abt-cta-btn" style="color:var(--athletics);border-color:var(--athletics);">Athletics →</a>
+            <a href="nut.html" class="abt-cta-btn" style="color:var(--nutrition);border-color:var(--nutrition);">Nutrition →</a>
+        </div>
+    </div>
+</section>
+
 <footer class="site-footer">
     <div class="site-footer-inner">
-
         <a href="index.html" class="site-footer-brand">
             <img src="logo.png" alt="KP12 Performance" class="site-footer-logo">
         </a>
-
         <div class="site-footer-socials">
-            <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link" aria-label="Instagram">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                    <circle cx="12" cy="12" r="4.5"/>
-                    <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
-                </svg>
+            <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
                 <span>Instagram</span>
             </a>
-            <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link" aria-label="TikTok">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/>
-                </svg>
+            <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
                 <span>TikTok</span>
             </a>
-            <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link" aria-label="YouTube">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/>
-                </svg>
+            <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/></svg>
                 <span>YouTube</span>
             </a>
         </div>
-
         <p class="site-footer-copy">© 2025 KP12 Performance. All rights reserved.</p>
-
     </div>
 </footer>
 
-    <script src="script.js"></script>
-    <script src="nav.js"></script>
-    <script src="about.js"></script>
-    <script>
-        // Safety net: if about.js fails to load or the observer never
-        // fires for some reason, force every section visible after a
-        // short delay so content never gets stuck invisible.
-        setTimeout(() => {
-            document.querySelectorAll(".reveal:not(.in-view)").forEach((el) => {
-                el.classList.add("in-view");
+<script src="nav.js"></script>
+<script>
+    // All animation logic inline — no external about.js that can 404
+    if ("IntersectionObserver" in window) {
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.classList.add("in-view");
+                    obs.unobserve(e.target);
+                }
             });
-        }, 1800);
-    </script>
+        }, { threshold: 0.07 });
+        document.querySelectorAll(".reveal").forEach(el => obs.observe(el));
+    } else {
+        document.querySelectorAll(".reveal").forEach(el => el.classList.add("in-view"));
+    }
+    setTimeout(() => {
+        document.querySelectorAll(".reveal:not(.in-view)").forEach(el => el.classList.add("in-view"));
+    }, 1200);
+</script>
+
 </body>
 </html>

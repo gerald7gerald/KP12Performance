@@ -6001,3 +6001,381 @@ transform:translateY(70px);
     color: var(--text);
     border-bottom-color: var(--text);
 }
+/* ========================================
+   ABOUT PAGE — REDESIGNED
+   ======================================== */
+
+/* Override old about-hero-content to remove scroll-cue from hero */
+.about-hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 0 6vw 100px;
+}
+
+.about-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 9vw, 100px);
+    line-height: 0.98;
+    text-transform: uppercase;
+    margin-top: 16px;
+}
+
+/* Shared section wrapper */
+.abt-section-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 6vw;
+}
+
+.abt-section {
+    padding: 100px 0;
+    border-top: 1px solid #232529;
+}
+
+.abt-heading {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4vw, 42px);
+    text-transform: uppercase;
+    margin: 14px 0 40px;
+    line-height: 1.05;
+}
+
+.abt-body {
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1.7;
+    max-width: 620px;
+}
+
+.abt-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+/* Mission */
+.abt-mission {
+    padding: 80px 0;
+    background: var(--bg-panel);
+    border-bottom: 1px solid #232529;
+}
+
+.abt-mission-quote {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 3vw, 30px);
+    text-transform: uppercase;
+    line-height: 1.35;
+    color: var(--text);
+    margin: 16px 0 0;
+    border-left: 3px solid var(--training);
+    padding-left: 28px;
+    max-width: 780px;
+}
+
+/* Timeline */
+.abt-timeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    border-top: 1px solid #232529;
+    padding-top: 36px;
+}
+
+.abt-timeline-item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.abt-year {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--training);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--training);
+    display: inline-block;
+    width: fit-content;
+}
+
+.abt-timeline-text {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.65;
+}
+
+/* Offer cards */
+.abt-offer {
+    padding: 100px 0;
+    background: var(--bg-panel);
+    border-top: 1px solid #232529;
+    border-bottom: 1px solid #232529;
+}
+
+.abt-offer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.abt-offer-card {
+    background: var(--bg);
+    border: 1px solid #2A2D31;
+    border-top: 3px solid #2A2D31;
+    padding: 28px 24px 32px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.abt-offer-card:hover {
+    transform: translateY(-4px);
+}
+
+.abt-offer-card--athletics {
+    border-top-color: var(--athletics);
+}
+
+.abt-offer-card--training {
+    border-top-color: var(--training);
+}
+
+.abt-offer-card--nutrition {
+    border-top-color: var(--nutrition);
+}
+
+.abt-offer-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.abt-offer-card--athletics .abt-offer-tag { color: var(--athletics); }
+.abt-offer-card--training  .abt-offer-tag { color: var(--training); }
+.abt-offer-card--nutrition .abt-offer-tag { color: var(--nutrition); }
+
+.abt-offer-card h3 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    text-transform: uppercase;
+    color: var(--text);
+    margin: 0;
+}
+
+.abt-offer-card p {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.55;
+    flex: 1;
+    margin: 0;
+}
+
+.abt-offer-cta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-top: 8px;
+    transition: color 0.25s ease;
+}
+
+.abt-offer-card:hover .abt-offer-cta {
+    color: var(--text);
+}
+
+/* Bio */
+.abt-bio {
+    padding: 100px 0;
+    border-top: 1px solid #232529;
+}
+
+.abt-bio-inner {
+    display: flex;
+    gap: 60px;
+    align-items: flex-start;
+}
+
+.abt-bio-photo {
+    flex: 0 0 280px;
+    aspect-ratio: 4/5;
+    overflow: hidden;
+    border-top: 3px solid var(--athletics);
+}
+
+.abt-bio-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 20%;
+    display: block;
+}
+
+.abt-bio-text .abt-heading {
+    margin-bottom: 20px;
+}
+
+/* Team */
+.abt-team-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    max-width: 760px;
+}
+
+.abt-team-card {
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    border-top: 3px solid var(--athletics);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.abt-team-card:hover {
+    transform: translateY(-4px);
+}
+
+.abt-team-photo {
+    aspect-ratio: 4/5;
+    overflow: hidden;
+}
+
+.abt-team-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+    display: block;
+}
+
+.abt-team-info {
+    padding: 22px 20px 26px;
+}
+
+.abt-team-name {
+    font-family: var(--font-display);
+    font-size: 20px;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+}
+
+.abt-team-role {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--athletics);
+    margin: 0 0 12px;
+}
+
+.abt-team-bio {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* Partners */
+.abt-partner-strip {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.abt-partner-card {
+    flex: 0 0 auto;
+    height: 80px;
+    background: #F5F4F0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.abt-partner-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+
+.abt-partner-card img {
+    max-height: 40px;
+    max-width: 160px;
+    width: auto;
+    display: block;
+}
+
+/* CTA band */
+.abt-band {
+    padding: 100px 0;
+    background: var(--bg-panel);
+    border-top: 1px solid #232529;
+}
+
+.abt-band-title {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 5vw, 52px);
+    text-transform: uppercase;
+    margin: 14px 0 0;
+}
+
+.abt-cta-btn {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    border: 1px solid;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.abt-cta-btn:hover {
+    background: currentColor;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+    .abt-offer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .abt-bio-inner {
+        flex-direction: column;
+        gap: 32px;
+    }
+
+    .abt-bio-photo {
+        flex: none;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .abt-team-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+    }
+}
+
+@media (max-width: 640px) {
+    .abt-timeline {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    .abt-section {
+        padding: 72px 0;
+    }
+
+    .abt-mission {
+        padding: 60px 0;
+    }
+
+    .abt-bio, .abt-offer, .abt-band {
+        padding: 72px 0;
+    }
+}
