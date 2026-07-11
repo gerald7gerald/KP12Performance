@@ -4979,3 +4979,514 @@ transform:translateY(70px);
     padding: 3px 10px;
     border-radius: 2px;
 }
+/* ---------- MY SCHEDULE PAGE ---------- */
+.mys-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 140px 6vw 100px;
+}
+
+.mys-guest {
+    text-align: center;
+}
+
+.mys-header {
+    margin-bottom: 48px;
+}
+
+.mys-title {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 6vw, 56px);
+    text-transform: uppercase;
+    line-height: 1.02;
+    margin: 12px 0 14px;
+}
+
+.mys-sub {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.mys-loading {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 24px 0;
+}
+
+/* Days layout */
+.mys-days {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+}
+
+.mys-day-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mys-day-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #232529;
+}
+
+.mys-day-name {
+    font-family: var(--font-display);
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.mys-session-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #2A2D31;
+    padding: 3px 10px;
+    border-radius: 2px;
+}
+
+.mys-sessions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Session card */
+.mys-session-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: var(--bg-panel);
+    border: 1px solid #232529;
+    border-left: 3px solid var(--training);
+    padding: 18px 20px;
+    transition: transform 0.2s ease;
+}
+
+.mys-session-card:hover {
+    transform: translateX(3px);
+}
+
+.mys-session-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    min-width: 160px;
+}
+
+.mys-time-start {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.mys-time-sep {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.mys-time-end {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.mys-session-info {
+    flex: 1;
+}
+
+.mys-service-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+    margin: 0 0 4px;
+}
+
+.mys-package {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    margin: 0;
+}
+
+.mys-session-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border: 1px solid;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* Empty state */
+.mys-empty {
+    text-align: center;
+    padding: 24px 0;
+}
+
+.mys-empty-title {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4vw, 36px);
+    text-transform: uppercase;
+    margin: 12px 0 16px;
+}
+
+.mys-empty-links {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 32px;
+    flex-wrap: wrap;
+}
+
+.mys-cta-btn {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    border: 1px solid;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.mys-cta-training {
+    color: var(--training);
+    border-color: var(--training);
+}
+
+.mys-cta-training:hover {
+    background: var(--training);
+    color: var(--training-dark);
+}
+
+.mys-cta-athletics {
+    color: var(--athletics);
+    border-color: var(--athletics);
+}
+
+.mys-cta-athletics:hover {
+    background: var(--athletics);
+    color: var(--athletics-dark);
+}
+
+@media (max-width: 600px) {
+    .mys-session-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .mys-session-time {
+        min-width: 0;
+    }
+}
+
+/* ---------- ATHLETICS PAGE — variant accents ---------- */
+/* Price cards tinted lime for Athletics pages */
+.tra-price-card--ath {
+    border-top-color: var(--athletics);
+}
+
+/* Book button lime variant */
+.tra-book-btn--ath {
+    color: var(--athletics);
+    border-bottom-color: var(--athletics);
+}
+
+.tra-book-btn--ath:hover {
+    color: var(--text);
+    border-bottom-color: var(--text);
+}
+
+/* Coming-soon service items are slightly muted */
+.tra-service-item--coming .tra-service-title {
+    opacity: 0.6;
+}
+
+.tra-service-item--coming .tra-chevron {
+    opacity: 0.4;
+}
+
+.tra-service-item--coming .tra-service-header:hover .tra-service-title {
+    color: var(--athletics);
+    opacity: 1;
+}
+
+/* ---------- SESSIONS REMAINING — EMPLOYEE APPOINTMENTS ---------- */
+.appt-sessions-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-left: 20px;
+    border-left: 1px solid #232529;
+    flex-shrink: 0;
+    min-width: 120px;
+}
+
+.appt-sessions-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.appt-sessions-display {
+    text-align: center;
+}
+
+.appt-sessions-num {
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1;
+    color: var(--athletics);
+    display: block;
+}
+
+.appt-sessions-low {
+    color: #FFC247 !important;
+}
+
+.appt-sessions-done {
+    color: var(--training) !important;
+}
+
+.appt-sessions-edit {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.appt-sessions-input {
+    width: 52px;
+    background: var(--bg);
+    border: 1px solid #2A2D31;
+    color: var(--text);
+    padding: 6px 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    text-align: center;
+    border-radius: 2px;
+    transition: border-color 0.2s ease;
+}
+
+.appt-sessions-input:focus {
+    outline: none;
+    border-color: var(--athletics);
+}
+
+/* ---------- SESSIONS REMAINING — MY SCHEDULE USER VIEW ---------- */
+.mys-sessions-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 14px;
+    border: 1px solid;
+    border-radius: 2px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.03);
+    text-align: center;
+}
+
+.mys-sessions-num {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1;
+    display: block;
+}
+
+.mys-sessions-lbl {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: block;
+}
+
+.mys-sessions-low .mys-sessions-num {
+    color: #FFC247 !important;
+}
+
+.mys-sessions-done .mys-sessions-num {
+    color: var(--training) !important;
+}
+
+.mys-sessions-done .mys-sessions-lbl::after {
+    content: ' — Complete!';
+}
+
+@media (max-width: 600px) {
+    .appt-sessions-col {
+        border-left: none;
+        border-top: 1px solid #232529;
+        padding-left: 0;
+        padding-top: 14px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        min-width: 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* ---------- COMPLETE BUTTON — EMPLOYEE APPOINTMENTS ---------- */
+.appt-complete-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(184, 255, 63, 0.35);
+    color: var(--athletics);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-top: 4px;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.appt-complete-btn:hover {
+    background: var(--athletics);
+    color: var(--athletics-dark);
+}
+
+.appt-complete-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ---------- BOOKING — ATHLETE SELECTION ---------- */
+.athlete-checkbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.athlete-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg-panel);
+    border: 1px solid #2A2D31;
+    padding: 14px 18px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.athlete-checkbox-item:hover {
+    border-color: var(--athletics);
+}
+
+.athlete-checkbox-item:has(.athlete-checkbox:checked) {
+    border-color: var(--athletics);
+    background: rgba(184, 255, 63, 0.05);
+}
+
+.athlete-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--athletics);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.athlete-checkbox-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.athlete-checkbox-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+}
+
+.athlete-checkbox-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+/* ---------- EMPLOYEE — ATTENDING ATHLETES ---------- */
+.appt-athletes-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.appt-athletes-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.appt-athlete-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--athletics);
+    background: rgba(184, 255, 63, 0.08);
+    border: 1px solid rgba(184, 255, 63, 0.3);
+    padding: 3px 10px;
+    border-radius: 2px;
+}
+
+/* ---------- MY SCHEDULE — ATTENDING ATHLETES ---------- */
+.mys-athletes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.mys-athlete-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--athletics);
+    background: rgba(184, 255, 63, 0.08);
+    border: 1px solid rgba(184, 255, 63, 0.25);
+    padding: 3px 10px;
+    border-radius: 2px;
+}
+
+/* ---------- NUTRITION PAGE — variant accents ---------- */
+.tra-price-card--nut {
+    border-color: rgba(255, 194, 71, 0.4);
+    background: rgba(255, 194, 71, 0.05);
+}
+
+.tra-book-btn--nut {
+    color: var(--nutrition);
+    border-bottom-color: var(--nutrition);
+}
+
+.tra-book-btn--nut:hover {
+    color: var(--text);
+    border-bottom-color: var(--text);
+}

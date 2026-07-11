@@ -164,7 +164,12 @@ pool.query(`
       ('youth-performance-training', 8),
       ('adult-training', 10),
       ('remote-training', 10),
-      ('swim-lessons', 5)
+      ('swim-lessons', 5),
+      ('speed-agility', 10),
+      ('beach-volleyball', 20),
+      ('sports-nutrition-consult', 10),
+      ('intro-nutrition', 10),
+      ('nutrition-check-ins', 10)
     ON CONFLICT (service_key) DO NOTHING;
   `);
 }).then(() => console.log("Service capacity table ready!"))

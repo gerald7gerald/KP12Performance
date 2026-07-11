@@ -32,7 +32,7 @@
 <section id="booking-main" class="booking-page" style="display:none;">
 
     <div class="booking-step" id="step-1">
-        <a href="tra.html" class="booking-back">← Back to Training</a>
+        <a href="#" id="booking-back-link" class="booking-back">← Back</a>
         <p class="eyebrow booking-eyebrow">[ BOOK A SESSION ]</p>
         <span class="tra-tag" id="booking-tag"></span>
         <h1 class="booking-title" id="booking-title"></h1>
@@ -181,6 +181,30 @@ const SERVICES = {
         packages: [{ label: 'Drop In', price: '', tag: '' }],
         subcategory: 'Beach/Indoor Volleyball',
         category: 'Athletics'
+    },
+    'sports-nutrition-consult': {
+        title: 'Sports Nutrition Consult', tag: '1 HOUR · ALL ATHLETES',
+        desc: 'Consult one-on-one with a dietitian and receive personalized guidance built around your sport and training schedule. Fuel up for your next competition, improve daily performance, or manage weight while maintaining athletic output.',
+        chips: ['SPORT NUTRITION','FUELING STRATEGIES','WEIGHT MANAGEMENT','PERFORMANCE','1 HOUR'],
+        packages: [{ label: '1-Hour Session', price: '$75', tag: '' }],
+        subcategory: 'Sports Nutrition Consult',
+        category: 'Nutrition'
+    },
+    'intro-nutrition': {
+        title: 'Intro to Dieting & Nutrition', tag: '1 HOUR · ALL AGES',
+        desc: 'New to thinking about what you eat and why it matters? This session breaks down the fundamentals of dieting and nutrition in a practical, judgment-free way. Leave with a clear, actionable starting point.',
+        chips: ['NUTRITION BASICS','DIETING INTRO','LIFESTYLE','ALL AGES','1 HOUR'],
+        packages: [{ label: '1-Hour Session', price: '$100', tag: '' }],
+        subcategory: 'Intro to Dieting and Nutrition',
+        category: 'Nutrition'
+    },
+    'nutrition-check-ins': {
+        title: 'Nutrition Consult Check-Ins', tag: '4 SESSIONS · ONGOING',
+        desc: 'Four dedicated check-in sessions with your dietitian to track progress, adjust your plan, and stay accountable to your nutrition goals. Perfect for ongoing guidance rather than a one-time consult.',
+        chips: ['PROGRESS TRACKING','PLAN ADJUSTMENTS','ACCOUNTABILITY','4 SESSIONS'],
+        packages: [{ label: '4 Check-In Sessions', price: '$240', tag: 'BEST VALUE' }],
+        subcategory: 'Nutrition Check-Ins',
+        category: 'Nutrition'
     }
 };
 
@@ -218,6 +242,21 @@ if (!service) {
     document.getElementById('booking-not-found').style.display = 'block';
 } else {
     document.title = `${service.title} | KP12 Performance`;
+
+    // Set back link dynamically based on which category this service belongs to
+    const backLink = document.getElementById('booking-back-link');
+    if (backLink) {
+        if (service.category === 'Athletics') {
+            backLink.href = 'ath.html';
+            backLink.textContent = '← Back to Athletics';
+        } else if (service.category === 'Nutrition') {
+            backLink.href = 'nut.html';
+            backLink.textContent = '← Back to Nutrition';
+        } else {
+            backLink.href = 'tra.html';
+            backLink.textContent = '← Back to Training';
+        }
+    }
     document.getElementById('booking-main').style.display = 'block';
 
     document.getElementById('booking-tag').textContent   = `[ ${service.tag} ]`;
@@ -367,6 +406,11 @@ function showScheduleStep() {
                 s.subcategory === service.subcategory &&
                 validDays.includes(s.day_of_week)
             );
+
+            // Also update the no-slots message to use the correct page link
+            const pageLink = serviceCategory === 'Athletics' ? 'ath.html'
+                           : serviceCategory === 'Nutrition' ? 'nut.html'
+                           : 'tra.html';
 
             if (relevant.length === 0) {
                 wrap.innerHTML = `
