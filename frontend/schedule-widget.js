@@ -8,7 +8,7 @@
     const CATEGORY_COLORS = {
         'Athletics': 'var(--athletics)',
         'Training':  'var(--training)',
-        'Nutrition': 'var(--nutrition, #FFC247)'
+        'Nutrition': 'var(--nutrition, #2ECC71)'
     };
 
     function formatTime(t) { return t || ""; }

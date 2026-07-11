@@ -502,14 +502,14 @@ app.post('/api/bookings', async (req, res) => {
           html: `
             <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:48px 40px;border:1px solid #232529;">
               <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;">
-              <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#B8FF3F;margin-bottom:16px;">[ BOOKING CONFIRMED ]</p>
+              <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#3D9EFF;margin-bottom:16px;">[ BOOKING CONFIRMED ]</p>
               <h1 style="font-size:30px;font-weight:900;text-transform:uppercase;margin:0 0 8px;line-height:1.1;">You're Booked,<br>${userName}!</h1>
               <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin-bottom:32px;">
                 Your session${slots.length > 1 ? 's are' : ' is'} confirmed. Here's what to expect this week — show up ready to work.
               </p>
 
-              <div style="background:#15171A;border:1px solid #232529;border-top:3px solid #B8FF3F;padding:24px;margin-bottom:28px;">
-                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#B8FF3F;margin:0 0 16px;">[ YOUR SESSIONS ]</p>
+              <div style="background:#15171A;border:1px solid #232529;border-top:3px solid #3D9EFF;padding:24px;margin-bottom:28px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#3D9EFF;margin:0 0 16px;">[ YOUR SESSIONS ]</p>
                 <p style="font-size:16px;font-weight:700;text-transform:uppercase;margin:0 0 16px;">${serviceTitle}</p>
                 ${packageLabel ? `<p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;margin:0 0 20px;">${packageLabel}</p>` : ''}
                 <table style="width:100%;border-collapse:collapse;border:1px solid #232529;">
@@ -525,12 +525,12 @@ app.post('/api/bookings', async (req, res) => {
 
               <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin-bottom:24px;">
                 You can view and manage your schedule anytime by visiting your account at
-                <a href="https://kp12performance.com/my-schedule.html" style="color:#B8FF3F;">kp12performance.com/my-schedule.html</a>.
+                <a href="https://kp12performance.com/my-schedule.html" style="color:#3D9EFF;">kp12performance.com/my-schedule.html</a>.
               </p>
 
               <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">
                 Questions? Reach us at
-                <a href="mailto:support@kp12performance.com" style="color:#B8FF3F;">support@kp12performance.com</a><br>
+                <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a><br>
                 © 2025 KP12 Performance. Let's get to work.
               </p>
             </div>`
@@ -559,7 +559,7 @@ app.post('/api/bookings', async (req, res) => {
         const slotLines = slots
           .slice()
           .sort((a, b) => ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(a.day) - ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(b.day))
-          .map(s => `<tr><td style="padding:10px 16px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:13px;color:#B8FF3F;">${s.day}</td><td style="padding:10px 16px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:13px;color:#F5F4F0;">${s.start} – ${s.end}</td></tr>`)
+          .map(s => `<tr><td style="padding:10px 16px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:13px;color:#3D9EFF;">${s.day}</td><td style="padding:10px 16px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:13px;color:#F5F4F0;">${s.start} – ${s.end}</td></tr>`)
           .join('');
 
         await resend.emails.send({
@@ -576,7 +576,7 @@ app.post('/api/bookings', async (req, res) => {
                 <h1 style="font-size:28px;font-weight:800;text-transform:uppercase;margin:0 0 8px;line-height:1.1;">You're Booked,<br>${userInfo.username}.</h1>
                 <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin:16px 0 32px;">Your sessions are locked in and we're ready to work. Here's a summary of what you've registered for this week.</p>
 
-                <div style="background:#15171A;border:1px solid #232529;border-top:3px solid #B8FF3F;padding:24px;margin-bottom:28px;">
+                <div style="background:#15171A;border:1px solid #232529;border-top:3px solid #3D9EFF;padding:24px;margin-bottom:28px;">
                   <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 6px;">SERVICE</p>
                   <p style="font-size:17px;font-weight:700;margin:0 0 16px;">${serviceTitle}</p>
                   ${packageLabel ? `<p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 6px;">PACKAGE</p><p style="font-size:15px;margin:0;">${packageLabel}</p>` : ''}
@@ -593,7 +593,7 @@ app.post('/api/bookings', async (req, res) => {
                   <tbody>${slotLines}</tbody>
                 </table>
 
-                <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:28px 0 0;">If you need to make any changes or have questions before your session, reply to this email or reach out at <a href="mailto:support@kp12performance.com" style="color:#B8FF3F;">support@kp12performance.com</a>.</p>
+                <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:28px 0 0;">If you need to make any changes or have questions before your session, reply to this email or reach out at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>.</p>
               </div>
               <div style="padding:20px 40px;border-top:1px solid #232529;text-align:center;">
                 <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
@@ -711,7 +711,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       await resend.emails.send({
         from: 'support@kp12performance.com', to: email,
         subject: 'Reset your KP12 Performance password',
-        html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:48px 40px;border:1px solid #232529;"><h1 style="font-size:24px;margin-bottom:20px;">Hey ${user.username},</h1><p style="color:#8C8F96;margin-bottom:32px;">Reset your password — link expires in 1 hour.</p><a href="${link}" style="background:#B8FF3F;color:#000;padding:14px 28px;text-decoration:none;font-weight:bold;display:inline-block;">Reset Password</a><p style="color:#8C8F96;font-size:12px;margin-top:32px;word-break:break-all;">${link}</p></div>`
+        html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:48px 40px;border:1px solid #232529;"><h1 style="font-size:24px;margin-bottom:20px;">Hey ${user.username},</h1><p style="color:#8C8F96;margin-bottom:32px;">Reset your password — link expires in 1 hour.</p><a href="${link}" style="background:#3D9EFF;color:#000;padding:14px 28px;text-decoration:none;font-weight:bold;display:inline-block;">Reset Password</a><p style="color:#8C8F96;font-size:12px;margin-top:32px;word-break:break-all;">${link}</p></div>`
       });
     }
     res.json({ message: "If that email is registered, a reset link is on its way." });
@@ -770,7 +770,7 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
         html: `
           <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:48px 40px;border:1px solid #232529;">
             <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;">
-            <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#B8FF3F;margin-bottom:16px;">[ SESSION COMPLETE ]</p>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#3D9EFF;margin-bottom:16px;">[ SESSION COMPLETE ]</p>
             <h1 style="font-size:30px;font-weight:900;text-transform:uppercase;margin:0 0 8px;line-height:1.1;">You Put In<br>The Work, ${booking.username}.</h1>
             <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin:20px 0 28px;">
               We want to take a moment to recognize your commitment. Completing your
@@ -779,15 +779,15 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
               takes consistency and dedication — and you showed up every time.
             </p>
 
-            <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #B8FF3F;padding:24px;margin-bottom:28px;">
+            <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #3D9EFF;padding:24px;margin-bottom:28px;">
               <p style="font-size:16px;font-weight:700;color:#F5F4F0;margin:0 0 10px;">What's next?</p>
               <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0;">
                 Progress doesn't stop here. Whether you're looking to level up your current program,
                 try something new, or bring in a teammate — we're ready when you are.
                 <br><br>
-                <a href="https://kp12performance.com/tra.html" style="color:#B8FF3F;text-decoration:none;font-weight:600;">Browse Training Programs →</a>
+                <a href="https://kp12performance.com/tra.html" style="color:#3D9EFF;text-decoration:none;font-weight:600;">Browse Training Programs →</a>
                 &nbsp;&nbsp;|&nbsp;&nbsp;
-                <a href="https://kp12performance.com/ath.html" style="color:#B8FF3F;text-decoration:none;font-weight:600;">Explore Athletics →</a>
+                <a href="https://kp12performance.com/ath.html" style="color:#3D9EFF;text-decoration:none;font-weight:600;">Explore Athletics →</a>
               </p>
             </div>
 
@@ -806,7 +806,7 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
             <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">
               Thank you for training with KP12 Performance. We'll see you on the other side of the next goal.<br><br>
               — The KP12 Team<br>
-              <a href="mailto:support@kp12performance.com" style="color:#B8FF3F;">support@kp12performance.com</a>
+              <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>
             </p>
           </div>`
       });
@@ -907,7 +907,7 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
                 <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:36px;display:block;">
               </div>
               <div style="padding:40px 40px 32px;">
-                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#B8FF3F;margin:0 0 16px;">[ SESSION COMPLETE ]</p>
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0 0 16px;">[ SESSION COMPLETE ]</p>
                 <h1 style="font-size:26px;font-weight:800;text-transform:uppercase;margin:0 0 20px;line-height:1.15;">Thank You for<br>Training with Us,<br>${user.username}.</h1>
 
                 <p style="color:#F5F4F0;font-size:15px;line-height:1.7;margin:0 0 16px;">
@@ -917,10 +917,10 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
                   We hope your experience with <strong style="color:#F5F4F0;">${booking.service_title}</strong> pushed you closer to your goals. Our coaches are committed to helping you reach the next level, and we'd love to keep that momentum going with you.
                 </p>
 
-                <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #B8FF3F;padding:24px;margin-bottom:28px;">
+                <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #3D9EFF;padding:24px;margin-bottom:28px;">
                   <p style="font-size:16px;font-weight:600;margin:0 0 8px;">How did we do?</p>
                   <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 16px;">Your feedback means everything to us. A quick review helps us improve and lets other athletes know what to expect.</p>
-                  <a href="https://kp12performance.com/review.html" style="display:inline-block;background:#B8FF3F;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:13px 24px;font-weight:600;">Leave a Review →</a>
+                  <a href="https://kp12performance.com/review.html" style="display:inline-block;background:#3D9EFF;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:13px 24px;font-weight:600;">Leave a Review →</a>
                 </div>
 
                 <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #232529;padding:24px;margin-bottom:28px;">
@@ -931,7 +931,7 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
 
                 <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:0;">
                   Questions or want to talk about what's next for your training? We're always here —
-                  <a href="mailto:support@kp12performance.com" style="color:#B8FF3F;">support@kp12performance.com</a>
+                  <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>
                 </p>
               </div>
               <div style="padding:20px 40px;border-top:1px solid #232529;text-align:center;">
