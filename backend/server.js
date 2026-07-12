@@ -255,6 +255,89 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     }
     setLoginCookie(res, userId);
+
+    // --- Welcome email to new user ---
+    try {
+      await resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: email,
+        subject: `Welcome to KP12 Performance, ${username}!`,
+        html: `
+          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
+            <div style="background:#15171A;padding:32px 40px;border-bottom:3px solid #3D9EFF;">
+              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:36px;display:block;">
+            </div>
+            <div style="padding:40px 40px 32px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0 0 16px;">[ WELCOME TO KP12 ]</p>
+              <h1 style="font-size:26px;font-weight:800;text-transform:uppercase;margin:0 0 20px;line-height:1.15;">You're in, ${username}.</h1>
+              <p style="color:#F5F4F0;font-size:15px;line-height:1.7;margin:0 0 24px;">Your account is all set. We're glad to have you — now let's get to work.</p>
+
+              <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #FF5630;padding:22px 24px;margin-bottom:24px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#FF5630;margin:0 0 8px;">[ TRAINING EXCLUSIVE ]</p>
+                <p style="font-size:16px;font-weight:700;margin:0 0 8px;">Free Initial Assessment</p>
+                <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 16px;">
+                  As a new member, you're eligible for a <strong style="color:#F5F4F0;">free initial assessment</strong> with our training team.
+                  We'll evaluate your current fitness level and map out exactly what your program should look like.
+                  This is a <strong style="color:#F5F4F0;">Training-exclusive</strong> benefit — don't miss it.
+                </p>
+                <a href="https://kp12performance.com/tra.html" style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 22px;font-weight:600;">Explore Training →</a>
+              </div>
+
+              <p style="color:#8C8F96;font-size:14px;line-height:1.65;margin:0 0 24px;">Browse all our programs — Athletics, Training, and Nutrition — and book your first session whenever you're ready.</p>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <a href="https://kp12performance.com/ath.html" style="display:inline-block;background:transparent;color:#3D9EFF;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:10px 18px;border:1px solid rgba(61,158,255,0.4);">Athletics</a>
+                <a href="https://kp12performance.com/nut.html" style="display:inline-block;background:transparent;color:#2ECC71;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:10px 18px;border:1px solid rgba(46,204,113,0.4);">Nutrition</a>
+              </div>
+              <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:28px 0 0;">Questions? Reach us at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a></p>
+            </div>
+            <div style="padding:20px 40px;border-top:1px solid #232529;text-align:center;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
+            </div>
+          </div>
+        `
+      });
+    } catch (e) { console.error('Welcome email error:', e); }
+
+    // --- Notify admin team of new signup ---
+    try {
+      await resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: ['performancekp12@gmail.com', 'geraldcgarcia7@gmail.com'],
+        subject: `[NEW SIGNUP] ${username} just created an account`,
+        html: `
+          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:520px;margin:0 auto;padding:0;border:1px solid #232529;">
+            <div style="background:#15171A;padding:24px 32px;border-bottom:3px solid #3D9EFF;">
+              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:28px;display:block;margin-bottom:12px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0;">[ NEW MEMBER ]</p>
+            </div>
+            <div style="padding:28px 32px;">
+              <h2 style="font-size:20px;font-weight:700;text-transform:uppercase;margin:0 0 20px;">${username} just signed up.</h2>
+              <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #3D9EFF;padding:18px 20px;margin-bottom:20px;">
+                <table style="width:100%;border-collapse:collapse;">
+                  <tr><td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;width:80px;">EMAIL</td>
+                      <td style="padding:5px 0;font-size:13px;"><a href="mailto:${email}" style="color:#3D9EFF;">${email}</a></td></tr>
+                  ${phone ? `<tr><td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">PHONE</td>
+                      <td style="padding:5px 0;font-size:13px;">${phone}</td></tr>` : ''}
+                  ${age ? `<tr><td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">AGE</td>
+                      <td style="padding:5px 0;font-size:13px;">${age}</td></tr>` : ''}
+                  <tr><td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">ROLE</td>
+                      <td style="padding:5px 0;font-size:13px;">${role === 'parent_guardian' ? 'Parent / Guardian' : 'Athlete'}</td></tr>
+                  ${referralSource ? `<tr><td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">HEARD VIA</td>
+                      <td style="padding:5px 0;font-size:13px;">${referralSource}${referralDetail ? ' — ' + referralDetail : ''}</td></tr>` : ''}
+                </table>
+              </div>
+              <div style="text-align:center;">
+                <a href="https://kp12performance.com/employee.html" style="display:inline-block;background:#3D9EFF;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 24px;font-weight:600;">View Member Directory →</a>
+              </div>
+            </div>
+            <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">KP12 Performance · Internal Notification</p>
+            </div>
+          </div>
+        `
+      });
+    } catch (e) { console.error('Signup notification error:', e); }
+
     res.status(201).json({ message: "Registered!" });
   } catch (err) { console.error(err); res.status(500).json({ error: "Registration error." }); }
 });
@@ -973,6 +1056,59 @@ pool.query(`
   );
 `).then(() => console.log("Elite players table ready!"))
   .catch(err => console.error("Elite players table error:", err));
+
+// POST /api/admin/send-email — mass or single email from the employee dashboard
+app.post('/api/admin/send-email', requireAdmin, async (req, res) => {
+  const { subject, message, recipientType, singleEmail } = req.body;
+  if (!subject || !message) return res.status(400).json({ error: "Subject and message are required." });
+
+  try {
+    let recipients = [];
+
+    if (recipientType === 'single') {
+      if (!singleEmail || !singleEmail.includes('@'))
+        return res.status(400).json({ error: "Please provide a valid email address." });
+      recipients = [singleEmail.trim()];
+    } else {
+      // All members
+      const result = await pool.query("SELECT email FROM users WHERE email IS NOT NULL");
+      recipients = result.rows.map(r => r.email).filter(Boolean);
+    }
+
+    if (!recipients.length) return res.status(400).json({ error: "No recipients found." });
+
+    // Resend supports up to 50 recipients per call — chunk if needed
+    const CHUNK = 50;
+    let sent = 0;
+    for (let i = 0; i < recipients.length; i += CHUNK) {
+      const chunk = recipients.slice(i, i + CHUNK);
+      await resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: chunk,
+        subject,
+        html: `
+          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
+            <div style="background:#15171A;padding:28px 36px;border-bottom:3px solid #FF5630;">
+              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:32px;display:block;">
+            </div>
+            <div style="padding:36px 36px 28px;">
+              <div style="font-size:15px;line-height:1.75;color:#F5F4F0;white-space:pre-wrap;">${message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+            </div>
+            <div style="padding:20px 36px;border-top:1px solid #232529;text-align:center;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">KP12 Performance · kp12performance.com</p>
+            </div>
+          </div>
+        `
+      });
+      sent += chunk.length;
+    }
+
+    res.json({ message: `Email sent to ${sent} recipient${sent !== 1 ? 's' : ''}.` });
+  } catch (err) {
+    console.error('Mass email error:', err);
+    res.status(500).json({ error: "Failed to send email. Check server logs." });
+  }
+});
 
 // ---- Auto-decrement sessions for today's day ----
 // Runs once at server startup. Since Render keeps the server running,

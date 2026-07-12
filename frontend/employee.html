@@ -160,6 +160,42 @@
 
     <div class="emp-divider"></div>
 
+    <!-- ===== SEND EMAIL ===== -->
+    <div class="emp-header" style="margin-top:0;">
+        <p class="eyebrow">[ COMMUNICATIONS ]</p>
+        <h2 class="emp-title" style="font-size:clamp(28px,4vw,40px);">Send an Email</h2>
+        <p class="emp-sub">Send a message to all members or a single person directly from here.</p>
+    </div>
+
+    <div class="email-blast-form">
+        <div class="email-blast-row">
+            <div class="field">
+                <label>Recipients</label>
+                <select id="email-recipient-type" class="email-select">
+                    <option value="all">Everyone (all members)</option>
+                    <option value="single">A specific person</option>
+                </select>
+            </div>
+            <div class="field" id="email-single-wrap" style="display:none;">
+                <label>Email Address</label>
+                <input type="email" id="email-single-input" placeholder="athlete@email.com">
+            </div>
+        </div>
+        <div class="field">
+            <label>Subject</label>
+            <input type="text" id="email-subject" placeholder="e.g. New sessions available this week!">
+        </div>
+        <div class="field">
+            <label>Message</label>
+            <textarea id="email-message" rows="7" placeholder="Write your message here. Keep it clear and friendly — it'll go out on KP12 branding."></textarea>
+        </div>
+        <p class="sched-error" id="email-blast-error" style="display:none;"></p>
+        <p class="auth-success" id="email-blast-success" style="display:none;"></p>
+        <button type="button" id="email-blast-btn" class="sched-save-btn" style="width:auto;">Send Email</button>
+    </div>
+
+    <div class="emp-divider"></div>
+
     <!-- ===== MEMBER DIRECTORY ===== -->
     <div class="emp-header" style="margin-top:0;">
         <p class="eyebrow">[ MEMBERS ]</p>
@@ -605,6 +641,49 @@ async function updateSessions(bookingId) {
         alert("Couldn't reach the server.");
     }
 }
+
+// ---- Send Email (mass or single) ----
+document.getElementById('email-recipient-type')?.addEventListener('change', function() {
+    document.getElementById('email-single-wrap').style.display =
+        this.value === 'single' ? 'block' : 'none';
+});
+
+document.getElementById('email-blast-btn')?.addEventListener('click', async () => {
+    const errorEl   = document.getElementById('email-blast-error');
+    const successEl = document.getElementById('email-blast-success');
+    errorEl.style.display   = 'none';
+    successEl.style.display = 'none';
+
+    const recipientType = document.getElementById('email-recipient-type').value;
+    const singleEmail   = document.getElementById('email-single-input')?.value.trim();
+    const subject       = document.getElementById('email-subject').value.trim();
+    const message       = document.getElementById('email-message').value.trim();
+
+    if (!subject) { errorEl.textContent = 'Please add a subject.'; errorEl.style.display = 'block'; return; }
+    if (!message) { errorEl.textContent = 'Please write a message.'; errorEl.style.display = 'block'; return; }
+    if (recipientType === 'single' && !singleEmail) {
+        errorEl.textContent = 'Please enter an email address.'; errorEl.style.display = 'block'; return;
+    }
+
+    const btn = document.getElementById('email-blast-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+        const res = await fetch('/api/admin/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subject, message, recipientType, singleEmail })
+        });
+        const data = await res.json();
+        if (!res.ok) { errorEl.textContent = data.error || 'Error sending.'; errorEl.style.display = 'block'; }
+        else { successEl.textContent = `✓ ${data.message}`; successEl.style.display = 'block'; }
+    } catch (e) {
+        errorEl.textContent = "Couldn't reach server."; errorEl.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Send Email';
+});
 
 // ---- Elite Players Admin ----
 async function loadElitePlayers() {
