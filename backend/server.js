@@ -746,60 +746,92 @@ app.post('/api/bookings', async (req, res) => {
       }
     }
 
-    // Send booking confirmation email
+    // Send booking confirmation email — lists each athlete individually for parent accounts
     try {
-      const userResult = await pool.query("SELECT username, email FROM users WHERE id = $1", [userId]);
+      const userResult = await pool.query("SELECT username, email, role FROM users WHERE id = $1", [userId]);
       const userInfo = userResult.rows[0];
       if (userInfo && userInfo.email) {
-        const slotLines = slots
-          .slice()
-          .sort((a, b) => ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(a.day) - ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(b.day))
-          .map(s => `<tr><td style="padding:10px 16px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:13px;color:#3D9EFF;">${s.day}</td><td style="padding:10px 16px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:13px;color:#F5F4F0;">${s.start} – ${s.end}</td></tr>`)
-          .join('');
+        const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const sortedSlots = (slots||[]).slice().sort((a,b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day));
+        const isParent = userInfo.role === 'parent_guardian' && Array.isArray(selectedAthletes) && selectedAthletes.length > 0;
+
+        const slotTableRows = sortedSlots.map(s => `
+          <tr>
+            <td style="padding:9px 14px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:12px;color:#3D9EFF;">${s.day}</td>
+            <td style="padding:9px 14px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:12px;color:#F5F4F0;">${s.start} – ${s.end}</td>
+          </tr>`).join('');
+
+        const slotTable = `<table style="width:100%;border-collapse:collapse;background:#1d1f23;border:1px solid #232529;">
+          <thead><tr>
+            <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#8C8F96;">DAY</th>
+            <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#8C8F96;">TIME</th>
+          </tr></thead>
+          <tbody>${slotTableRows}</tbody>
+        </table>`;
+
+        let bodyHtml = '';
+
+        if (isParent) {
+          const athleteCards = selectedAthletes.map((a, i) => `
+            <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #3D9EFF;padding:20px 22px;margin-bottom:14px;border-radius:1px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#3D9EFF;margin:0 0 5px;">
+                ATHLETE ${i + 1} of ${selectedAthletes.length}
+              </p>
+              <p style="font-size:18px;font-weight:700;margin:0 0 3px;">
+                ${a.name || 'Your Athlete'}${a.age ? ` <span style="font-size:13px;color:#8C8F96;font-weight:400;">age ${a.age}</span>` : ''}
+              </p>
+              <p style="font-size:13px;color:#8C8F96;margin:0 0 14px;">${serviceTitle}${packageLabel ? ' · ' + packageLabel : ''}</p>
+              ${slotTable}
+            </div>
+          `).join('');
+
+          bodyHtml = `
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0 0 14px;">[ BOOKING CONFIRMED ]</p>
+            <h1 style="font-size:24px;font-weight:800;text-transform:uppercase;margin:0 0 6px;line-height:1.15;">You're all set, ${userInfo.username}! 🎉</h1>
+            <p style="color:#8C8F96;font-size:15px;line-height:1.7;margin:14px 0 26px;">
+              Great news — all ${selectedAthletes.length} of your athletes are officially registered and ready to train at KP12 Performance. Here's the breakdown:
+            </p>
+            ${athleteCards}
+            <p style="color:#8C8F96;font-size:14px;line-height:1.65;margin:18px 0 0;">
+              Got questions before the session? We're always happy to help —
+              <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>. 
+              We can't wait to train with your athletes!
+            </p>`;
+        } else {
+          bodyHtml = `
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0 0 14px;">[ BOOKING CONFIRMED ]</p>
+            <h1 style="font-size:26px;font-weight:800;text-transform:uppercase;margin:0 0 6px;line-height:1.1;">You're Booked, ${userInfo.username}! 💪</h1>
+            <p style="color:#8C8F96;font-size:15px;line-height:1.7;margin:14px 0 26px;">Your sessions are locked in and we're ready to work. Here's what you're signed up for this week:</p>
+            <div style="background:#15171A;border:1px solid #2A2D31;border-top:3px solid #3D9EFF;padding:20px 22px;margin-bottom:18px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 5px;">SERVICE</p>
+              <p style="font-size:17px;font-weight:700;margin:0 0 ${packageLabel ? '14' : '0'}px;">${serviceTitle}</p>
+              ${packageLabel ? `<p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 5px;">PACKAGE</p><p style="font-size:15px;margin:0;">${packageLabel}</p>` : ''}
+            </div>
+            ${slotTable}
+            <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:20px 0 0;">
+              Questions? Reach us at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>
+            </p>`;
+        }
 
         await resend.emails.send({
           from: 'support@kp12performance.com',
           to: userInfo.email,
-          subject: `You're booked — ${serviceTitle} | KP12 Performance`,
-          html: `
-            <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
-              <div style="background:#15171A;padding:32px 40px;border-bottom:1px solid #232529;">
-                <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:36px;display:block;">
-              </div>
-              <div style="padding:40px 40px 32px;">
-                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#8C8F96;margin:0 0 16px;">[ BOOKING CONFIRMED ]</p>
-                <h1 style="font-size:28px;font-weight:800;text-transform:uppercase;margin:0 0 8px;line-height:1.1;">You're Booked,<br>${userInfo.username}.</h1>
-                <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin:16px 0 32px;">Your sessions are locked in and we're ready to work. Here's a summary of what you've registered for this week.</p>
-
-                <div style="background:#15171A;border:1px solid #232529;border-top:3px solid #3D9EFF;padding:24px;margin-bottom:28px;">
-                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 6px;">SERVICE</p>
-                  <p style="font-size:17px;font-weight:700;margin:0 0 16px;">${serviceTitle}</p>
-                  ${packageLabel ? `<p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 6px;">PACKAGE</p><p style="font-size:15px;margin:0;">${packageLabel}</p>` : ''}
-                </div>
-
-                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 12px;">YOUR SESSIONS THIS WEEK</p>
-                <table style="width:100%;border-collapse:collapse;background:#15171A;border:1px solid #232529;">
-                  <thead>
-                    <tr style="background:#1d1f23;">
-                      <th style="padding:10px 16px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;">DAY</th>
-                      <th style="padding:10px 16px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;">TIME</th>
-                    </tr>
-                  </thead>
-                  <tbody>${slotLines}</tbody>
-                </table>
-
-                <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:28px 0 0;">If you need to make any changes or have questions before your session, reply to this email or reach out at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>.</p>
-              </div>
-              <div style="padding:20px 40px;border-top:1px solid #232529;text-align:center;">
-                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
-              </div>
+          subject: isParent
+            ? `${selectedAthletes.length} athletes booked — ${serviceTitle} | KP12 Performance`
+            : `You're booked — ${serviceTitle} | KP12 Performance`,
+          html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:580px;margin:0 auto;border:1px solid #232529;">
+            <div style="background:#15171A;padding:26px 32px;border-bottom:1px solid #232529;">
+              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:32px;display:block;">
             </div>
-          `
+            <div style="padding:32px 32px 26px;">${bodyHtml}</div>
+            <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
+            </div>
+          </div>`
         });
       }
     } catch (emailErr) {
       console.error('Booking confirmation email error:', emailErr);
-      // Don't fail the booking if email fails — log and continue
     }
 
     // ---- Employee notification email ----
@@ -1286,58 +1318,87 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
     }
     const booking = bookingResult.rows[0];
 
-    // Fetch the user's email + username for the thank-you email
+    // Fetch user, their role, and their booking athletes for a personalized thank-you
     const userResult = await pool.query(
-      "SELECT username, email FROM users WHERE id = $1",
+      "SELECT username, email, role FROM users WHERE id = $1",
       [booking.user_id]
     );
     const user = userResult.rows[0];
 
-    // Send the professional thank-you email
+    const athleteResult = await pool.query(
+      "SELECT athlete_name, athlete_age FROM booking_athletes WHERE booking_id = $1",
+      [id]
+    );
+    const athletes = athleteResult.rows;
+    const isParent = user && user.role === 'parent_guardian' && athletes.length > 0;
+
     if (user && user.email) {
       try {
+        let thankYouBody = '';
+
+        if (isParent) {
+          const kidShoutouts = athletes.map((a, i) => `
+            <div style="padding:12px 0;border-bottom:1px solid #232529;display:flex;align-items:center;gap:14px;">
+              <div style="width:34px;height:34px;border-radius:50%;background:rgba(46,204,113,0.15);border:1.5px solid #2ECC71;display:flex;align-items:center;justify-content:center;font-family:Anton,sans-serif;font-size:13px;color:#2ECC71;flex-shrink:0;">${i+1}</div>
+              <div>
+                <p style="font-weight:700;font-size:15px;margin:0;">${a.athlete_name || 'Your Athlete'}${a.athlete_age ? ` <span style="font-size:13px;color:#8C8F96;font-weight:400;">age ${a.athlete_age}</span>` : ''}</p>
+                <p style="color:#8C8F96;font-size:13px;margin:0;">Completed ${booking.service_title}</p>
+              </div>
+            </div>
+          `).join('');
+
+          thankYouBody = `
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#2ECC71;margin:0 0 14px;">[ SESSION COMPLETE ]</p>
+            <h1 style="font-size:24px;font-weight:800;text-transform:uppercase;margin:0 0 6px;line-height:1.15;">Your athletes crushed it, ${user.username}! 🏆</h1>
+            <p style="color:#F5F4F0;font-size:15px;line-height:1.7;margin:14px 0 16px;">
+              You showed up for your athletes every single session — and that commitment makes all the difference. Here's who put in the work this week:
+            </p>
+            <div style="background:#15171A;border:1px solid #2A2D31;padding:4px 18px 4px;margin-bottom:22px;">
+              ${kidShoutouts}
+            </div>
+            <p style="color:#8C8F96;font-size:14px;line-height:1.65;margin:0 0 22px;">
+              We're proud of each one of them. We hope this experience with <strong style="color:#F5F4F0;">${booking.service_title}</strong> pushed them closer to their goals — and we'd love to hear how they felt about it.
+            </p>`;
+        } else {
+          thankYouBody = `
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#2ECC71;margin:0 0 14px;">[ SESSION COMPLETE ]</p>
+            <h1 style="font-size:24px;font-weight:800;text-transform:uppercase;margin:0 0 6px;line-height:1.15;">You Put in the Work,<br>${user.username}! 🔥</h1>
+            <p style="color:#F5F4F0;font-size:15px;line-height:1.7;margin:14px 0 16px;">
+              It was an honor training with you this week. Every rep and every session you completed is an investment in the athlete you're becoming — and that dedication doesn't go unnoticed.
+            </p>
+            <p style="color:#8C8F96;font-size:15px;line-height:1.7;margin:0 0 22px;">
+              We hope your experience with <strong style="color:#F5F4F0;">${booking.service_title}</strong> pushed you closer to your goals. Our coaches are already looking forward to your next block.
+            </p>`;
+        }
+
         await resend.emails.send({
           from: 'support@kp12performance.com',
           to: user.email,
-          subject: `Thank You for Training with KP12 Performance — We'd Love Your Feedback`,
-          html: `
-            <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
-              <div style="background:#15171A;padding:32px 40px;border-bottom:1px solid #232529;">
-                <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:36px;display:block;">
-              </div>
-              <div style="padding:40px 40px 32px;">
-                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0 0 16px;">[ SESSION COMPLETE ]</p>
-                <h1 style="font-size:26px;font-weight:800;text-transform:uppercase;margin:0 0 20px;line-height:1.15;">Thank You for<br>Training with Us,<br>${user.username}.</h1>
-
-                <p style="color:#F5F4F0;font-size:15px;line-height:1.7;margin:0 0 16px;">
-                  It was an honor working alongside you this week. Every rep, every session, and every moment of effort you put in is an investment in the athlete you're becoming — and that dedication doesn't go unnoticed.
-                </p>
-                <p style="color:#8C8F96;font-size:15px;line-height:1.7;margin:0 0 28px;">
-                  We hope your experience with <strong style="color:#F5F4F0;">${booking.service_title}</strong> pushed you closer to your goals. Our coaches are committed to helping you reach the next level, and we'd love to keep that momentum going with you.
-                </p>
-
-                <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #3D9EFF;padding:24px;margin-bottom:28px;">
-                  <p style="font-size:16px;font-weight:600;margin:0 0 8px;">How did we do?</p>
-                  <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 16px;">Your feedback means everything to us. A quick review helps us improve and lets other athletes know what to expect.</p>
-                  <a href="https://kp12performance.com/review.html" style="display:inline-block;background:#3D9EFF;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:13px 24px;font-weight:600;">Leave a Review →</a>
-                </div>
-
-                <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #232529;padding:24px;margin-bottom:28px;">
-                  <p style="font-size:15px;font-weight:600;margin:0 0 8px;">Ready for Your Next Block?</p>
-                  <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 16px;">Don't lose the momentum you've built. Book your next sessions now and keep making progress toward your goals.</p>
-                  <a href="https://kp12performance.com/tra.html" style="display:inline-block;background:transparent;color:#F5F4F0;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:13px 24px;border:1px solid #3a3d42;">Book Again →</a>
-                </div>
-
-                <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:0;">
-                  Questions or want to talk about what's next for your training? We're always here —
-                  <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>
-                </p>
-              </div>
-              <div style="padding:20px 40px;border-top:1px solid #232529;text-align:center;">
-                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
-              </div>
+          subject: isParent
+            ? `Your athletes crushed it this week — Thank You | KP12 Performance`
+            : `Thank You for Training with KP12 Performance — We'd Love Your Feedback`,
+          html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:580px;margin:0 auto;border:1px solid #232529;">
+            <div style="background:#15171A;padding:26px 32px;border-bottom:1px solid #232529;">
+              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:32px;display:block;">
             </div>
-          `
+            <div style="padding:32px 32px 26px;">
+              ${thankYouBody}
+              <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #2ECC71;padding:20px 22px;margin-bottom:16px;">
+                <p style="font-size:15px;font-weight:600;margin:0 0 8px;">How did we do?</p>
+                <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 14px;">A quick review helps us improve and lets other athletes know what to expect.</p>
+                <a href="https://kp12performance.com/review.html" style="display:inline-block;background:#2ECC71;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 22px;font-weight:600;">Leave a Review →</a>
+              </div>
+              <div style="border:1px solid #232529;padding:20px 22px;">
+                <p style="font-size:15px;font-weight:600;margin:0 0 8px;">Ready for the Next Block?</p>
+                <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 14px;">Keep the momentum going. Book your next sessions now.</p>
+                <a href="https://kp12performance.com/tra.html" style="display:inline-block;background:transparent;color:#F5F4F0;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 22px;border:1px solid #3a3d42;">Book Again →</a>
+              </div>
+              <p style="color:#8C8F96;font-size:13px;margin:18px 0 0;">Questions? <a href="mailto:support@kp12performance.com" style="color:#2ECC71;">support@kp12performance.com</a></p>
+            </div>
+            <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
+            </div>
+          </div>`
         });
       } catch (emailErr) {
         console.error('Thank-you email error:', emailErr);
