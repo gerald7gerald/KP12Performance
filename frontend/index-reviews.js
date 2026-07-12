@@ -20,6 +20,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        // Ensure the window clips properly on mobile
+        const win = container.parentElement;
+        if (win) {
+            win.style.overflow = 'hidden';
+            win.style.width    = '100%';
+            win.style.maxWidth = '100%';
+        }
+        // Ensure container is a proper flex row
+        container.style.cssText = 'display:flex;flex-direction:row;transition:transform 0.55s cubic-bezier(0.4,0,0.2,1);width:100%;';
+
         container.innerHTML = reviews.map(r => {
             const stars      = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
             const safeComment= escapeHtml(r.comment);
