@@ -445,9 +445,20 @@ app.get('/api/schedule', async (req, res) => {
     const enriched = await Promise.all(slots.map(async (slot) => {
       if (!slot.max_spots) return { ...slot, spots_taken: null, spots_available: null };
       const countRes = await pool.query(
-        `SELECT COUNT(DISTINCT bs.booking_id) AS taken
+        `SELECT COALESCE(SUM(
+           CASE
+             WHEN u.role = 'parent_guardian' AND COALESCE(ba.cnt, 0) > 0 THEN ba.cnt
+             ELSE 1
+           END
+         ), 0) AS taken
          FROM booking_slots bs
          JOIN bookings b ON b.id = bs.booking_id
+         JOIN users u ON u.id = b.user_id
+         LEFT JOIN (
+           SELECT booking_id, COUNT(*) AS cnt
+           FROM booking_athletes
+           GROUP BY booking_id
+         ) ba ON ba.booking_id = b.id
          WHERE b.week_of = $1
            AND b.status = 'confirmed'
            AND bs.day_of_week = $2
@@ -523,12 +534,22 @@ app.get('/api/capacity', async (req, res) => {
     // Get all capacities
     const capResult = await pool.query("SELECT service_key, max_spots FROM service_capacity");
 
-    // Count confirmed bookings per service this week
+    // Count confirmed spots per service this week — counting athletes for parent bookings
     const bookingsResult = await pool.query(
-      `SELECT service_key, COUNT(*) AS taken
-       FROM bookings
-       WHERE week_of = $1 AND status = 'confirmed'
-       GROUP BY service_key`,
+      `SELECT b.service_key,
+              COALESCE(SUM(
+                CASE
+                  WHEN u.role = 'parent_guardian' AND COALESCE(ba.cnt, 0) > 0 THEN ba.cnt
+                  ELSE 1
+                END
+              ), 0) AS taken
+       FROM bookings b
+       JOIN users u ON u.id = b.user_id
+       LEFT JOIN (
+         SELECT booking_id, COUNT(*) AS cnt FROM booking_athletes GROUP BY booking_id
+       ) ba ON ba.booking_id = b.id
+       WHERE b.week_of = $1 AND b.status = 'confirmed'
+       GROUP BY b.service_key`,
       [weekOf]
     );
 
@@ -568,10 +589,21 @@ app.post('/api/bookings', async (req, res) => {
     if (capResult.rows.length > 0) {
       const max = capResult.rows[0].max_spots;
       const takenResult = await pool.query(
-        "SELECT COUNT(*) AS taken FROM bookings WHERE service_key=$1 AND week_of=$2 AND status='confirmed'",
+        `SELECT COALESCE(SUM(
+           CASE
+             WHEN u.role = 'parent_guardian' AND COALESCE(ba.cnt, 0) > 0 THEN ba.cnt
+             ELSE 1
+           END
+         ), 0) AS taken
+         FROM bookings b
+         JOIN users u ON u.id = b.user_id
+         LEFT JOIN (
+           SELECT booking_id, COUNT(*) AS cnt FROM booking_athletes GROUP BY booking_id
+         ) ba ON ba.booking_id = b.id
+         WHERE b.service_key=$1 AND b.week_of=$2 AND b.status='confirmed'`,
         [serviceKey, weekOf]
       );
-      const taken = parseInt(takenResult.rows[0].taken);
+      const taken = parseInt(takenResult.rows[0].taken) || 0;
       if (taken >= max) {
         return res.status(409).json({ error: "This service is fully booked for the week. Please check back next week." });
       }
@@ -590,17 +622,33 @@ app.post('/api/bookings', async (req, res) => {
         if (slotCapRes.rows.length > 0 && slotCapRes.rows[0].max_spots) {
           const slotMax = slotCapRes.rows[0].max_spots;
           const slotTakenRes = await pool.query(
-            `SELECT COUNT(DISTINCT bs.booking_id) AS taken
+            `SELECT COALESCE(SUM(
+               CASE
+                 WHEN u.role = 'parent_guardian' AND COALESCE(ba.cnt, 0) > 0 THEN ba.cnt
+                 ELSE 1
+               END
+             ), 0) AS taken
              FROM booking_slots bs
              JOIN bookings b ON b.id = bs.booking_id
+             JOIN users u ON u.id = b.user_id
+             LEFT JOIN (
+               SELECT booking_id, COUNT(*) AS cnt
+               FROM booking_athletes
+               GROUP BY booking_id
+             ) ba ON ba.booking_id = b.id
              WHERE b.week_of=$1 AND b.status='confirmed'
                AND bs.day_of_week=$2 AND bs.start_time=$3`,
             [weekOf, slot.day, slot.start]
           );
           const slotTaken = parseInt(slotTakenRes.rows[0].taken) || 0;
-          if (slotTaken >= slotMax) {
+
+          // Also count the athletes in THIS booking being created
+          const thisBookingCount = (Array.isArray(selectedAthletes) && selectedAthletes.length > 0)
+            ? selectedAthletes.length : 1;
+          if (slotTaken + thisBookingCount > slotMax) {
+            const spotsLeft = Math.max(0, slotMax - slotTaken);
             return res.status(409).json({
-              error: `The ${slot.day} ${slot.start} slot is full. Please choose a different time.`
+              error: `The ${slot.day} ${slot.start} slot only has ${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left. You're registering ${thisBookingCount} athlete${thisBookingCount !== 1 ? 's' : ''}.`
             });
           }
         }
