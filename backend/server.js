@@ -291,7 +291,13 @@ app.post('/api/auth/signup', async (req, res) => {
                 <a href="https://kp12performance.com/ath.html" style="display:inline-block;background:transparent;color:#3D9EFF;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:10px 18px;border:1px solid rgba(61,158,255,0.4);">Athletics</a>
                 <a href="https://kp12performance.com/nut.html" style="display:inline-block;background:transparent;color:#2ECC71;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:10px 18px;border:1px solid rgba(46,204,113,0.4);">Nutrition</a>
               </div>
-              <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:28px 0 0;">Questions? Reach us at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a></p>
+              <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:28px 0 16px;">Questions? Reach us at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a></p>
+              <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #FFC247;padding:16px 20px;margin-top:16px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#FFC247;margin:0 0 6px;">[ CANCELLATION POLICY ]</p>
+                <p style="font-size:13px;color:#F5F4F0;line-height:1.6;margin:0;">
+                  Need to cancel? Please let us know at least <strong>6 hours before your session</strong>. Cancellations made less than 6 hours prior will be subject to a <strong>cancellation fee</strong>. To cancel, reply to this email or reach us at <a href="mailto:support@kp12performance.com" style="color:#FFC247;">support@kp12performance.com</a>.
+                </p>
+              </div>
             </div>
             <div style="padding:20px 40px;border-top:1px solid #232529;text-align:center;">
               <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
@@ -792,11 +798,20 @@ app.post('/api/bookings', async (req, res) => {
               Great news — all ${selectedAthletes.length} of your athletes are officially registered and ready to train at KP12 Performance. Here's the breakdown:
             </p>
             ${athleteCards}
-            <p style="color:#8C8F96;font-size:14px;line-height:1.65;margin:18px 0 0;">
+            <p style="color:#8C8F96;font-size:14px;line-height:1.65;margin:18px 0 16px;">
               Got questions before the session? We're always happy to help —
               <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>. 
               We can't wait to train with your athletes!
-            </p>`;
+            </p>
+              <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #FFC247;padding:16px 20px;margin-top:20px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#FFC247;margin:0 0 6px;">[ CANCELLATION POLICY ]</p>
+                <p style="font-size:13px;color:#F5F4F0;line-height:1.6;margin:0;">
+                  Need to cancel? Please let us know at least <strong>6 hours before your session</strong>. 
+                  Cancellations made less than 6 hours prior will be subject to a <strong>cancellation fee</strong>. 
+                  To cancel, reply to this email or contact us at 
+                  <a href="mailto:support@kp12performance.com" style="color:#FFC247;">support@kp12performance.com</a>.
+                </p>
+              </div>`; 
         } else {
           bodyHtml = `
             <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0 0 14px;">[ BOOKING CONFIRMED ]</p>
@@ -808,9 +823,20 @@ app.post('/api/bookings', async (req, res) => {
               ${packageLabel ? `<p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 5px;">PACKAGE</p><p style="font-size:15px;margin:0;">${packageLabel}</p>` : ''}
             </div>
             ${slotTable}
-            <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:20px 0 0;">
+            <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:20px 0 14px;">
               Questions? Reach us at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>
-            </p>`;
+            </p>
+
+              <div style="background:#1a1209;border:1px solid rgba(255,194,71,0.3);border-left:3px solid #FFC247;padding:16px 20px;margin-top:20px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#FFC247;margin:0 0 6px;">[ CANCELLATION POLICY ]</p>
+                <p style="font-size:13px;color:#F5F4F0;line-height:1.6;margin:0;">
+                  If you need to cancel or reschedule, please do so <strong>at least 6 hours before your session</strong>.
+                  Cancellations made less than 6 hours prior will be subject to a <strong>cancellation fee</strong>.
+                  To cancel, reply to this email or contact us at
+                  <a href="mailto:support@kp12performance.com" style="color:#FFC247;">support@kp12performance.com</a>.
+                </p>
+              </div>
+            `;
         }
 
         await resend.emails.send({
