@@ -563,15 +563,6 @@ app.post('/api/bookings', async (req, res) => {
   try {
     const weekOf = currentWeekMonday();
 
-    // Check if user already has a confirmed booking for this service this week
-    const existingCheck = await pool.query(
-      "SELECT id FROM bookings WHERE user_id=$1 AND service_key=$2 AND week_of=$3 AND status='confirmed'",
-      [userId, serviceKey, weekOf]
-    );
-    if (existingCheck.rows.length > 0) {
-      return res.status(409).json({ error: "You already have a booking for this service this week." });
-    }
-
     // Check overall service capacity
     const capResult = await pool.query("SELECT max_spots FROM service_capacity WHERE service_key=$1", [serviceKey]);
     if (capResult.rows.length > 0) {
