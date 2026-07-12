@@ -144,11 +144,13 @@ pool.query(`
     subcategory VARCHAR(60),
     start_time VARCHAR(10) NOT NULL,
     end_time VARCHAR(10) NOT NULL,
+    max_spots INTEGER DEFAULT NULL,
     week_of DATE,
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW()
   );
 `).then(() => pool.query(`ALTER TABLE schedule ADD COLUMN IF NOT EXISTS week_of DATE;`))
+  .then(() => pool.query(`ALTER TABLE schedule ADD COLUMN IF NOT EXISTS max_spots INTEGER DEFAULT NULL;`))
   .then(() => console.log("Schedule table ready!"))
   .catch(err => console.error("Schedule:", err));
 
@@ -430,40 +432,66 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
 app.get('/api/schedule', async (req, res) => {
   try {
     const weekOf = currentWeekMonday();
+    // Get slots with max_spots
     const r = await pool.query(
-      `SELECT s.id,s.day_of_week,s.category,s.subcategory,s.start_time,s.end_time,s.week_of,
+      `SELECT s.id,s.day_of_week,s.category,s.subcategory,s.start_time,s.end_time,s.max_spots,s.week_of,
               u.username AS created_by
        FROM schedule s LEFT JOIN users u ON s.created_by=u.id
        WHERE s.week_of=$1 OR s.week_of IS NULL`, [weekOf]
     );
-    res.json(sortSlots(r.rows));
-  } catch (err) { res.status(500).json({ error: "Error fetching schedule." }); }
+
+    // For each slot, count how many confirmed bookings include that day+time this week
+    const slots = r.rows;
+    const enriched = await Promise.all(slots.map(async (slot) => {
+      if (!slot.max_spots) return { ...slot, spots_taken: null, spots_available: null };
+      const countRes = await pool.query(
+        `SELECT COUNT(DISTINCT bs.booking_id) AS taken
+         FROM booking_slots bs
+         JOIN bookings b ON b.id = bs.booking_id
+         WHERE b.week_of = $1
+           AND b.status = 'confirmed'
+           AND bs.day_of_week = $2
+           AND bs.start_time = $3`,
+        [weekOf, slot.day_of_week, slot.start_time]
+      );
+      const taken = parseInt(countRes.rows[0].taken) || 0;
+      return { ...slot, spots_taken: taken, spots_available: slot.max_spots - taken };
+    }));
+
+    res.json(sortSlots(enriched));
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error fetching schedule." }); }
 });
 
 app.post('/api/schedule', requireAdmin, async (req, res) => {
   const userId = getUserIdFromCookies(req);
-  const { day, category, subcategory, startTime, endTime } = req.body;
+  const { day, category, subcategory, startTime, endTime, maxSpots } = req.body;
   if (!day || !category || !startTime || !endTime)
     return res.status(400).json({ error: "All fields required." });
   if (!DAYS_ORDER.includes(day)) return res.status(400).json({ error: "Invalid day." });
+  const spotLimit = (maxSpots && parseInt(maxSpots) > 0) ? parseInt(maxSpots) : null;
   try {
     const weekOf = currentWeekMonday();
     const r = await pool.query(
-      `INSERT INTO schedule (day_of_week,category,subcategory,start_time,end_time,week_of,created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [day, category, subcategory||null, startTime, endTime, weekOf, userId]
+      `INSERT INTO schedule (day_of_week,category,subcategory,start_time,end_time,max_spots,week_of,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [day, category, subcategory||null, startTime, endTime, spotLimit, weekOf, userId]
     );
     res.status(201).json({ message: "Slot saved!", slot: r.rows[0] });
   } catch (err) { res.status(500).json({ error: "Error saving slot." }); }
 });
 
 app.patch('/api/schedule/:id', requireAdmin, async (req, res) => {
-  const { startTime, endTime } = req.body;
+  const { startTime, endTime, maxSpots } = req.body;
   if (!startTime || !endTime) return res.status(400).json({ error: "Times required." });
+  const spotLimit = (maxSpots !== undefined) ? (parseInt(maxSpots) > 0 ? parseInt(maxSpots) : null) : undefined;
   try {
     const r = await pool.query(
-      "UPDATE schedule SET start_time=$1,end_time=$2 WHERE id=$3 RETURNING *",
-      [startTime, endTime, req.params.id]
+      spotLimit !== undefined
+        ? "UPDATE schedule SET start_time=$1,end_time=$2,max_spots=$3 WHERE id=$4 RETURNING *"
+        : "UPDATE schedule SET start_time=$1,end_time=$2 WHERE id=$3 RETURNING *",
+      spotLimit !== undefined
+        ? [startTime, endTime, spotLimit, req.params.id]
+        : [startTime, endTime, req.params.id]
     );
     if (!r.rows.length) return res.status(404).json({ error: "Not found." });
     res.json({ message: "Updated!", slot: r.rows[0] });
@@ -544,7 +572,7 @@ app.post('/api/bookings', async (req, res) => {
       return res.status(409).json({ error: "You already have a booking for this service this week." });
     }
 
-    // Check capacity
+    // Check overall service capacity
     const capResult = await pool.query("SELECT max_spots FROM service_capacity WHERE service_key=$1", [serviceKey]);
     if (capResult.rows.length > 0) {
       const max = capResult.rows[0].max_spots;
@@ -555,6 +583,36 @@ app.post('/api/bookings', async (req, res) => {
       const taken = parseInt(takenResult.rows[0].taken);
       if (taken >= max) {
         return res.status(409).json({ error: "This service is fully booked for the week. Please check back next week." });
+      }
+    }
+
+    // Check per-slot capacity — each slot the user picked must have room
+    if (Array.isArray(slots) && slots.length > 0) {
+      for (const slot of slots) {
+        // Get the max_spots for this specific schedule slot
+        const slotCapRes = await pool.query(
+          `SELECT max_spots FROM schedule
+           WHERE day_of_week=$1 AND start_time=$2 AND category IS NOT NULL
+             AND (week_of=$3 OR week_of IS NULL) LIMIT 1`,
+          [slot.day, slot.start, weekOf]
+        );
+        if (slotCapRes.rows.length > 0 && slotCapRes.rows[0].max_spots) {
+          const slotMax = slotCapRes.rows[0].max_spots;
+          const slotTakenRes = await pool.query(
+            `SELECT COUNT(DISTINCT bs.booking_id) AS taken
+             FROM booking_slots bs
+             JOIN bookings b ON b.id = bs.booking_id
+             WHERE b.week_of=$1 AND b.status='confirmed'
+               AND bs.day_of_week=$2 AND bs.start_time=$3`,
+            [weekOf, slot.day, slot.start]
+          );
+          const slotTaken = parseInt(slotTakenRes.rows[0].taken) || 0;
+          if (slotTaken >= slotMax) {
+            return res.status(409).json({
+              error: `The ${slot.day} ${slot.start} slot is full. Please choose a different time.`
+            });
+          }
+        }
       }
     }
 

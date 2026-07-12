@@ -290,7 +290,7 @@ if (!service) {
             const full  = info.available <= 0;
 
             fill.style.width = pct + '%';
-            fill.style.background = full ? 'var(--training)' : pct > 70 ? '#FFC247' : 'var(--athletics)';
+            fill.style.background = full ? 'var(--training)' : pct > 70 ? '#2ECC71' : 'var(--athletics)';
             label.textContent = full
                 ? `FULL — ${info.taken}/${info.max} spots taken this week`
                 : `${info.taken}/${info.max} spots taken this week — ${info.available} left`;
@@ -440,10 +440,21 @@ function showScheduleStep() {
                     <p class="booking-day-label">${day}</p>
                     <div class="booking-day-slots">`;
                 daySlots.forEach(slot => {
+                    const isFull = slot.max_spots && slot.spots_available <= 0;
+                    const isLow  = slot.max_spots && slot.spots_available > 0 && slot.spots_available <= 2;
+                    const spotsLabel = slot.max_spots
+                        ? (isFull
+                            ? `<span class="slot-spots-badge slot-spots-full">FULL</span>`
+                            : `<span class="slot-spots-badge ${isLow ? 'slot-spots-low' : ''}">${slot.spots_available} left</span>`)
+                        : '';
                     html += `
-                        <button type="button" class="booking-slot-btn" data-slot-id="${slot.id}">
+                        <button type="button" class="booking-slot-btn ${isFull ? 'booking-slot-full' : ''}"
+                            data-slot-id="${slot.id}" ${isFull ? 'disabled' : ''}>
                             <span class="booking-slot-time">${slot.start_time} – ${slot.end_time}</span>
-                            <span class="booking-slot-day">${slot.day_of_week}s</span>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                                <span class="booking-slot-day">${slot.day_of_week}</span>
+                                ${spotsLabel}
+                            </div>
                         </button>`;
                 });
                 html += `</div></div>`;

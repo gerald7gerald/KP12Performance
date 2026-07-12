@@ -65,6 +65,13 @@
                 <label>End Time</label>
                 <select id="sched-end"></select>
             </div>
+            <div class="field">
+                <label>Spot Limit</label>
+                <input type="number" id="sched-max-spots" min="1" max="100" placeholder="No limit"
+                    style="background:var(--bg);border:1px solid #2A2D31;color:var(--text);
+                           padding:10px 12px;font-family:var(--font-mono);font-size:13px;
+                           border-radius:2px;width:100px;">
+            </div>
             <button type="button" id="sched-save-btn" class="sched-save-btn">Save Slot</button>
         </div>
         <p class="sched-error" id="sched-error" style="display:none;"></p>
@@ -349,7 +356,8 @@ document.getElementById('sched-save-btn').addEventListener('click', async () => 
     try {
         const res = await fetch('/api/schedule', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ day: selectedDay, category, subcategory, startTime, endTime })
+            body: JSON.stringify({ day: selectedDay, category, subcategory, startTime, endTime,
+            maxSpots: document.getElementById('sched-max-spots')?.value || null })
         });
         const data = await res.json();
         if (!res.ok) { errorEl.textContent = data.error || 'Error.'; errorEl.style.display = 'block'; }
@@ -431,6 +439,7 @@ async function loadSchedule() {
                         <span class="sched-slot-cat" style="color:${color}">${s.category}</span>
                         ${s.subcategory ? `<span class="sched-slot-sub">${s.subcategory}</span>` : ''}
                         <span class="sched-slot-time">${s.start_time} – ${s.end_time}</span>
+                        ${s.max_spots ? `<span class="sched-slot-spots ${s.spots_available <= 0 ? 'sched-slots-full' : s.spots_available <= 2 ? 'sched-slots-low' : ''}">${s.spots_taken||0}/${s.max_spots} spots</span>` : ''}
                     </div>
                     <div class="sched-admin-slot-actions">
                         <button class="sched-slot-edit-btn" onclick='openEditPanel(${JSON.stringify(s)})'>Edit</button>

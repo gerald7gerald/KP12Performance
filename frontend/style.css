@@ -7625,3 +7625,62 @@ transform:translateY(70px);
     .acc-form-row { grid-template-columns: 1fr; }
     .acc-save-btn, .acc-logout-btn { width: 100%; }
 }
+/* ---------- EMPLOYEE SCHEDULE — slot spot badges ---------- */
+.sched-slot-spots {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 2px;
+    border: 1px solid #2A2D31;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+    margin-top: 3px;
+    display: inline-block;
+}
+
+.sched-slots-low {
+    color: #FFC247;
+    border-color: rgba(255,194,71,0.4);
+    background: rgba(255,194,71,0.07);
+}
+
+.sched-slots-full {
+    color: var(--training);
+    border-color: rgba(255,86,48,0.4);
+    background: rgba(255,86,48,0.07);
+}
+
+/* ---------- BOOKING PAGE — per-slot availability badges ---------- */
+.slot-spots-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--athletics);
+    background: rgba(61,158,255,0.1);
+    border: 1px solid rgba(61,158,255,0.25);
+    padding: 2px 7px;
+    border-radius: 2px;
+}
+
+.slot-spots-low {
+    color: #FFC247;
+    background: rgba(255,194,71,0.1);
+    border-color: rgba(255,194,71,0.3);
+}
+
+.slot-spots-full {
+    color: var(--training);
+    background: rgba(255,86,48,0.08);
+    border-color: rgba(255,86,48,0.3);
+}
+
+.booking-slot-full {
+    opacity: 0.45;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+.booking-slot-full .booking-slot-time {
+    text-decoration: line-through;
+}
