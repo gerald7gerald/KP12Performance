@@ -218,16 +218,28 @@ let selectedSlots = new Set(); // Set of slot IDs
 let slotDataMap  = {};         // id -> slot object
 let isLoggedIn   = false;
 
-// Check login state and role
+// Check login state, role, and existing bookings for this service
 let userRole = null;
 let userAthletes = [];
+let existingPackageLabel = null; // package the user already booked for this service this week
 
 fetch('/api/auth/me')
     .then(r => r.ok ? r.json() : null)
-    .then(d => {
+    .then(async d => {
         if (d && d.user) {
             isLoggedIn = true;
             userRole = d.user.role;
+            // Check if user already has a booking for this service this week
+            try {
+                const bRes = await fetch('/api/bookings/mine');
+                if (bRes.ok) {
+                    const bookings = await bRes.json();
+                    const existing = bookings.find(b => b.service_key === serviceKey && b.status === 'confirmed');
+                    if (existing && existing.package_label) {
+                        existingPackageLabel = existing.package_label;
+                    }
+                }
+            } catch (e) { /* non-fatal */ }
         }
     })
     .catch(() => {});
@@ -276,26 +288,56 @@ if (!service) {
 
     function buildPackages() {
         const pkgEl = document.getElementById('booking-packages');
+
+        // If already booked this week with a specific package, show a locked notice
+        if (existingPackageLabel) {
+            const notice = document.createElement('p');
+            notice.className = 'booking-pkg-locked-note';
+            notice.innerHTML = `You have an active <strong>${existingPackageLabel}</strong> booking for this service this week. You can add more slots under the same package.`;
+            pkgEl.appendChild(notice);
+        }
+
         service.packages.forEach((pkg, i) => {
             const card = document.createElement('div');
             card.className = 'booking-pkg-card';
             if (i === service.packages.length - 1 && service.packages.length > 1)
                 card.classList.add('booking-pkg-card--highlight');
+
+            // Lock out packages that don't match existing booking
+            const isLocked = existingPackageLabel && pkg.label !== existingPackageLabel;
+            if (isLocked) card.classList.add('booking-pkg-card--locked');
+
+            // Auto-select if it matches existing
+            if (existingPackageLabel && pkg.label === existingPackageLabel) {
+                card.classList.add('is-selected');
+                selectedPkg = pkg;
+            }
+
             card.innerHTML = `
                 ${pkg.tag ? `<span class="booking-pkg-tag">${pkg.tag}</span>` : ""}
                 <span class="booking-pkg-sessions">${pkg.label}</span>
                 ${pkg.price ? `<span class="booking-pkg-price">${pkg.price}</span>` : ""}
+                ${isLocked ? `<span class="booking-pkg-locked-label">Not available with current booking</span>` : ''}
             `;
-            card.addEventListener('click', () => {
-                document.querySelectorAll('.booking-pkg-card').forEach(c => c.classList.remove('is-selected'));
-                card.classList.add('is-selected');
-                selectedPkg = pkg;
-                selectedSlots.clear();
-                updateConfirmState();
-                showScheduleStep();
-            });
+
+            if (!isLocked) {
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.booking-pkg-card:not(.booking-pkg-card--locked)').forEach(c => c.classList.remove('is-selected'));
+                    card.classList.add('is-selected');
+                    selectedPkg = pkg;
+                    selectedSlots.clear();
+                    updateConfirmState();
+                    showScheduleStep();
+                });
+            }
+
             pkgEl.appendChild(card);
         });
+
+        // If already have a package, show schedule immediately
+        if (existingPackageLabel) {
+            setTimeout(() => showScheduleStep(), 100);
+        }
     }
 }
 

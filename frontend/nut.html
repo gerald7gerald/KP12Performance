@@ -167,18 +167,34 @@
 <script src="script.js"></script>
 <script src="nav.js"></script>
 <script>
-// Capacity badges
-fetch('/api/capacity')
+// Capacity badges from the employee's schedule slots
+fetch('/api/schedule')
     .then(r => r.json())
-    .then(cap => {
-        ['sports-nutrition-consult','intro-nutrition','nutrition-check-ins'].forEach(key => {
+    .then(slots => {
+        const subToKey = {
+            'Sports Nutrition Consult':       'sports-nutrition-consult',
+            'Intro to Dieting and Nutrition': 'intro-nutrition',
+            'Nutrition Check-Ins':            'nutrition-check-ins'
+        };
+        const totals = {};
+        slots.forEach(s => {
+            if (!s.subcategory || !s.max_spots) return;
+            const key = subToKey[s.subcategory];
+            if (!key) return;
+            if (!totals[key]) totals[key] = { max: 0, taken: 0 };
+            totals[key].max   += parseInt(s.max_spots) || 0;
+            totals[key].taken += parseInt(s.spots_taken) || 0;
+        });
+        Object.keys(totals).forEach(key => {
             const el = document.getElementById(`spots-${key}`);
-            if (!el || !cap[key]) return;
-            const info = cap[key];
-            const full = info.available <= 0;
-            const pct = Math.min(100, (info.taken / info.max) * 100);
-            el.innerHTML = `<span class="tra-spots-text ${full ? 'tra-spots-full' : pct > 70 ? 'tra-spots-warn' : ''}">
-                ${info.taken}/${info.max} spots${full ? ' — FULL' : info.available <= 2 ? ` — ${info.available} left!` : ''}
+            if (!el) return;
+            const { max, taken } = totals[key];
+            if (!max) return;
+            const available = max - taken;
+            const full = available <= 0;
+            const pct  = Math.min(100, (taken / max) * 100);
+            el.innerHTML = `<span class="tra-spots-text ${full ? 'tra-spots-full' : pct > 60 ? 'tra-spots-warn' : ''}">
+                ${taken}/${max} spots${full ? ' — FULL' : available <= 2 ? ` — ${available} left!` : ''}
             </span>`;
         });
     })
