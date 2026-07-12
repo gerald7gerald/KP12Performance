@@ -17,13 +17,14 @@
             <img src="logo.png" alt="KP12 Performance" class="nav-logo">
         </a>
         <ul class="nav-links">
-            <li><a href="my-schedule.html">My Schedule</a></li>            
+            <li><a href="my-schedule.html">My Schedule</a></li>
             <li><a href="signup.html" id="auth-nav-link">Sign Up</a></li>
             <li><a href="abt.html">About Us</a></li>
             <li><a href="shop.html">Shop</a></li>
         </ul>
     </header>
 
+    <!-- Hero -->
     <section class="hero">
         <div class="hero-slideshow" aria-hidden="true">
             <div class="hero-slide" style="background-image:url('hero-2.jpg')"></div>
@@ -33,18 +34,17 @@
         </div>
         <h1 class="hero-title fade-up" style="--d:0.1s">KP12<br>PERFORMANCE</h1>
         <p class="hero-sub fade-up" style="--d:0.22s">Three lanes, one standard.</p>
-        
-        <div class="scroll-cue-container" style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 10;">
-            <div class="scroll-cue fade-up" style="--d:0.34s" aria-hidden="true">
-                <span></span>
-            </div>
+        <div class="scroll-cue-container" style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);z-index:10;">
+            <div class="scroll-cue fade-up" style="--d:0.34s" aria-hidden="true"><span></span></div>
         </div>
     </section>
-   
+
+    <!-- Elite Players — admin-curated athlete showcase -->
     <section class="elite-section">
         <div id="elite-players-section"></div>
     </section>
 
+    <!-- Category lanes -->
     <section class="paths paths-3" id="paths" aria-label="Choose your path">
 
         <a href="ath.html" class="path path-athletics fade-up" style="--d:0.1s">
@@ -77,28 +77,24 @@
 
     </section>
 
+    <!-- Reviews -->
     <section class="reviews-preview">
 
         <p class="eyebrow fade-up" style="--d:0s">[ COMMUNITY ]</p>
+        <h2 class="section-title fade-up" style="--d:0.1s">WHAT PEOPLE<br>ARE SAYING</h2>
 
-        <h2 class="section-title fade-up" style="--d:0.1s">
-            WHAT PEOPLE<br>ARE SAYING
-        </h2>
-
-        <div class="review-slideshow-window fade-up" style="--d:0.2s; position: relative; max-width: 600px; margin: 0 auto 2rem; overflow: hidden;">
-            
-            <div id="index-reviews-container" style="display: flex; transition: transform 0.5s ease-in-out; width: 100%;">
-                <div class="review-card-slide" style="min-width: 100%; box-sizing: border-box; padding: 30px; text-align: center; background: var(--bg-panel, #15171A); border: 1px solid rgba(255, 255, 255, 0.1);">
-                    <div class="stars" style="color: #FFC247; margin-bottom: 10px;">★★★★★</div>
-                    <p class="review-text" style="font-family: 'Work Sans', sans-serif; font-style: italic; font-size: 1.1rem; line-height: 1.6;">
-                        "Loading community athlete reviews..."
-                    </p>
-                    <p class="review-author" style="font-family: 'JetBrains Mono', monospace; margin-top: 15px; color: var(--text-muted, #8C8F96);">
-                        — KP12 Team
-                    </p>
+        <!-- overflow:hidden wrapper is the key fix — clips the flex row to one slide at a time -->
+        <div class="index-reviews-window fade-up" style="--d:0.2s">
+            <div id="index-reviews-container">
+                <!-- placeholder shown until index-reviews.js replaces it -->
+                <div class="review-card-slide">
+                    <div class="review-slide-body">
+                        <div class="stars">★★★★★</div>
+                        <p class="review-text">"Loading reviews..."</p>
+                        <p class="review-author">— KP12 Team</p>
+                    </div>
                 </div>
             </div>
-
         </div>
 
         <button id="reviewBtn" class="review-button fade-up" style="--d:0.3s">
@@ -106,41 +102,29 @@
         </button>
 
     </section>
-    <!-- FOOTER: replace the old <footer class="status-bar"> block with this on every page -->
-<footer class="site-footer">
-    <div class="site-footer-inner">
 
-        <a href="index.html" class="site-footer-brand">
-            <img src="logo.png" alt="KP12 Performance" class="site-footer-logo">
-        </a>
-
-        <div class="site-footer-socials">
-            <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link" aria-label="Instagram">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                    <circle cx="12" cy="12" r="4.5"/>
-                    <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
-                </svg>
-                <span>Instagram</span>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <a href="index.html" class="site-footer-brand">
+                <img src="logo.png" alt="KP12 Performance" class="site-footer-logo">
             </a>
-            <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link" aria-label="TikTok">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/>
-                </svg>
-                <span>TikTok</span>
-            </a>
-            <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link" aria-label="YouTube">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/>
-                </svg>
-                <span>YouTube</span>
-            </a>
+            <div class="site-footer-socials">
+                <a href="https://www.instagram.com/kp12_performance/" target="_blank" rel="noopener" class="social-link" aria-label="Instagram">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+                    <span>Instagram</span>
+                </a>
+                <a href="https://www.tiktok.com/@kp12.performance" target="_blank" rel="noopener" class="social-link" aria-label="TikTok">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
+                    <span>TikTok</span>
+                </a>
+                <a href="https://www.youtube.com/@KP12Performance" target="_blank" rel="noopener" class="social-link" aria-label="YouTube">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.23-1.64-.96-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 2.6 12 2.6 12 2.6s-5.04 0-8.14.21c-.47.06-1.49.06-2.4 1.02C.73 4.56.5 6.2.5 6.2S.27 8.1.27 10v1.8c0 1.9.23 3.8.23 3.8s.23 1.64.96 2.37c.91.96 2.12.93 2.66 1.03C5.76 19.2 12 19.2 12 19.2s5.04 0 8.14-.21c.47-.06 1.49-.07 2.4-1.03.73-.73.96-2.37.96-2.37s.23-1.9.23-3.8V10c0-1.9-.23-3.8-.23-3.8zM9.73 13.8V7.2l6.47 3.3-6.47 3.3z"/></svg>
+                    <span>YouTube</span>
+                </a>
+            </div>
+            <p class="site-footer-copy">© 2025 KP12 Performance. All rights reserved.</p>
         </div>
-
-        <p class="site-footer-copy">© 2025 KP12 Performance. All rights reserved.</p>
-
-    </div>
-</footer>
+    </footer>
 
     <script src="script.js"></script>
     <script src="nav.js"></script>
@@ -148,5 +132,6 @@
     <script src="hero-slideshow.js"></script>
     <script src="index-reviews.js"></script>
     <script src="elite-players.js"></script>
+
 </body>
 </html>

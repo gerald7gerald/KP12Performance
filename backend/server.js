@@ -959,6 +959,21 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
   }
 });
 
+// Elite players table — admin-managed showcase athletes on the homepage
+pool.query(`
+  CREATE TABLE IF NOT EXISTS elite_players (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    sport VARCHAR(100),
+    description TEXT,
+    achievement VARCHAR(200),
+    image_data TEXT,
+    display_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+`).then(() => console.log("Elite players table ready!"))
+  .catch(err => console.error("Elite players table error:", err));
+
 // ---- Auto-decrement sessions for today's day ----
 // Runs once at server startup. Since Render keeps the server running,
 // this fires once per deployment/restart. For fully automatic daily runs,
@@ -1089,6 +1104,62 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Error completing booking." });
   }
+});
+
+// --- ELITE PLAYERS ROUTES ---
+
+// GET — public, returns all elite players ordered by display_order
+app.get('/api/elite-players', async (req, res) => {
+  try {
+    const r = await pool.query(
+      "SELECT id, name, sport, description, achievement, image_data, display_order FROM elite_players ORDER BY display_order ASC, created_at ASC"
+    );
+    res.json(r.rows);
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error fetching elite players." }); }
+});
+
+// POST — admin only, add a player
+app.post('/api/elite-players', requireAdmin, async (req, res) => {
+  const { name, sport, description, achievement, imageData, displayOrder } = req.body;
+  if (!name) return res.status(400).json({ error: "Name is required." });
+  const cleanImage = (imageData && imageData.startsWith('data:image/')) ? imageData : null;
+  try {
+    const r = await pool.query(
+      "INSERT INTO elite_players (name, sport, description, achievement, image_data, display_order) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
+      [name, sport||null, description||null, achievement||null, cleanImage, displayOrder||0]
+    );
+    res.status(201).json({ message: "Player added!", id: r.rows[0].id });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error adding player." }); }
+});
+
+// PATCH — admin only, edit a player
+app.patch('/api/elite-players/:id', requireAdmin, async (req, res) => {
+  const { name, sport, description, achievement, imageData, displayOrder } = req.body;
+  const cleanImage = imageData
+    ? (imageData.startsWith('data:image/') ? imageData : undefined)
+    : null;
+  try {
+    const r = await pool.query(
+      `UPDATE elite_players SET
+        name=$1, sport=$2, description=$3, achievement=$4,
+        display_order=$5
+        ${cleanImage !== undefined ? ', image_data=$6' : ''}
+       WHERE id=$${cleanImage !== undefined ? 7 : 6} RETURNING id`,
+      cleanImage !== undefined
+        ? [name, sport||null, description||null, achievement||null, displayOrder||0, cleanImage, req.params.id]
+        : [name, sport||null, description||null, achievement||null, displayOrder||0, req.params.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: "Player not found." });
+    res.json({ message: "Player updated!" });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error updating player." }); }
+});
+
+// DELETE — admin only
+app.delete('/api/elite-players/:id', requireAdmin, async (req, res) => {
+  try {
+    await pool.query("DELETE FROM elite_players WHERE id=$1", [req.params.id]);
+    res.json({ message: "Player removed." });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error removing player." }); }
 });
 
 // PATCH /api/bookings/:id/sessions — admin adjusts sessions_remaining for a user
