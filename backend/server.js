@@ -98,6 +98,7 @@ pool.query(`
 `).then(() => pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;`))
   .then(() => pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30), ADD COLUMN IF NOT EXISTS age INTEGER, ADD COLUMN IF NOT EXISTS gender VARCHAR(30);`))
   .then(() => pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(30), ADD COLUMN IF NOT EXISTS referral_source VARCHAR(60), ADD COLUMN IF NOT EXISTS referral_detail TEXT;`))
+  .then(() => pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image TEXT;`))
   .then(() => pool.query("UPDATE users SET is_admin = TRUE WHERE email = 'geraldcgarcia7@gmail.com';"))
   .then(() => console.log("Users table ready!"))
   .catch(err => console.error("User setup error:", err));
@@ -363,7 +364,7 @@ app.get('/api/auth/me', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Not logged in." });
   try {
-    const r = await pool.query("SELECT id,username,email,phone,age,gender,role,is_admin FROM users WHERE id=$1", [userId]);
+    const r = await pool.query("SELECT id,username,email,phone,age,gender,role,is_admin,profile_image FROM users WHERE id=$1", [userId]);
     if (!r.rows.length) return res.status(401).json({ error: "Not logged in." });
     res.json({ user: r.rows[0] });
   } catch (err) { res.status(500).json({ error: "Error." }); }
@@ -394,6 +395,18 @@ app.patch('/api/auth/profile', async (req, res) => {
       [phone||null, age?parseInt(age):null, gender||null, userId]);
     res.json({ message: "Profile updated." });
   } catch (err) { res.status(500).json({ error: "Error." }); }
+});
+
+// PATCH /api/auth/profile-image — save or remove profile picture
+app.patch('/api/auth/profile-image', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: "Please sign in." });
+  const { imageData } = req.body;
+  const clean = (imageData && imageData.startsWith('data:image/')) ? imageData : null;
+  try {
+    await pool.query("UPDATE users SET profile_image=$1 WHERE id=$2", [clean, userId]);
+    res.json({ message: "Profile picture updated.", profile_image: clean });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error saving image." }); }
 });
 
 app.post('/api/auth/logout', (req, res) => { res.clearCookie('userId'); res.json({ message: "Logged out." }); });
@@ -902,7 +915,7 @@ app.post('/api/reviews', async (req, res) => {
 app.get('/api/reviews', async (req, res) => {
   try {
     const r = await pool.query(
-      `SELECT reviews.id,reviews.training_type,reviews.comment,reviews.rating,reviews.image_data,reviews.created_at,users.username
+      `SELECT reviews.id,reviews.training_type,reviews.comment,reviews.rating,reviews.created_at,users.username,users.profile_image
        FROM reviews JOIN users ON reviews.user_id=users.id ORDER BY reviews.created_at DESC LIMIT 20`
     );
     res.json(r.rows);
