@@ -573,6 +573,14 @@ async function loadAppointments() {
     }
 }
 
+// ---- Shared escape helper (must be global for loadElitePlayers) ----
+function esc(str) {
+    if (str === null || str === undefined) return '—';
+    const d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+}
+
 // ---- Mark booking complete ----
 async function completeBooking(bookingId, btn) {
     if (!confirm('Mark this booking as complete? This will remove it from appointments and send the client a thank-you email.')) return;
@@ -690,8 +698,10 @@ async function loadElitePlayers() {
     const list = document.getElementById('elite-admin-list');
     if (!list) return;
     try {
-        const players = await fetch('/api/elite-players').then(r => r.json());
-        if (!players.length) {
+        const res = await fetch('/api/elite-players');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const players = await res.json();
+        if (!Array.isArray(players) || players.length === 0) {
             list.innerHTML = '<p class="emp-loading">No elite players added yet.</p>';
             return;
         }

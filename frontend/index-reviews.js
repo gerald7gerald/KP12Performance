@@ -26,22 +26,26 @@ document.addEventListener("DOMContentLoaded", async () => {
             const safeUser   = escapeHtml(r.username || "Athlete");
             const safeType   = escapeHtml(r.training_type);
 
-            // If the review has a photo, show it above the text in the card
+            // Photo as a small circular avatar thumbnail — never a banner
             const imgBlock = r.image_data
-                ? `<div style="width:100%;height:200px;overflow:hidden;flex-shrink:0;">
-                       <img src="${r.image_data}" alt="${safeUser}" loading="lazy"
-                            style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
-                   </div>`
+                ? `<img src="${r.image_data}" alt="${safeUser}" loading="lazy"
+                        style="width:72px;height:72px;border-radius:50%;object-fit:cover;
+                               object-position:center top;display:block;margin:0 auto 16px;
+                               border:2px solid var(--athletics,#3D9EFF);flex-shrink:0;">`
                 : "";
 
             return `
-                <div class="review-card-slide ${r.image_data ? 'review-card-slide--has-img' : ''}">
+                <div style="min-width:100%;flex-shrink:0;box-sizing:border-box;
+                            padding:32px 36px;text-align:center;
+                            background:var(--bg-panel,#15171A);border:1px solid #232529;">
                     ${imgBlock}
-                    <div class="review-slide-body">
-                        <div class="stars">${stars}</div>
-                        <p class="review-text">"${safeComment}"</p>
-                        <p class="review-author">— ${safeUser} <span class="review-list-type">[ ${safeType} ]</span></p>
-                    </div>
+                    <div style="color:var(--athletics,#3D9EFF);font-size:18px;letter-spacing:3px;margin-bottom:14px;">${stars}</div>
+                    <p style="font-family:'Work Sans',sans-serif;font-style:italic;font-size:15px;
+                              line-height:1.65;color:#F5F4F0;margin:0 0 16px;">"${safeComment}"</p>
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                              letter-spacing:0.06em;color:#8C8F96;margin:0;">
+                        — ${safeUser} <span style="opacity:0.6;">[ ${safeType} ]</span>
+                    </p>
                 </div>
             `;
         }).join('');
