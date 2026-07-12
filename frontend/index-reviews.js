@@ -28,8 +28,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // If the review has a photo, show it above the text in the card
             const imgBlock = r.image_data
-                ? `<div class="review-slide-img-wrap">
-                       <img src="${r.image_data}" alt="${safeUser}" class="review-slide-img" loading="lazy">
+                ? `<div style="width:100%;height:200px;overflow:hidden;flex-shrink:0;">
+                       <img src="${r.image_data}" alt="${safeUser}" loading="lazy"
+                            style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
                    </div>`
                 : "";
 
