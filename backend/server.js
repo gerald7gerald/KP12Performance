@@ -52,10 +52,12 @@ function sortSlots(rows) {
 
 function currentWeekMonday() {
   const d = new Date();
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const day = d.getDay(); // 0=Sun, 1=Mon ... 6=Sat
+  // On Sunday, show NEXT week (tomorrow is Monday)
+  // On Mon-Sat, go back to the Monday of the current week
+  const diff = day === 0 ? 1 : (1 - day);
   const mon = new Date(d);
-  mon.setDate(diff);
+  mon.setDate(d.getDate() + diff);
   return mon.toISOString().split('T')[0];
 }
 
@@ -219,7 +221,8 @@ pool.query(`
     start_time VARCHAR(10),
     end_time VARCHAR(10)
   );
-`).then(() => console.log("Booking slots table ready!"))
+`).then(() => pool.query(`ALTER TABLE booking_slots ADD COLUMN IF NOT EXISTS reminder_sent BOOLEAN DEFAULT FALSE;`))
+  .then(() => console.log("Booking slots table ready!"))
   .catch(err => console.error("Booking slots:", err));
 
 // Tracks which registered athletes (children) are attending a parent's booking
@@ -811,6 +814,11 @@ app.post('/api/bookings', async (req, res) => {
               <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>. 
               We can't wait to train with your athletes!
             </p>
+              <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #3D9EFF;padding:16px 20px;margin-bottom:20px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#3D9EFF;margin:0 0 6px;">📍 LOCATION</p>
+                <p style="font-size:14px;color:#F5F4F0;font-weight:600;margin:0 0 4px;">St. John Bosco High School</p>
+                <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;margin:0;">13640 Bellflower Blvd, Bellflower, CA 90706</p>
+              </div>
               <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #FFC247;padding:16px 20px;margin-top:20px;">
                 <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#FFC247;margin:0 0 6px;">[ CANCELLATION POLICY ]</p>
                 <p style="font-size:13px;color:#F5F4F0;line-height:1.6;margin:0;">
@@ -831,7 +839,13 @@ app.post('/api/bookings', async (req, res) => {
               ${packageLabel ? `<p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 5px;">PACKAGE</p><p style="font-size:15px;margin:0;">${packageLabel}</p>` : ''}
             </div>
             ${slotTable}
-            <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:20px 0 14px;">
+
+            <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #3D9EFF;padding:16px 20px;margin-bottom:20px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#3D9EFF;margin:0 0 6px;">📍 LOCATION</p>
+              <p style="font-size:14px;color:#F5F4F0;font-weight:600;margin:0 0 4px;">St. John Bosco High School</p>
+              <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;margin:0;">13640 Bellflower Blvd, Bellflower, CA 90706</p>
+            </div>
+            <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0;">
               Questions? Reach us at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>
             </p>
 
@@ -1335,6 +1349,126 @@ async function autoDecrementSessions() {
     console.error('Auto-decrement error:', err);
   }
 }
+
+// ============================================================
+// REMINDER JOB — sends "training in 2 hours!" emails every 30 min
+// ============================================================
+async function sendUpcomingReminders() {
+  try {
+    const DAY_OFFSET = { Monday:0, Tuesday:1, Wednesday:2, Thursday:3, Friday:4, Saturday:5 };
+
+    const slotsRes = await pool.query(`
+      SELECT bs.id AS slot_id, bs.day_of_week, bs.start_time, bs.end_time,
+             b.id AS booking_id, b.week_of, b.service_title,
+             u.email, u.username, u.role,
+             COALESCE(
+               (SELECT STRING_AGG(athlete_name, ', ') FROM booking_athletes WHERE booking_id = b.id),
+               NULL
+             ) AS athlete_names
+      FROM booking_slots bs
+      JOIN bookings b ON b.id = bs.booking_id
+      JOIN users u ON u.id = b.user_id
+      WHERE b.status = 'confirmed'
+        AND bs.reminder_sent = FALSE
+    `);
+
+    const now = new Date();
+
+    for (const row of slotsRes.rows) {
+      const offset = DAY_OFFSET[row.day_of_week];
+      if (offset === undefined) continue;
+
+      // Build the actual slot datetime from week_of + day offset + start_time
+      const weekMonday = new Date(row.week_of);
+      weekMonday.setUTCHours(0, 0, 0, 0);
+      const slotDate = new Date(weekMonday);
+      slotDate.setUTCDate(weekMonday.getUTCDate() + offset);
+
+      const timeParts = (row.start_time || '').match(/^(\d+):(\d+)\s*(AM|PM)?$/i);
+      if (!timeParts) continue;
+      let hours = parseInt(timeParts[1]);
+      const mins = parseInt(timeParts[2]);
+      const ampm = (timeParts[3] || '').toUpperCase();
+      if (ampm === 'PM' && hours < 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+      slotDate.setUTCHours(hours, mins, 0, 0);
+
+      // Only send if slot is 1h45m–2h15m away (30-min window around the 2-hour mark)
+      const diffMins = (slotDate.getTime() - now.getTime()) / 60000;
+      if (diffMins < 105 || diffMins > 135) continue;
+
+      const isParent  = row.role === 'parent_guardian' && row.athlete_names;
+      const greeting  = isParent
+        ? `Head's up, ${row.username}! Your athletes train in 2 hours 🏊`
+        : `Head's up, ${row.username}! You're training in 2 hours 💪`;
+      const whoLine   = isParent
+        ? `Make sure <strong style="color:#F5F4F0;">${row.athlete_names}</strong> are fueled, warmed up, and ready to go.`
+        : `Make sure you're fueled, warmed up, and ready to put in the work.`;
+
+      await resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: row.email,
+        subject: `⏰ Your session starts in 2 hours — KP12 Performance`,
+        html: `
+          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #232529;">
+            <div style="background:#15171A;padding:24px 32px;border-bottom:1px solid #232529;">
+              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:30px;display:block;">
+            </div>
+            <div style="padding:32px 32px 28px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0 0 14px;">[ SESSION REMINDER ]</p>
+              <h1 style="font-size:24px;font-weight:800;text-transform:uppercase;margin:0 0 6px;line-height:1.1;">⏰ 2 Hours to Go!</h1>
+              <p style="color:#F5F4F0;font-size:15px;line-height:1.7;margin:14px 0 24px;">
+                ${greeting}<br>${whoLine}
+              </p>
+              <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #FF5630;padding:20px 24px;margin-bottom:20px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#FF5630;margin:0 0 12px;">YOUR SESSION TODAY</p>
+                <table style="width:100%;border-collapse:collapse;">
+                  <tr>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;padding:5px 0;">SERVICE</td>
+                    <td style="font-size:14px;color:#F5F4F0;padding:5px 0;text-align:right;">${row.service_title}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;padding:5px 0;">DAY</td>
+                    <td style="font-size:14px;color:#F5F4F0;padding:5px 0;text-align:right;">${row.day_of_week}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;padding:5px 0;">TIME</td>
+                    <td style="font-size:14px;color:#3D9EFF;font-weight:700;padding:5px 0;text-align:right;">${row.start_time} – ${row.end_time}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #3D9EFF;padding:16px 20px;margin-bottom:20px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#3D9EFF;margin:0 0 6px;">📍 LOCATION</p>
+                <p style="font-size:14px;color:#F5F4F0;font-weight:600;margin:0 0 4px;">St. John Bosco High School</p>
+                <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;margin:0;">13640 Bellflower Blvd, Bellflower, CA 90706</p>
+              </div>
+              <div style="background:#1a1209;border:1px solid rgba(255,194,71,0.3);border-left:3px solid #FFC247;padding:14px 18px;margin-bottom:20px;">
+                <p style="font-size:13px;color:#F5F4F0;line-height:1.6;margin:0;">
+                  Need to cancel? You must do so <strong>at least 6 hours before your session</strong> to avoid a cancellation fee. Reply to this email or contact us at
+                  <a href="mailto:support@kp12performance.com" style="color:#FFC247;">support@kp12performance.com</a>.
+                </p>
+              </div>
+              <p style="color:#8C8F96;font-size:14px;margin:0;">We'll see you out there — let's get to work! 🔥</p>
+            </div>
+            <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
+            </div>
+          </div>
+        `
+      });
+
+      await pool.query('UPDATE booking_slots SET reminder_sent = TRUE WHERE id = $1', [row.slot_id]);
+      console.log(`[REMINDER] Sent to ${row.email} — ${row.service_title} ${row.day_of_week} ${row.start_time}`);
+    }
+  } catch (err) {
+    console.error('[REMINDER] Job error:', err);
+  }
+}
+
+// Run 5s after startup, then every 30 minutes
+setTimeout(sendUpcomingReminders, 5000);
+setInterval(sendUpcomingReminders, 30 * 60 * 1000);
 
 // POST /api/bookings/:id/complete — admin marks a booking complete
 // Sends a thank-you email and frees the capacity slot
