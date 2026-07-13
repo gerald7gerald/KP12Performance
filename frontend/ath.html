@@ -112,7 +112,7 @@
             <div class="tra-service-label">
                 <span class="tra-tag" style="color:var(--athletics)">[ ATHLETICS ]</span>
                 <h2 class="tra-service-title" style="color:var(--text)">Swim Team / Clinics</h2>
-                <span class="tra-spots-badge" id="spots-swim-team"></span>
+                <span class="tra-spots-badge" id="spots-swim-team-clinic"></span>
             </div>
             <span class="tra-chevron" style="color:var(--athletics)">+</span>
         </div>
@@ -219,32 +219,34 @@
 fetch('/api/schedule')
     .then(r => r.json())
     .then(slots => {
+        const normSub = str => (str || '').toLowerCase().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ').trim();
         const subToKey = {
-            'Swim Lessons':          'swim-lessons',
-            'Swim Team / Clinics':   'swim-team-clinic',
-            'Speed/Agility/COD':     'speed-agility',
-            'Beach/Indoor Volleyball': 'beach-volleyball'
+            [normSub('Swim Lessons')]:           'swim-lessons',
+            [normSub('Swim Team / Clinics')]:    'swim-team-clinic',
+            [normSub('Swim Team/Clinics')]:      'swim-team-clinic',
+            [normSub('Speed/Agility/COD')]:      'speed-agility',
+            [normSub('Beach/Indoor Volleyball')]: 'beach-volleyball'
         };
         const totals = {};
         slots.forEach(s => {
             if (!s.subcategory || !s.max_spots) return;
-            const key = subToKey[s.subcategory];
+            const key = subToKey[normSub(s.subcategory)];
             if (!key) return;
             if (!totals[key]) totals[key] = { max: 0, taken: 0 };
             totals[key].max   += parseInt(s.max_spots) || 0;
             totals[key].taken += parseInt(s.spots_taken) || 0;
         });
         Object.keys(totals).forEach(key => {
-            const el = document.getElementById(`spots-${key}`);
+            const el = document.getElementById('spots-' + key);
             if (!el) return;
             const { max, taken } = totals[key];
             if (!max) return;
             const available = max - taken;
             const full = available <= 0;
             const pct  = Math.min(100, (taken / max) * 100);
-            el.innerHTML = `<span class="tra-spots-text ${full ? 'tra-spots-full' : pct > 60 ? 'tra-spots-warn' : ''}">
-                ${taken}/${max} spots${full ? ' — FULL' : available <= 2 ? ` — ${available} left!` : ''}
-            </span>`;
+            el.innerHTML = '<span class="tra-spots-text ' + (full ? 'tra-spots-full' : pct > 60 ? 'tra-spots-warn' : '') + '">' +
+                taken + '/' + max + ' spots' + (full ? ' — FULL' : available <= 2 ? ' — ' + available + ' left!' : '') +
+            '</span>';
         });
     })
     .catch(() => {});
