@@ -86,6 +86,45 @@
         </form>
     </div>
 
+    <!-- Athletes section — only shown for parent/guardian accounts -->
+    <div class="acc-section" id="acc-athletes-section" style="display:none;border-top:1px solid #232529;padding-top:32px;">
+        <p class="eyebrow">[ MY ATHLETES ]</p>
+        <h3 class="acc-section-title">Registered Athletes</h3>
+        <p style="font-size:14px;color:var(--text-muted);margin:0 0 20px;line-height:1.6;">
+            These athletes will appear as options when you book a session.
+        </p>
+
+        <!-- Existing athletes list -->
+        <div id="acc-athletes-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+
+        <!-- Add athlete form -->
+        <div id="acc-add-athlete-wrap" style="background:var(--bg-panel);border:1px solid #2A2D31;border-left:3px solid var(--athletics);padding:20px;display:flex;flex-direction:column;gap:14px;">
+            <p style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--athletics);margin:0;">+ Add Athlete</p>
+            <div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:10px;">
+                <div class="field">
+                    <label>Name</label>
+                    <input type="text" id="new-athlete-name" placeholder="Full name" style="background:var(--bg);border:1px solid #2A2D31;color:var(--text);padding:10px 12px;font-family:var(--font-body);font-size:14px;border-radius:2px;width:100%;box-sizing:border-box;">
+                </div>
+                <div class="field">
+                    <label>Age</label>
+                    <input type="number" id="new-athlete-age" placeholder="—" min="4" max="25" style="background:var(--bg);border:1px solid #2A2D31;color:var(--text);padding:10px 12px;font-family:var(--font-body);font-size:14px;border-radius:2px;width:100%;box-sizing:border-box;">
+                </div>
+                <div class="field">
+                    <label>Gender</label>
+                    <select id="new-athlete-gender" style="background:var(--bg);border:1px solid #2A2D31;color:var(--text);padding:10px 12px;font-family:var(--font-body);font-size:14px;border-radius:2px;width:100%;box-sizing:border-box;">
+                        <option value="">—</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Non-binary">Non-binary</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <p id="acc-athlete-error" style="display:none;color:var(--training);font-size:13px;margin:0;"></p>
+            <button type="button" id="acc-add-athlete-btn" class="acc-save-btn" style="margin-top:0;">Add Athlete</button>
+        </div>
+    </div>
+
     <!-- Sign out -->
     <div class="acc-section" style="border-top:1px solid #232529;padding-top:32px;">
         <button type="button" id="acc-logout-btn" class="acc-logout-btn">Sign Out</button>
@@ -134,6 +173,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Set avatar
         setAvatar(user.username, user.profile_image);
+
+        // Show athlete management for parent/guardian accounts
+        if (user.role === 'parent_guardian') {
+            document.getElementById('acc-athletes-section').style.display = 'flex';
+            loadAthletes();
+        }
 
     } catch (err) {
         window.location.href = 'login.html';
@@ -248,6 +293,90 @@ document.getElementById('acc-form').addEventListener('submit', async (e) => {
     }
     btn.disabled = false; btn.textContent = 'Save Changes';
 });
+
+// ---- Athlete management ----
+async function loadAthletes() {
+    const list = document.getElementById('acc-athletes-list');
+    if (!list) return;
+    try {
+        const res     = await fetch('/api/auth/my-athletes');
+        const athletes = await res.json();
+        list.innerHTML = '';
+
+        if (!athletes.length) {
+            list.innerHTML = '<p style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">No athletes registered yet.</p>';
+            return;
+        }
+
+        athletes.forEach(a => {
+            const card = document.createElement('div');
+            card.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid #2A2D31;padding:14px 16px;border-radius:2px;gap:12px;';
+            card.innerHTML = `
+                <div>
+                    <p style="font-weight:600;font-size:15px;color:var(--text);margin:0 0 3px;">${escHtml(a.name)}</p>
+                    <p style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin:0;">
+                        ${a.age ? 'Age ' + a.age : ''}${a.age && a.gender ? ' · ' : ''}${a.gender || ''}
+                    </p>
+                </div>
+                <button data-id="${a.id}" class="remove-athlete-acc-btn"
+                    style="background:transparent;border:1px solid rgba(255,86,48,0.4);color:var(--training);
+                           font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;padding:6px 12px;
+                           cursor:pointer;border-radius:2px;white-space:nowrap;flex-shrink:0;">
+                    Remove
+                </button>`;
+
+            card.querySelector('.remove-athlete-acc-btn').addEventListener('click', async function() {
+                if (!confirm(`Remove ${escHtml(a.name)} from your account?`)) return;
+                this.disabled = true;
+                this.textContent = '...';
+                const r = await fetch('/api/auth/athletes/' + a.id, { method: 'DELETE' });
+                if (r.ok) { loadAthletes(); }
+                else { this.textContent = 'Error'; this.disabled = false; }
+            });
+
+            list.appendChild(card);
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+document.getElementById('acc-add-athlete-btn')?.addEventListener('click', async () => {
+    const name   = document.getElementById('new-athlete-name').value.trim();
+    const age    = document.getElementById('new-athlete-age').value;
+    const gender = document.getElementById('new-athlete-gender').value;
+    const errEl  = document.getElementById('acc-athlete-error');
+    errEl.style.display = 'none';
+
+    if (!name) { errEl.textContent = "Please enter the athlete name."; errEl.style.display = 'block'; return; }
+
+    const btn = document.getElementById('acc-add-athlete-btn');
+    btn.disabled = true; btn.textContent = 'Adding...';
+
+    try {
+        const res  = await fetch('/api/auth/athletes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, age: age || null, gender: gender || null })
+        });
+        const data = await res.json();
+        if (!res.ok) { errEl.textContent = data.error || 'Error.'; errEl.style.display = 'block'; }
+        else {
+            document.getElementById('new-athlete-name').value   = '';
+            document.getElementById('new-athlete-age').value    = '';
+            document.getElementById('new-athlete-gender').value = '';
+            loadAthletes();
+        }
+    } catch { errEl.textContent = "Couldn't reach server."; errEl.style.display = 'block'; }
+
+    btn.disabled = false; btn.textContent = 'Add Athlete';
+});
+
+function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+}
 
 // ---- Sign out ----
 document.getElementById('acc-logout-btn').addEventListener('click', async () => {

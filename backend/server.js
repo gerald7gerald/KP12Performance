@@ -400,6 +400,35 @@ app.get('/api/auth/my-athletes', async (req, res) => {
   }
 });
 
+// POST /api/auth/athletes — add a new athlete to the logged-in parent's account
+app.post('/api/auth/athletes', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: "Please sign in." });
+  const { name, age, gender } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: "Athlete name is required." });
+  try {
+    const r = await pool.query(
+      "INSERT INTO athletes (user_id, name, age, gender) VALUES ($1,$2,$3,$4) RETURNING id,name,age,gender",
+      [userId, name.trim(), age ? parseInt(age) : null, gender || null]
+    );
+    res.json({ message: "Athlete added.", athlete: r.rows[0] });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error adding athlete." }); }
+});
+
+// DELETE /api/auth/athletes/:id — remove an athlete from the logged-in parent's account
+app.delete('/api/auth/athletes/:id', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: "Please sign in." });
+  try {
+    const r = await pool.query(
+      "DELETE FROM athletes WHERE id=$1 AND user_id=$2 RETURNING id",
+      [req.params.id, userId]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: "Athlete not found." });
+    res.json({ message: "Athlete removed." });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error removing athlete." }); }
+});
+
 app.patch('/api/auth/profile', async (req, res) => {
   const userId = getUserIdFromCookies(req);
   if (!userId) return res.status(401).json({ error: "Sign in first." });
