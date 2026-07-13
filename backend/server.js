@@ -170,6 +170,7 @@ pool.query(`
       ('adult-training', 10),
       ('remote-training', 10),
       ('swim-lessons', 5),
+      ('swim-team-clinic', 20),
       ('speed-agility', 10),
       ('beach-volleyball', 20),
       ('sports-nutrition-consult', 10),

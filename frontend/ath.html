@@ -106,21 +106,27 @@
         </div>
     </div>
 
-    <!-- Swim Team / Clinics — Coming Soon -->
-    <div class="tra-service-item tra-service-item--coming reveal">
+    <!-- Swim Team / Clinics — NOW OPEN -->
+    <div class="tra-service-item reveal">
         <div class="tra-service-header" onclick="toggleService(this)">
             <div class="tra-service-label">
-                <span class="tra-tag" style="color:var(--athletics)">[ COMING SOON ]</span>
+                <span class="tra-tag" style="color:var(--athletics)">[ ATHLETICS ]</span>
                 <h2 class="tra-service-title" style="color:var(--text)">Swim Team / Clinics</h2>
+                <span class="tra-spots-badge" id="spots-swim-team"></span>
             </div>
             <span class="tra-chevron" style="color:var(--athletics)">+</span>
         </div>
         <div class="tra-service-body">
             <div class="tra-service-inner">
-                <p class="tra-service-desc">Group swim clinics and team programming are coming soon. Check back for updates — this will be a great opportunity to train with other competitive swimmers and take your racing to the next level.</p>
+                <p class="tra-service-desc">Group swim clinics and competitive team programming designed to take your racing to the next level. Train alongside other competitive swimmers in structured, coach-led sessions focused on technique, speed, and race strategy.</p>
                 <div class="tra-service-chips">
-                    <span class="stat-chip">COMING SOON</span>
+                    <span class="stat-chip">GROUP</span>
+                    <span class="stat-chip">ALL LEVELS</span>
+                    <span class="stat-chip">COMPETITIVE</span>
                 </div>
+                <a href="booking.html?service=swim-team-clinic&title=Swim+Team+%2F+Clinics&category=Athletics" class="tra-book-btn tra-book-btn--ath">
+                    Book a Spot <span class="arrow">→</span>
+                </a>
             </div>
         </div>
     </div>
@@ -215,6 +221,7 @@ fetch('/api/schedule')
     .then(slots => {
         const subToKey = {
             'Swim Lessons':          'swim-lessons',
+            'Swim Team / Clinics':   'swim-team-clinic',
             'Speed/Agility/COD':     'speed-agility',
             'Beach/Indoor Volleyball': 'beach-volleyball'
         };
