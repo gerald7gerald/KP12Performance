@@ -86,31 +86,31 @@
             // Info — the key is flex:1 + min-width:0 + overflow:hidden to prevent text blowout
             const infoDiv = document.createElement('div');
             infoDiv.style.cssText = mobile
-                ? 'padding:20px 18px 24px;box-sizing:border-box;'
-                : 'flex:1;min-width:0;overflow:hidden;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:10px;';
+                ? 'padding:20px 18px 24px;box-sizing:border-box;width:100%;'
+                : 'flex:1;min-width:0;width:0;overflow:hidden;padding:24px 28px;box-sizing:border-box;display:block;';
 
             if (p.sport) {
                 const sport = document.createElement('p');
-                sport.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:var(--athletics,#3D9EFF);margin:0;";
+                sport.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:var(--athletics,#3D9EFF);margin:0 0 8px;display:block;";
                 sport.textContent = p.sport;
                 infoDiv.appendChild(sport);
             }
 
             const name = document.createElement('h3');
-            name.style.cssText = "font-family:'Anton',sans-serif;font-size:clamp(20px,2.5vw,28px);text-transform:uppercase;line-height:1.05;color:#F5F4F0;margin:0;word-break:break-word;";
+            name.style.cssText = "font-family:'Anton',sans-serif;font-size:clamp(20px,2.5vw,28px);text-transform:uppercase;line-height:1.05;color:#F5F4F0;margin:0 0 8px;display:block;word-break:break-word;";
             name.textContent = p.name || '';
             infoDiv.appendChild(name);
 
             if (p.achievement) {
                 const ach = document.createElement('p');
-                ach.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.05em;color:#8C8F96;margin:0;line-height:1.55;word-break:break-word;";
+                ach.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.05em;color:#8C8F96;margin:0 0 8px;display:block;line-height:1.55;word-break:break-word;";
                 ach.textContent = p.achievement;
                 infoDiv.appendChild(ach);
             }
 
             if (p.description) {
                 const desc = document.createElement('p');
-                desc.style.cssText = 'font-size:13px;line-height:1.7;color:#8C8F96;font-style:italic;margin:0;padding-top:10px;border-top:1px solid #232529;word-break:break-word;overflow-wrap:break-word;white-space:normal;';
+                desc.style.cssText = 'font-size:13px;line-height:1.7;color:#8C8F96;font-style:italic;margin:0;padding-top:10px;border-top:1px solid #232529;word-break:break-word;overflow-wrap:break-word;white-space:normal;display:block;width:100%;';
                 desc.textContent = '\u201c' + p.description + '\u201d';
                 infoDiv.appendChild(desc);
             }
