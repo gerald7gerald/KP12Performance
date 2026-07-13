@@ -284,7 +284,8 @@ app.post('/api/auth/signup', async (req, res) => {
                   We'll evaluate your current fitness level and map out exactly what your program should look like.
                   This is a <strong style="color:#F5F4F0;">Training-exclusive</strong> benefit — don't miss it.
                 </p>
-                <a href="https://kp12performance.com/tra.html" style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 22px;font-weight:600;">Explore Training →</a>
+                <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:0 0 12px;">To claim your free assessment, simply send us an email and we'll get you scheduled right away.</p>
+                <a href="mailto:performancekp12@gmail.com?subject=Free%20Initial%20Assessment%20Request&body=Hi%20KP12%20team%2C%20I%20just%20signed%20up%20and%20would%20like%20to%20claim%20my%20free%20initial%20assessment." style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 22px;font-weight:600;">Email Us to Claim →</a>
               </div>
 
               <p style="color:#8C8F96;font-size:14px;line-height:1.65;margin:0 0 24px;">Browse all our programs — Athletics, Training, and Nutrition — and book your first session whenever you're ready.</p>
