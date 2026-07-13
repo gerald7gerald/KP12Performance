@@ -55,7 +55,7 @@
 
         // Clipping window
         const clipWindow = document.createElement('div');
-        clipWindow.style.cssText = 'position:relative;overflow:hidden;width:100%;border:1px solid #232529;border-left:3px solid var(--athletics,#3D9EFF);';
+        clipWindow.style.cssText = 'position:relative;overflow:hidden;width:100%;max-width:100%;border:1px solid #232529;border-left:3px solid var(--athletics,#3D9EFF);';
 
         // Track
         const track = document.createElement('div');
@@ -102,7 +102,7 @@
                 }
 
                 const infoDiv = document.createElement('div');
-                infoDiv.style.cssText = 'flex:1;min-width:0;padding:28px 30px;display:flex;flex-direction:column;justify-content:center;gap:10px;overflow:hidden;word-break:break-word;';
+                infoDiv.style.cssText = 'flex:1;min-width:0;max-width:0;padding:28px 30px;display:flex;flex-direction:column;justify-content:center;gap:10px;overflow:hidden;word-break:break-word;overflow-wrap:break-word;';
                 infoDiv.innerHTML = buildInfo(p);
 
                 slide.appendChild(photoDiv);
@@ -156,7 +156,7 @@
             ${p.sport ? `<p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:var(--athletics,#3D9EFF);margin:0;">${esc(p.sport)}</p>` : ''}
             <h3 style="font-family:'Anton',sans-serif;font-size:clamp(20px,3vw,30px);text-transform:uppercase;line-height:1.05;color:#F5F4F0;margin:0;word-break:break-word;">${esc(p.name)}</h3>
             ${p.achievement ? `<p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.05em;color:#8C8F96;margin:0;line-height:1.55;word-break:break-word;">${esc(p.achievement)}</p>` : ''}
-            ${p.description ? `<p style="font-size:13px;line-height:1.7;color:#8C8F96;font-style:italic;margin:0;padding-top:10px;border-top:1px solid #232529;word-break:break-word;overflow-wrap:break-word;">"${esc(p.description)}"</p>` : ''}
+            ${p.description ? `<p style="font-size:13px;line-height:1.7;color:#8C8F96;font-style:italic;margin:0;padding-top:10px;border-top:1px solid #232529;word-break:break-word;overflow-wrap:break-word;white-space:normal;max-width:100%;display:block;">"${esc(p.description)}"</p>` : ''}
         `;
     }
 
