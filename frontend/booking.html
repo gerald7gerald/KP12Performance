@@ -422,9 +422,12 @@ function showScheduleStep() {
         .then(slots => {
             // Use service's own category if specified, else default to Training
             const serviceCategory = service.category || 'Training';
+            // Normalize subcategory for comparison — handles slash spacing variants
+            // e.g. "Swim Team/Clinics" == "Swim Team / Clinics"
+            const normSub = str => (str || '').replace(/\s*\/\s*/g, ' / ').trim();
             const relevant = slots.filter(s =>
                 s.category === serviceCategory &&
-                s.subcategory === service.subcategory &&
+                normSub(s.subcategory) === normSub(service.subcategory) &&
                 validDays.includes(s.day_of_week)
             );
 

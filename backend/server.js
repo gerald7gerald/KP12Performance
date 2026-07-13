@@ -478,7 +478,12 @@ app.get('/api/schedule', async (req, res) => {
       return { ...slot, spots_taken: taken, spots_available: slot.max_spots - taken };
     }));
 
-    res.json(sortSlots(enriched));
+    // Normalize subcategory slash spacing so "Swim Team/Clinics" → "Swim Team / Clinics"
+    const normalized = enriched.map(s => ({
+      ...s,
+      subcategory: s.subcategory ? s.subcategory.replace(/\s*\/\s*/g, ' / ').trim() : s.subcategory
+    }));
+    res.json(sortSlots(normalized));
   } catch (err) { console.error(err); res.status(500).json({ error: "Error fetching schedule." }); }
 });
 
