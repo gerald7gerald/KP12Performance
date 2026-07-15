@@ -452,6 +452,54 @@ app.patch('/api/auth/profile-image', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: "Error saving image." }); }
 });
 
+// POST /api/claim-assessment — send free assessment email to logged-in user
+app.post('/api/claim-assessment', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: "Please sign in." });
+  try {
+    const r = await pool.query("SELECT username, email FROM users WHERE id=$1", [userId]);
+    const user = r.rows[0];
+    if (!user) return res.status(404).json({ error: "User not found." });
+
+    await resend.emails.send({
+      from: 'support@kp12performance.com',
+      to: user.email,
+      subject: `You won a Free Initial Assessment! 🎉 | KP12 Performance`,
+      html: `
+        <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #232529;">
+          <div style="background:#15171A;padding:26px 32px;border-bottom:1px solid #232529;">
+            <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:30px;display:block;">
+          </div>
+          <div style="padding:32px 32px 28px;">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#FF5630;margin:0 0 14px;">[ YOU WON! ]</p>
+            <h1 style="font-size:26px;font-weight:800;text-transform:uppercase;margin:0 0 6px;line-height:1.1;">Congrats, ${user.username}! 🎉</h1>
+            <p style="color:#F5F4F0;font-size:15px;line-height:1.7;margin:14px 0 24px;">
+              You spun the wheel and landed on something special. You have just unlocked a <strong>FREE initial assessment</strong> with our training team — on us!
+            </p>
+            <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #FF5630;padding:22px 24px;margin-bottom:22px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#FF5630;margin:0 0 8px;">[ TRAINING EXCLUSIVE ]</p>
+              <p style="font-size:17px;font-weight:700;margin:0 0 8px;">Free Initial Assessment</p>
+              <p style="color:#8C8F96;font-size:14px;line-height:1.65;margin:0 0 16px;">
+                We will evaluate your current fitness level, talk through your goals, and map out exactly what your program should look like. This is your starting point — and it will not cost you a thing.
+              </p>
+              <a href="mailto:performancekp12@gmail.com?subject=Free%20Initial%20Assessment%20-%20${user.username}&body=Hi%20KP12%20team%2C%20I%20just%20won%20a%20free%20initial%20assessment%20and%20would%20like%20to%20schedule%20it."
+                 style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 22px;font-weight:600;">
+                Email Us to Schedule &rarr;
+              </a>
+            </div>
+            <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:0;">
+              Questions? <a href="mailto:support@kp12performance.com" style="color:#FF5630;">support@kp12performance.com</a>
+            </p>
+          </div>
+          <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance</p>
+          </div>
+        </div>`
+    });
+    res.json({ message: "Assessment email sent!" });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error sending email." }); }
+});
+
 app.post('/api/auth/logout', (req, res) => { res.clearCookie('userId'); res.json({ message: "Logged out." }); });
 
 // ---- Admin ----

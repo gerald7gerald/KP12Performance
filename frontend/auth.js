@@ -73,6 +73,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
+                // If user came from wheel spin, auto-send the free assessment email
+                if (sessionStorage.getItem('kp12-claim-on-login') || new URLSearchParams(window.location.search).get('claim') === 'assessment') {
+                    sessionStorage.removeItem('kp12-claim-on-login');
+                    try { await fetch('/api/claim-assessment', { method: 'POST' }); } catch(e) {}
+                }
+
                 const redirect = localStorage.getItem("redirectAfterLogin");
                 if (redirect) {
                     localStorage.removeItem("redirectAfterLogin");
@@ -112,6 +118,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     showError("login-error", data.error || "Invalid email or password.");
                     submitBtn.disabled = false;
                     return;
+                }
+
+                // If user came from wheel spin, auto-send the free assessment email
+                if (sessionStorage.getItem('kp12-claim-on-login') || new URLSearchParams(window.location.search).get('claim') === 'assessment') {
+                    sessionStorage.removeItem('kp12-claim-on-login');
+                    try { await fetch('/api/claim-assessment', { method: 'POST' }); } catch(e) {}
                 }
 
                 const redirect = localStorage.getItem("redirectAfterLogin");
