@@ -20,15 +20,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        // Ensure the window clips properly on mobile
+        // Force the window and all parents to clip properly on mobile
         const win = container.parentElement;
         if (win) {
-            win.style.overflow = 'hidden';
-            win.style.width    = '100%';
-            win.style.maxWidth = '100%';
+            win.style.cssText = 'overflow:hidden;width:100%;max-width:100%;box-sizing:border-box;display:block;';
+            // Also constrain the grandparent section
+            if (win.parentElement) {
+                win.parentElement.style.overflowX = 'hidden';
+                win.parentElement.style.maxWidth  = '100vw';
+            }
         }
-        // Ensure container is a proper flex row
-        container.style.cssText = 'display:flex;flex-direction:row;transition:transform 0.55s cubic-bezier(0.4,0,0.2,1);width:100%;';
+        // Ensure container is a proper flex row — no overflow
+        container.style.cssText = 'display:flex;flex-direction:row;transition:transform 0.55s cubic-bezier(0.4,0,0.2,1);width:100%;max-width:100%;';
 
         container.innerHTML = reviews.map(r => {
             const stars      = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
@@ -52,14 +55,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             return `
                 <div style="min-width:100%;flex-shrink:0;box-sizing:border-box;
-                            padding:36px 40px;text-align:center;
-                            background:var(--bg-panel,#15171A);border:1px solid #232529;">
+                            padding:clamp(20px,5vw,36px) clamp(16px,5vw,40px);text-align:center;
+                            background:var(--bg-panel,#15171A);border:1px solid #232529;
+                            overflow:hidden;max-width:100vw;">
                     ${avatarBlock}
                     <div style="color:var(--athletics,#3D9EFF);font-size:18px;letter-spacing:3px;margin-bottom:14px;">${stars}</div>
                     <p style="font-family:'Work Sans',sans-serif;font-style:italic;font-size:15px;
                               line-height:1.7;color:#F5F4F0;margin:0 0 18px;">"${safeComment}"</p>
                     <p style="font-family:'JetBrains Mono',monospace;font-size:11px;
-                              letter-spacing:0.06em;color:#8C8F96;margin:0;">
+                              letter-spacing:0.06em;color:#8C8F96;margin:0;word-break:break-word;">
                         — ${safeUser} <span style="opacity:0.6;">[ ${safeType} ]</span>
                     </p>
                 </div>

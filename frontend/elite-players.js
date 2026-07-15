@@ -50,11 +50,11 @@
         section.appendChild(header);
 
         const outerWrap = document.createElement('div');
-        outerWrap.style.cssText = 'max-width:780px;margin:0 auto;box-sizing:border-box;';
+        outerWrap.style.cssText = 'max-width:780px;width:100%;margin:0 auto;box-sizing:border-box;overflow:hidden;';
 
         // Clip window — overflow:hidden is the key
         const clipWindow = document.createElement('div');
-        clipWindow.style.cssText = 'overflow:hidden;width:100%;border:1px solid #232529;border-left:3px solid var(--athletics,#3D9EFF);box-sizing:border-box;';
+        clipWindow.style.cssText = 'overflow:hidden;width:100%;max-width:100%;border:1px solid #232529;border-left:3px solid var(--athletics,#3D9EFF);box-sizing:border-box;';
 
         // Track
         const track = document.createElement('div');
@@ -69,7 +69,7 @@
             // Photo
             const photoDiv = document.createElement('div');
             if (mobile) {
-                photoDiv.style.cssText = 'width:100%;height:220px;overflow:hidden;flex-shrink:0;background:#15171A;';
+                photoDiv.style.cssText = 'width:100%;height:200px;overflow:hidden;flex-shrink:0;background:#15171A;flex-shrink:0;';
             } else {
                 photoDiv.style.cssText = 'flex:0 0 260px;width:260px;height:auto;min-height:200px;overflow:hidden;background:#15171A;flex-shrink:0;';
             }
@@ -78,7 +78,7 @@
                 const img = document.createElement('img');
                 img.src = p.image_data;
                 img.alt = esc(p.name);
-                img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center top;display:block;';
+                img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block;';
                 img.loading = 'lazy';
                 photoDiv.appendChild(img);
             }
