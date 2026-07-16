@@ -1468,7 +1468,11 @@ async function sendUpcomingReminders() {
       const ampm = (timeParts[3] || '').toUpperCase();
       if (ampm === 'PM' && hours < 12) hours += 12;
       if (ampm === 'AM' && hours === 12) hours = 0;
-      slotDate.setUTCHours(hours, mins, 0, 0);
+      // Slot times are in US Pacific time — convert to UTC before comparing
+      // PDT (Mar–Nov): UTC-7 → add 7 hours; PST (Nov–Mar): UTC-8 → add 8 hours
+      const month = new Date().getMonth();
+      const pacificOffset = (month >= 2 && month <= 10) ? 7 : 8;
+      slotDate.setUTCHours(hours + pacificOffset, mins, 0, 0);
 
       // Only send if slot is 1h45m–2h15m away (30-min window around the 2-hour mark)
       const diffMins = (slotDate.getTime() - now.getTime()) / 60000;
