@@ -875,6 +875,22 @@ app.post('/api/bookings', async (req, res) => {
               <p style="font-size:14px;color:#F5F4F0;font-weight:600;margin:0 0 4px;">St. John Bosco High School</p>
               <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;margin:0;">13640 Bellflower Blvd, Bellflower, CA 90706</p>
             </div>
+
+            <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #2ECC71;padding:20px 24px;margin-bottom:20px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#2ECC71;margin:0 0 12px;">&#x1F4B3; PAYMENT REMINDER</p>
+              <p style="font-size:13px;color:#8C8F96;line-height:1.6;margin:0 0 16px;">If you haven't paid yet, please do so before your session:</p>
+              <table style="width:100%;border-collapse:collapse;"><tr>
+                <td style="padding:0 16px 0 0;vertical-align:top;width:50%;">
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Venmo</p>
+                  <a href="https://venmo.com/u/Kyle-Perera-12" style="color:#2ECC71;font-family:'JetBrains Mono',monospace;font-size:12px;text-decoration:none;">@Kyle-Perera-12</a>
+                </td>
+                <td style="padding:0;vertical-align:top;width:50%;">
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Zelle</p>
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0 0 8px;">Kyle Perera</p>
+                  <img src="https://kp12performance.com/zelle-qr.jpg" alt="Zelle QR Code" style="width:110px;height:110px;display:block;border:2px solid #2A2D31;">
+                </td>
+              </tr></table>
+            </div>
             <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0;">
               Questions? Reach us at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>
             </p>
@@ -1244,6 +1260,22 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
               </a>
             </div>
 
+
+            <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #2ECC71;padding:20px 24px;margin-bottom:20px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#2ECC71;margin:0 0 12px;">&#x1F4B3; PAYMENT REMINDER</p>
+              <p style="font-size:13px;color:#8C8F96;line-height:1.6;margin:0 0 16px;">If you haven't paid yet, please do so using one of the options below:</p>
+              <table style="width:100%;border-collapse:collapse;"><tr>
+                <td style="padding:0 16px 0 0;vertical-align:top;width:50%;">
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Venmo</p>
+                  <a href="https://venmo.com/u/Kyle-Perera-12" style="color:#2ECC71;font-family:'JetBrains Mono',monospace;font-size:12px;text-decoration:none;">@Kyle-Perera-12</a>
+                </td>
+                <td style="padding:0;vertical-align:top;width:50%;">
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Zelle</p>
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0 0 8px;">Kyle Perera</p>
+                  <img src="https://kp12performance.com/zelle-qr.jpg" alt="Zelle QR Code" style="width:110px;height:110px;display:block;border:2px solid #2A2D31;">
+                </td>
+              </tr></table>
+            </div>
             <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">
               Thank you for training with KP12 Performance. We'll see you on the other side of the next goal.<br><br>
               — The KP12 Team<br>
