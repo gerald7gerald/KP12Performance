@@ -767,69 +767,6 @@ app.post('/api/bookings', async (req, res) => {
       );
     }
 
-    // ---- Send booking confirmation email ----
-    try {
-      const userResult = await pool.query("SELECT email, username FROM users WHERE id=$1", [userId]);
-      if (userResult.rows.length > 0) {
-        const userEmail = userResult.rows[0].email;
-        const userName  = userResult.rows[0].username;
-
-        const slotLines = slots
-          .slice()
-          .sort((a,b) => ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(a.day)
-                       - ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(b.day))
-          .map(s => `<tr>
-              <td style="padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#F5F4F0;border-bottom:1px solid #232529;">${s.day}</td>
-              <td style="padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#8C8F96;border-bottom:1px solid #232529;">${s.start} – ${s.end}</td>
-            </tr>`)
-          .join('');
-
-        await resend.emails.send({
-          from: 'support@kp12performance.com',
-          to: userEmail,
-          subject: `You're booked! — ${serviceTitle}`,
-          html: `
-            <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:48px 40px;border:1px solid #232529;">
-              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;">
-              <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#3D9EFF;margin-bottom:16px;">[ BOOKING CONFIRMED ]</p>
-              <h1 style="font-size:30px;font-weight:900;text-transform:uppercase;margin:0 0 8px;line-height:1.1;">You're Booked,<br>${userName}!</h1>
-              <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin-bottom:32px;">
-                Your session${slots.length > 1 ? 's are' : ' is'} confirmed. Here's what to expect this week — show up ready to work.
-              </p>
-
-              <div style="background:#15171A;border:1px solid #232529;border-top:3px solid #3D9EFF;padding:24px;margin-bottom:28px;">
-                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#3D9EFF;margin:0 0 16px;">[ YOUR SESSIONS ]</p>
-                <p style="font-size:16px;font-weight:700;text-transform:uppercase;margin:0 0 16px;">${serviceTitle}</p>
-                ${packageLabel ? `<p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;margin:0 0 20px;">${packageLabel}</p>` : ''}
-                <table style="width:100%;border-collapse:collapse;border:1px solid #232529;">
-                  <thead>
-                    <tr style="background:#0D0E10;">
-                      <th style="padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;text-align:left;border-bottom:1px solid #232529;">DAY</th>
-                      <th style="padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;text-align:left;border-bottom:1px solid #232529;">TIME</th>
-                    </tr>
-                  </thead>
-                  <tbody>${slotLines}</tbody>
-                </table>
-              </div>
-
-              <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin-bottom:24px;">
-                You can view and manage your schedule anytime by visiting your account at
-                <a href="https://kp12performance.com/my-schedule.html" style="color:#3D9EFF;">kp12performance.com/my-schedule.html</a>.
-              </p>
-
-              <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">
-                Questions? Reach us at
-                <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a><br>
-                © 2025 KP12 Performance. Let's get to work.
-              </p>
-            </div>`
-        });
-      }
-    } catch (emailErr) {
-      console.error("Booking confirmation email failed:", emailErr);
-      // Don't fail the whole request just because email failed
-    }
-
     // Save which athletes are attending (for parent/guardian bookings)
     if (Array.isArray(selectedAthletes) && selectedAthletes.length > 0) {
       for (const athlete of selectedAthletes) {
