@@ -297,7 +297,23 @@ app.post('/api/auth/signup', async (req, res) => {
                 <a href="https://kp12performance.com/ath.html" style="display:inline-block;background:transparent;color:#3D9EFF;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:10px 18px;border:1px solid rgba(61,158,255,0.4);">Athletics</a>
                 <a href="https://kp12performance.com/nut.html" style="display:inline-block;background:transparent;color:#2ECC71;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:10px 18px;border:1px solid rgba(46,204,113,0.4);">Nutrition</a>
               </div>
-              <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:28px 0 16px;">Questions? Reach us at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a></p>
+          
+            <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #2ECC71;padding:20px 24px;margin-bottom:20px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#2ECC71;margin:0 0 12px;">&#x1F4B3; PAYMENT REMINDER</p>
+              <p style="font-size:13px;color:#8C8F96;line-height:1.6;margin:0 0 16px;">If you haven't paid yet, please do so before your session:</p>
+              <table style="width:100%;border-collapse:collapse;"><tr>
+                <td style="padding:0 16px 0 0;vertical-align:top;width:50%;">
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Venmo</p>
+                  <a href="https://venmo.com/u/Kyle-Perera-12" style="color:#2ECC71;font-family:'JetBrains Mono',monospace;font-size:12px;text-decoration:none;">@Kyle-Perera-12</a>
+                </td>
+                <td style="padding:0;vertical-align:top;width:50%;">
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Zelle</p>
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0 0 8px;">Kyle Perera</p>
+                  <img src="https://kp12performance.com/zelle-qr.jpg" alt="Zelle QR Code" style="width:110px;height:110px;display:block;border:2px solid #2A2D31;">
+                </td>
+              </tr></table>
+            </div>
+    <p style="color:#8C8F96;font-size:13px;line-height:1.6;margin:28px 0 16px;">Questions? Reach us at <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a></p>
               <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #FFC247;padding:16px 20px;margin-top:16px;">
                 <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#FFC247;margin:0 0 6px;">[ CANCELLATION POLICY ]</p>
                 <p style="font-size:13px;color:#F5F4F0;line-height:1.6;margin:0;">
@@ -1467,6 +1483,22 @@ async function sendUpcomingReminders() {
                   <a href="mailto:support@kp12performance.com" style="color:#FFC247;">support@kp12performance.com</a>.
                 </p>
               </div>
+
+              <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #2ECC71;padding:20px 24px;margin-bottom:20px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#2ECC71;margin:0 0 12px;">&#x1F4B3; PAYMENT REMINDER</p>
+                <p style="font-size:13px;color:#8C8F96;line-height:1.6;margin:0 0 16px;">If you haven't paid yet, please do so before your session using one of the options below:</p>
+                <table style="width:100%;border-collapse:collapse;"><tr>
+                  <td style="padding:0 16px 0 0;vertical-align:top;width:50%;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Venmo</p>
+                    <a href="https://venmo.com/u/Kyle-Perera-12" style="color:#2ECC71;font-family:'JetBrains Mono',monospace;font-size:12px;text-decoration:none;">@Kyle-Perera-12</a>
+                  </td>
+                  <td style="padding:0;vertical-align:top;width:50%;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Zelle</p>
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0 0 8px;">Kyle Perera</p>
+                    <img src="https://kp12performance.com/zelle-qr.jpg" alt="Zelle QR Code" style="width:110px;height:110px;display:block;border:2px solid #2A2D31;">
+                  </td>
+                </tr></table>
+              </div>
               <p style="color:#8C8F96;font-size:14px;margin:0;">We'll see you out there — let's get to work! 🔥</p>
             </div>
             <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
@@ -1569,6 +1601,22 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
             </div>
             <div style="padding:32px 32px 26px;">
               ${thankYouBody}
+
+              <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #2ECC71;padding:20px 24px;margin-bottom:20px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#2ECC71;margin:0 0 12px;">&#x1F4B3; PAYMENT REMINDER</p>
+                <p style="font-size:13px;color:#8C8F96;line-height:1.6;margin:0 0 16px;">If you haven't paid yet, please do so before your session using one of the options below:</p>
+                <table style="width:100%;border-collapse:collapse;"><tr>
+                  <td style="padding:0 16px 0 0;vertical-align:top;width:50%;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Venmo</p>
+                    <a href="https://venmo.com/u/Kyle-Perera-12" style="color:#2ECC71;font-family:'JetBrains Mono',monospace;font-size:12px;text-decoration:none;">@Kyle-Perera-12</a>
+                  </td>
+                  <td style="padding:0;vertical-align:top;width:50%;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Zelle</p>
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0 0 8px;">Kyle Perera</p>
+                    <img src="https://kp12performance.com/zelle-qr.jpg" alt="Zelle QR Code" style="width:110px;height:110px;display:block;border:2px solid #2A2D31;">
+                  </td>
+                </tr></table>
+              </div>
               <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #2ECC71;padding:20px 22px;margin-bottom:16px;">
                 <p style="font-size:15px;font-weight:600;margin:0 0 8px;">How did we do?</p>
                 <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 14px;">A quick review helps us improve and lets other athletes know what to expect.</p>
