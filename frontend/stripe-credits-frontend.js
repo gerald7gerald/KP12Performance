@@ -118,11 +118,21 @@ async function startStripeCheckout() {
     if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to payment...'; }
 
     try {
+        // Fetch logged-in user profile info first
+        const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+        const meData = meRes.ok ? await meRes.json() : {};
+        const user = meData.user || {};
+
         const res = await fetch('/api/stripe/create-checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({}) // Sends empty object safely so req.body exists
+            credentials: 'include', // Ensure session cookies are sent
+            body: JSON.stringify({
+                userId: user.id || null,
+                email: user.email || null
+            })
         });
+
         const data = await res.json();
 
         if (!res.ok || !data.url) {
