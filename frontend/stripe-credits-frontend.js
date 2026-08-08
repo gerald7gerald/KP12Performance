@@ -120,12 +120,8 @@ async function startStripeCheckout(amountCents = 5000, packageName = 'KP12 Train
     const btn = document.getElementById('pay-stripe-btn') || document.getElementById('pay-new-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to payment...'; }
 
-    // Save selected slot details and current URL query parameters into sessionStorage
     if (pendingSlotData) {
-        sessionStorage.setItem('pending_stripe_booking', JSON.stringify({
-            ...pendingSlotData,
-            returnQuery: window.location.search
-        }));
+        sessionStorage.setItem('pending_stripe_booking', JSON.stringify(pendingSlotData));
     }
 
     try {
@@ -133,7 +129,7 @@ async function startStripeCheckout(amountCents = 5000, packageName = 'KP12 Train
         const meData = meRes.ok ? await meRes.json() : {};
         const user = meData.user || meData;
 
-        const res  = await fetch('/api/stripe/create-checkout', {
+        const res = await fetch('/api/stripe/create-checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -141,7 +137,8 @@ async function startStripeCheckout(amountCents = 5000, packageName = 'KP12 Train
                 userId: user.id || null,
                 email: user.email || null,
                 amountCents: amountCents,
-                packageName: packageName
+                packageName: packageName,
+                serviceKey: pendingSlotData?.serviceKey || '' // <--- Pass serviceKey to backend
             })
         });
         const data = await res.json();

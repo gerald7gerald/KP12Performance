@@ -1914,6 +1914,12 @@ app.post('/api/stripe/create-checkout', async (req, res) => {
 
     const amountCents = req.body?.amountCents || 5000;
     const packageName = req.body?.packageName || 'KP12 Training Package';
+    const serviceKey  = req.body?.serviceKey  || ''; // <--- Preserves the active service!
+
+    const domain = process.env.DOMAIN_URL || 'https://kp12performance.com';
+    const successQuery = serviceKey 
+      ? `booking.html?service=${encodeURIComponent(serviceKey)}&payment=success`
+      : `booking.html?payment=success`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -1926,7 +1932,7 @@ app.post('/api/stripe/create-checkout', async (req, res) => {
             product_data: {
               name: packageName,
             },
-            unit_amount: amountCents, // Dynamically charges $175, $350, $250, $400, etc.
+            unit_amount: amountCents,
           },
           quantity: 1,
         },
@@ -1934,8 +1940,8 @@ app.post('/api/stripe/create-checkout', async (req, res) => {
       metadata: {
         user_id: String(userId),
       },
-      success_url: `${process.env.DOMAIN_URL || 'https://kp12performance.com'}/booking.html?payment=success`,
-      cancel_url: `${process.env.DOMAIN_URL || 'https://kp12performance.com'}/booking.html?payment=cancelled`,
+      success_url: `${domain}/${successQuery}`,
+      cancel_url: `${domain}/booking.html?payment=cancelled`,
     });
 
     res.json({ url: session.url });
