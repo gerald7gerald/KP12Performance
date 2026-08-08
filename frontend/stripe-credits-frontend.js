@@ -114,10 +114,19 @@ async function bookWithCredit(serviceKey, serviceTitle, packageLabel, slots, sel
     }
 }
 
-// ---- START STRIPE CHECKOUT WITH DYNAMIC PRICE ----
-async function startStripeCheckout(amountCents = 5000, packageName = 'KP12 Training Package') {
+
+// ---- START STRIPE CHECKOUT WITH DYNAMIC PRICE & SLOT SAVING ----
+async function startStripeCheckout(amountCents = 5000, packageName = 'KP12 Training Package', pendingSlotData = null) {
     const btn = document.getElementById('pay-stripe-btn') || document.getElementById('pay-new-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to payment...'; }
+
+    // Save selected slot details and current URL query parameters into sessionStorage
+    if (pendingSlotData) {
+        sessionStorage.setItem('pending_stripe_booking', JSON.stringify({
+            ...pendingSlotData,
+            returnQuery: window.location.search
+        }));
+    }
 
     try {
         const meRes = await fetch('/api/auth/me', { credentials: 'include' });
@@ -194,12 +203,41 @@ function showBookingSuccess(bookingId, serviceTitle, slots, creditsRemaining) {
 }
 
 // ---- HANDLE RETURN FROM STRIPE ----
-(function checkPaymentReturn() {
+// ---- HANDLE RETURN FROM STRIPE & AUTO-BOOK SLOT ----
+(async function checkPaymentReturn() {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get('payment');
     if (!payment) return;
 
     if (payment === 'success') {
+        const pendingRaw = sessionStorage.getItem('pending_stripe_booking');
+        
+        if (pendingRaw) {
+            sessionStorage.removeItem('pending_stripe_booking');
+            try {
+                const pending = JSON.parse(pendingRaw);
+                
+                // If service query parameter is missing on return URL, restore it
+                if (!params.get('service') && pending.returnQuery) {
+                    window.history.replaceState({}, '', window.location.pathname + pending.returnQuery);
+                }
+
+                // Automatically redeem the new credit for the chosen session!
+                await bookWithCredit(
+                    pending.serviceKey,
+                    pending.serviceTitle,
+                    pending.packageLabel,
+                    pending.slots,
+                    pending.selectedAthletes
+                );
+                return;
+            } catch (err) {
+                console.error('Auto-booking error:', err);
+            }
+        }
+
+        // Fallback banner if no pending booking was cached
+        window.history.replaceState({}, '', window.location.pathname);
         const banner = document.createElement('div');
         banner.style.cssText = `
             position:fixed;top:80px;left:50%;transform:translateX(-50%);
@@ -211,8 +249,9 @@ function showBookingSuccess(bookingId, serviceTitle, slots, creditsRemaining) {
         banner.textContent = '✓ Payment received! 1 session credit added to your account.';
         document.body.appendChild(banner);
         setTimeout(() => banner.remove(), 6000);
-        window.history.replaceState({}, '', window.location.pathname);
+
     } else if (payment === 'cancelled') {
+        sessionStorage.removeItem('pending_stripe_booking');
         const banner = document.createElement('div');
         banner.style.cssText = `
             position:fixed;top:80px;left:50%;transform:translateX(-50%);
