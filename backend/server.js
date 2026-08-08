@@ -7,9 +7,31 @@ const crypto = require('crypto');
 const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+// Stripe Webhook MUST go before app.use(express.json())
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("Webhook signature verification failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the checkout.session.completed event
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    // Handle successful checkout (add credits, save session, etc.)
+    console.log("Payment received for session:", session.id);
+  }
+
+  res.json({ received: true });
+});
 
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
@@ -98,12 +120,33 @@ pool.query(`
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL
   );
-`).then(() => pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;`))
-  .then(() => pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30), ADD COLUMN IF NOT EXISTS age INTEGER, ADD COLUMN IF NOT EXISTS gender VARCHAR(30);`))
-  .then(() => pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(30), ADD COLUMN IF NOT EXISTS referral_source VARCHAR(60), ADD COLUMN IF NOT EXISTS referral_detail TEXT;`))
-  .then(() => pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image TEXT;`))
+`)
+  .then(() => pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;'))
+  .then(() => pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30), ADD COLUMN IF NOT EXISTS age INTEGER, ADD COLUMN IF NOT EXISTS gender VARCHAR(30);'))
+  .then(() => pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(30), ADD COLUMN IF NOT EXISTS referral_source VARCHAR(60), ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0;'))
+  .then(() => pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image TEXT;'))
   .then(() => pool.query("UPDATE users SET is_admin = TRUE WHERE email = 'geraldcgarcia7@gmail.com';"))
-  .then(() => console.log("Users table ready!"))
+  .then(() => pool.query(`
+    CREATE TABLE IF NOT EXISTS stripe_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      stripe_session_id TEXT UNIQUE NOT NULL,
+      amount_cents INTEGER,
+      status TEXT DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `))
+  .then(() => pool.query(`
+    CREATE TABLE IF NOT EXISTS attendance_tokens (
+      id SERIAL PRIMARY KEY,
+      booking_id INTEGER REFERENCES bookings(id) ON DELETE CASCADE,
+      token TEXT UNIQUE NOT NULL,
+      used BOOLEAN DEFAULT FALSE,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `))
+  .then(() => console.log("Users and Stripe tables ready!"))
   .catch(err => console.error("User setup error:", err));
 
 pool.query(`
