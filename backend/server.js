@@ -33,9 +33,12 @@ app.use('/api/stripe/webhook',
       if (!userId) return res.json({ received: true });
 
       try {
+        // Award credits = session_count from metadata (set correctly by create-checkout)
+        const totalCredits = parseInt(session.metadata?.session_count || '1');
+
         await pool.query(
-          'UPDATE users SET credits = COALESCE(credits, 0) + 1 WHERE id = $1',
-          [userId]
+          'UPDATE users SET credits = COALESCE(credits, 0) + $1 WHERE id = $2',
+          [totalCredits, userId]
         );
         await pool.query(
           "UPDATE stripe_sessions SET status = 'paid' WHERE stripe_session_id = $1",
@@ -47,7 +50,7 @@ app.use('/api/stripe/webhook',
         );
         const user = userRes.rows[0];
         if (user) {
-          const sessionCount = parseInt(session.metadata?.session_count || '1');
+          const sessionCount = totalCredits;
           await resend.emails.send({
             from: 'support@kp12performance.com',
             to: user.email,
@@ -206,6 +209,8 @@ pool.query(`
   .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS selected_athletes JSONB`))
   .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS booking_id INTEGER`))
   .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS booking_attempted BOOLEAN DEFAULT FALSE`))
+  .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS num_athletes INTEGER DEFAULT 1`))
+  .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS total_credits INTEGER DEFAULT 1`))
   .then(() => pool.query(`
     CREATE TABLE IF NOT EXISTS attendance_tokens (
       id SERIAL PRIMARY KEY,
@@ -1907,7 +1912,25 @@ app.post('/api/stripe/create-checkout', async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
     const domain = process.env.DOMAIN_URL || process.env.BASE_URL || 'https://kp12performance.com';
-    const amount = amountCents || 5000;
+
+    // ---- Multi-athlete + multi-session pricing ----
+    const basePriceCents = amountCents || 5000;            // price per athlete for the package
+    const numAthletes    = (Array.isArray(selectedAthletes) && selectedAthletes.length > 0)
+                           ? selectedAthletes.length : 1;
+
+    // Parse session count from packageLabel e.g. "4 Sessions" → 4, "1 Session" → 1
+    const sessionMatch   = (packageLabel || '').match(/(\d+)\s*session/i);
+    const packageSessions = sessionMatch ? parseInt(sessionMatch[1]) : 1;
+
+    // Total charge = base price × number of athletes
+    const totalAmountCents = basePriceCents * numAthletes;
+
+    // Total credits to award = sessions in package × number of athletes
+    const totalCredits = packageSessions * numAthletes;
+
+    const athleteDesc = numAthletes > 1
+      ? `${numAthletes} athletes × ${packageSessions} session${packageSessions !== 1 ? 's' : ''} each`
+      : `${packageSessions} session${packageSessions !== 1 ? 's' : ''}`;
 
     const stripeSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -1918,33 +1941,36 @@ app.post('/api/stripe/create-checkout', async (req, res) => {
           currency: 'usd',
           product_data: {
             name: serviceTitle || 'KP12 Training Session',
-            description: packageLabel || '1 session — redeemable this week',
+            description: `${packageLabel || 'Training Package'} — ${athleteDesc}`,
           },
-          unit_amount: amount,
+          unit_amount: basePriceCents,  // Stripe unit price per athlete
         },
-        quantity: 1,
+        quantity: numAthletes,           // Stripe multiplies unit × quantity on the receipt
       }],
       metadata: {
-        user_id:     String(userId),
-        service_key: serviceKey,
-        session_count: '1',
+        user_id:       String(userId),
+        service_key:   serviceKey,
+        session_count: String(totalCredits),
+        num_athletes:  String(numAthletes),
       },
       // {CHECKOUT_SESSION_ID} is a Stripe template variable — DO NOT change to a JS variable
       success_url: `${domain}/booking.html?service=${encodeURIComponent(serviceKey)}&payment=success&sid={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${domain}/booking.html?service=${encodeURIComponent(serviceKey)}&payment=cancelled`,
     });
 
-    // Save full booking intent to DB — source of truth on return
+    // Save full booking intent + pricing breakdown to DB
     await pool.query(
       `INSERT INTO stripe_sessions
-         (user_id, stripe_session_id, amount_cents, service_key, package_label, slots, selected_athletes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
+         (user_id, stripe_session_id, amount_cents, service_key, package_label,
+          slots, selected_athletes, num_athletes, total_credits)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        ON CONFLICT (stripe_session_id) DO NOTHING`,
-      [userId, stripeSession.id, amount, serviceKey, packageLabel || null,
-       JSON.stringify(slots), JSON.stringify(selectedAthletes || [])]
+      [userId, stripeSession.id, totalAmountCents, serviceKey, packageLabel || null,
+       JSON.stringify(slots), JSON.stringify(selectedAthletes || []),
+       numAthletes, totalCredits]
     );
 
-    res.json({ url: stripeSession.url });
+    res.json({ url: stripeSession.url, totalAmountCents, numAthletes, totalCredits });
   } catch (err) {
     console.error('Stripe Checkout Error:', err);
     res.status(500).json({ error: err.message });
@@ -1994,31 +2020,40 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
       return res.status(402).json({ error: 'payment_not_complete', status: stripeSession.payment_status });
     }
 
-    // Idempotently grant credit (skip if webhook already did it)
+    // Read the correct credit amount from the DB record
+    const totalCredits = pending.total_credits || 1;
+    const numAthletes  = pending.num_athletes  || 1;
+
+    // Idempotently grant credits (skip if webhook already did it)
     if (pending.status !== 'paid') {
-      await pool.query('UPDATE users SET credits = COALESCE(credits,0) + 1 WHERE id = $1', [userId]);
+      await pool.query(
+        'UPDATE users SET credits = COALESCE(credits,0) + $1 WHERE id = $2',
+        [totalCredits, userId]
+      );
       await pool.query("UPDATE stripe_sessions SET status = 'paid' WHERE stripe_session_id = $1", [stripeSessionId]);
     }
 
     // Mark booking attempted to prevent double-booking on refresh
     await pool.query('UPDATE stripe_sessions SET booking_attempted = TRUE WHERE stripe_session_id = $1', [stripeSessionId]);
 
-    // Deduct 1 credit atomically
+    // Deduct exactly totalCredits atomically
     const deductRes = await pool.query(
-      'UPDATE users SET credits = credits - 1 WHERE id = $1 AND credits > 0 RETURNING credits',
-      [userId]
+      'UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1 RETURNING credits',
+      [totalCredits, userId]
     );
-    if (!deductRes.rows.length) return res.status(402).json({ error: 'Credit deduction failed.' });
+    if (!deductRes.rows.length) return res.status(402).json({ error: 'Insufficient credits after payment.' });
 
-    // Create the booking
+    // Create the booking — sessions_remaining = totalCredits (one per session purchased)
     const weekOf = currentWeekMonday();
     const slots  = pending.slots || [];
     const selectedAthletes = pending.selected_athletes || [];
 
     const bookingRes = await pool.query(
       `INSERT INTO bookings (user_id, service_key, service_title, package_label, sessions_remaining, week_of, status)
-       VALUES ($1,$2,$3,$4,1,$5,'confirmed') RETURNING id`,
-      [userId, pending.service_key, pending.service_key, pending.package_label || '1 Session (Credit)', weekOf]
+       VALUES ($1,$2,$3,$4,$5,$6,'confirmed') RETURNING id`,
+      [userId, pending.service_key, pending.service_key,
+       pending.package_label || `${totalCredits} Sessions (Credit)`,
+       totalCredits, weekOf]
     );
     const bookingId = bookingRes.rows[0].id;
 
