@@ -8,7 +8,6 @@ const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
