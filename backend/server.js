@@ -99,31 +99,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Database Migrations (Claude setup)
-pool.query('SELECT NOW()')
-  .then(() => pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0'))
-  .then(() => pool.query(`
-    CREATE TABLE IF NOT EXISTS stripe_sessions (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-      stripe_session_id TEXT UNIQUE NOT NULL,
-      amount_cents INTEGER,
-      status TEXT DEFAULT 'pending',
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `))
-  .then(() => pool.query(`
-    CREATE TABLE IF NOT EXISTS attendance_tokens (
-      id SERIAL PRIMARY KEY,
-      booking_id INTEGER REFERENCES bookings(id) ON DELETE CASCADE,
-      token TEXT UNIQUE NOT NULL,
-      used BOOLEAN DEFAULT FALSE,
-      expires_at TIMESTAMP NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `))
-  .then(() => console.log('✅ Database migrations finished successfully!'))
-  .catch(err => console.error('❌ Migration error:', err));
+// (migrations handled in startup chain below)
 
 // ---- Helpers ----
 function timeToMinutes(t) {
@@ -215,9 +191,21 @@ pool.query(`
       stripe_session_id TEXT UNIQUE NOT NULL,
       amount_cents INTEGER,
       status TEXT DEFAULT 'pending',
+      service_key TEXT,
+      package_label TEXT,
+      slots JSONB,
+      selected_athletes JSONB,
+      booking_id INTEGER,
+      booking_attempted BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT NOW()
     );
   `))
+  .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS service_key TEXT`))
+  .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS package_label TEXT`))
+  .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS slots JSONB`))
+  .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS selected_athletes JSONB`))
+  .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS booking_id INTEGER`))
+  .then(() => pool.query(`ALTER TABLE stripe_sessions ADD COLUMN IF NOT EXISTS booking_attempted BOOLEAN DEFAULT FALSE`))
   .then(() => pool.query(`
     CREATE TABLE IF NOT EXISTS attendance_tokens (
       id SERIAL PRIMARY KEY,
@@ -1903,137 +1891,359 @@ app.patch('/api/bookings/:id/sessions', requireAdmin, async (req, res) => {
 // ============================================================
 
 // 1. Create Checkout Session
+// Uses session cookie (not body params) for security
 app.post('/api/stripe/create-checkout', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: 'Please sign in first.' });
+
+  const { serviceKey, serviceTitle, packageLabel, slots, selectedAthletes, amountCents } = req.body;
+  if (!serviceKey || !slots?.length) {
+    return res.status(400).json({ error: 'Missing serviceKey or slots.' });
+  }
+
   try {
-    const userId = req.body?.userId || req.user?.id || req.session?.user?.id;
-    const email  = req.body?.email  || req.user?.email || req.session?.user?.email;
+    const userRes = await pool.query('SELECT username, email FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
 
-    if (!userId) {
-      return res.status(401).json({ error: 'You must be logged in to checkout.' });
-    }
+    const domain = process.env.DOMAIN_URL || process.env.BASE_URL || 'https://kp12performance.com';
+    const amount = amountCents || 5000;
 
-    const amountCents = req.body?.amountCents || 5000;
-    const packageName = req.body?.packageName || 'KP12 Training Package';
-    const serviceKey  = req.body?.serviceKey  || ''; // <--- Preserves the active service!
-
-    const domain = process.env.DOMAIN_URL || 'https://kp12performance.com';
-    const successQuery = serviceKey 
-      ? `booking.html?service=${encodeURIComponent(serviceKey)}&payment=success`
-      : `booking.html?payment=success`;
-
-    const session = await stripe.checkout.sessions.create({
+    const stripeSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
-      customer_email: email,
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: packageName,
-            },
-            unit_amount: amountCents,
+      customer_email: user.email,
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: serviceTitle || 'KP12 Training Session',
+            description: packageLabel || '1 session — redeemable this week',
           },
-          quantity: 1,
+          unit_amount: amount,
         },
-      ],
+        quantity: 1,
+      }],
       metadata: {
-        user_id: String(userId),
+        user_id:     String(userId),
+        service_key: serviceKey,
+        session_count: '1',
       },
-      success_url: `${domain}/${successQuery}`,
-      cancel_url: `${domain}/booking.html?payment=cancelled`,
+      // {CHECKOUT_SESSION_ID} is a Stripe template variable — DO NOT change to a JS variable
+      success_url: `${domain}/booking.html?service=${encodeURIComponent(serviceKey)}&payment=success&sid={CHECKOUT_SESSION_ID}`,
+      cancel_url:  `${domain}/booking.html?service=${encodeURIComponent(serviceKey)}&payment=cancelled`,
     });
 
-    res.json({ url: session.url });
+    // Save full booking intent to DB — source of truth on return
+    await pool.query(
+      `INSERT INTO stripe_sessions
+         (user_id, stripe_session_id, amount_cents, service_key, package_label, slots, selected_athletes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       ON CONFLICT (stripe_session_id) DO NOTHING`,
+      [userId, stripeSession.id, amount, serviceKey, packageLabel || null,
+       JSON.stringify(slots), JSON.stringify(selectedAthletes || [])]
+    );
+
+    res.json({ url: stripeSession.url });
   } catch (err) {
     console.error('Stripe Checkout Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
-// 2. Fetch User Credit Balance
+
+// 2. Fetch Credit Balance — uses session cookie
 app.get('/api/credits', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: 'Not signed in.' });
   try {
-    const { email } = req.query;
-    if (!email) return res.status(400).json({ error: 'Email required' });
-
-    const userRes = await pool.query('SELECT id, credits FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-    res.json({ credits: userRes.rows[0].credits || 0 });
+    const r = await pool.query('SELECT credits FROM users WHERE id = $1', [userId]);
+    res.json({ credits: r.rows[0]?.credits ?? 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 3. Book Using Credit
-app.post('/api/bookings/use-credit', async (req, res) => {
+// 3. Complete Booking After Stripe Return
+// Called once when user lands back on booking.html after paying.
+// Verifies payment with Stripe directly (no webhook race condition),
+// grants credit, deducts it, creates booking. Safe on refresh.
+app.post('/api/stripe/complete-booking', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: 'not_authenticated' });
+
+  const { stripeSessionId } = req.body;
+  if (!stripeSessionId) return res.status(400).json({ error: 'Missing stripeSessionId.' });
+
   try {
-    const { email, bookingDetails } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email required' });
+    // Load our local record
+    const sessionRes = await pool.query(
+      'SELECT * FROM stripe_sessions WHERE stripe_session_id = $1 AND user_id = $2',
+      [stripeSessionId, userId]
+    );
+    if (!sessionRes.rows.length) return res.status(404).json({ error: 'Session not found.' });
+    const pending = sessionRes.rows[0];
 
-    const userRes = await pool.query('SELECT id, credits FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-    const user = userRes.rows[0];
-    if ((user.credits || 0) < 1) {
-      return res.status(400).json({ error: 'Insufficient credits' });
+    // Already completed — safe on refresh
+    if (pending.booking_attempted && pending.booking_id) {
+      return res.json({ status: 'already_booked', bookingId: pending.booking_id });
     }
 
-    // Deduct 1 credit
-    const updateRes = await pool.query(
-      'UPDATE users SET credits = credits - 1 WHERE id = $1 RETURNING credits',
-      [user.id]
-    );
+    // Ask Stripe directly if payment succeeded (avoids webhook timing issue)
+    const stripeSession = await stripe.checkout.sessions.retrieve(stripeSessionId);
+    if (stripeSession.payment_status !== 'paid') {
+      return res.status(402).json({ error: 'payment_not_complete', status: stripeSession.payment_status });
+    }
 
-    res.json({ success: true, remainingCredits: updateRes.rows[0].credits });
+    // Idempotently grant credit (skip if webhook already did it)
+    if (pending.status !== 'paid') {
+      await pool.query('UPDATE users SET credits = COALESCE(credits,0) + 1 WHERE id = $1', [userId]);
+      await pool.query("UPDATE stripe_sessions SET status = 'paid' WHERE stripe_session_id = $1", [stripeSessionId]);
+    }
+
+    // Mark booking attempted to prevent double-booking on refresh
+    await pool.query('UPDATE stripe_sessions SET booking_attempted = TRUE WHERE stripe_session_id = $1', [stripeSessionId]);
+
+    // Deduct 1 credit atomically
+    const deductRes = await pool.query(
+      'UPDATE users SET credits = credits - 1 WHERE id = $1 AND credits > 0 RETURNING credits',
+      [userId]
+    );
+    if (!deductRes.rows.length) return res.status(402).json({ error: 'Credit deduction failed.' });
+
+    // Create the booking
+    const weekOf = currentWeekMonday();
+    const slots  = pending.slots || [];
+    const selectedAthletes = pending.selected_athletes || [];
+
+    const bookingRes = await pool.query(
+      `INSERT INTO bookings (user_id, service_key, service_title, package_label, sessions_remaining, week_of, status)
+       VALUES ($1,$2,$3,$4,1,$5,'confirmed') RETURNING id`,
+      [userId, pending.service_key, pending.service_key, pending.package_label || '1 Session (Credit)', weekOf]
+    );
+    const bookingId = bookingRes.rows[0].id;
+
+    for (const slot of slots) {
+      await pool.query(
+        'INSERT INTO booking_slots (booking_id, day_of_week, start_time, end_time) VALUES ($1,$2,$3,$4)',
+        [bookingId, slot.day, slot.start, slot.end]
+      );
+    }
+
+    if (Array.isArray(selectedAthletes) && selectedAthletes.length) {
+      for (const a of selectedAthletes) {
+        await pool.query(
+          'INSERT INTO booking_athletes (booking_id, athlete_name, athlete_age, athlete_gender) VALUES ($1,$2,$3,$4)',
+          [bookingId, a.name, a.age || null, a.gender || null]
+        );
+      }
+    }
+
+    // Link booking to stripe_session
+    await pool.query('UPDATE stripe_sessions SET booking_id = $1 WHERE stripe_session_id = $2', [bookingId, stripeSessionId]);
+
+    // Send confirmation email (non-blocking)
+    const userRes = await pool.query('SELECT username, email FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
+    if (user?.email) {
+      const slotTable = slots.map(s =>
+        `<tr><td style="padding:9px 14px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:12px;color:#3D9EFF;">${s.day}</td>
+         <td style="padding:9px 14px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:12px;color:#F5F4F0;">${s.start} – ${s.end}</td></tr>`
+      ).join('');
+      resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: user.email,
+        subject: `You're booked — ${pending.service_key} | KP12 Performance`,
+        html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #232529;">
+          <div style="background:#15171A;padding:26px 32px;border-bottom:1px solid #232529;">
+            <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:30px;display:block;">
+          </div>
+          <div style="padding:32px 32px 28px;">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0 0 14px;">[ BOOKING CONFIRMED ]</p>
+            <h1 style="font-size:24px;font-weight:800;text-transform:uppercase;margin:0 0 6px;">You're Booked, ${user.username}! 💪</h1>
+            <p style="color:#8C8F96;font-size:14px;margin:0 0 24px;">1 session credit used. Your slot is locked in.</p>
+            <table style="width:100%;border-collapse:collapse;background:#15171A;border:1px solid #232529;margin-bottom:18px;">
+              <thead><tr style="background:#1d1f23;">
+                <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">DAY</th>
+                <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">TIME</th>
+              </tr></thead><tbody>${slotTable}</tbody>
+            </table>
+            <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #3D9EFF;padding:16px 20px;margin-bottom:18px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#3D9EFF;margin:0 0 6px;">📍 LOCATION</p>
+              <p style="font-size:14px;color:#F5F4F0;font-weight:600;margin:0 0 4px;">St. John Bosco High School</p>
+              <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;margin:0;">13640 Bellflower Blvd, Bellflower, CA 90706</p>
+            </div>
+            <div style="background:#1a1209;border:1px solid rgba(255,194,71,0.3);border-left:3px solid #FFC247;padding:16px 20px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#FFC247;margin:0 0 6px;">[ CANCELLATION POLICY ]</p>
+              <p style="font-size:13px;color:#F5F4F0;line-height:1.6;margin:0;">Cancel at least <strong>6 hours before your session</strong> to avoid a fee.
+                Contact <a href="mailto:support@kp12performance.com" style="color:#FFC247;">support@kp12performance.com</a></p>
+            </div>
+          </div>
+          <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
+          </div>
+        </div>`
+      }).catch(e => console.error('Email error:', e));
+    }
+
+    res.json({ status: 'booked', bookingId, creditsRemaining: deductRes.rows[0].credits, slots, serviceKey: pending.service_key });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('complete-booking error:', err);
+    res.status(500).json({ error: 'Booking failed. Your payment was received — contact support@kp12performance.com' });
   }
 });
 
-// 4. Send Check-In Attendance Token
-app.post('/api/attendance/send-checkin', async (req, res) => {
+// 4. Book Using Existing Credit (no Stripe needed)
+app.post('/api/bookings/use-credit', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: 'Please sign in.' });
+
+  const { serviceKey, serviceTitle, packageLabel, slots, selectedAthletes } = req.body;
+  if (!serviceKey || !slots?.length) return res.status(400).json({ error: 'Missing serviceKey or slots.' });
+
   try {
-    const { bookingId } = req.body;
-    if (!bookingId) return res.status(400).json({ error: 'Booking ID required' });
+    const creditRes = await pool.query('SELECT credits FROM users WHERE id = $1', [userId]);
+    if ((creditRes.rows[0]?.credits || 0) < 1) {
+      return res.status(402).json({ error: 'No credits available. Please purchase a session.' });
+    }
+
+    const deductRes = await pool.query(
+      'UPDATE users SET credits = credits - 1 WHERE id = $1 AND credits > 0 RETURNING credits',
+      [userId]
+    );
+    if (!deductRes.rows.length) return res.status(402).json({ error: 'Credit deduction failed.' });
+
+    const weekOf = currentWeekMonday();
+    const bookingRes = await pool.query(
+      `INSERT INTO bookings (user_id, service_key, service_title, package_label, sessions_remaining, week_of, status)
+       VALUES ($1,$2,$3,$4,1,$5,'confirmed') RETURNING id`,
+      [userId, serviceKey, serviceTitle, packageLabel || '1 Session (Credit)', weekOf]
+    );
+    const bookingId = bookingRes.rows[0].id;
+
+    for (const slot of slots) {
+      await pool.query(
+        'INSERT INTO booking_slots (booking_id, day_of_week, start_time, end_time) VALUES ($1,$2,$3,$4)',
+        [bookingId, slot.day, slot.start, slot.end]
+      );
+    }
+
+    if (Array.isArray(selectedAthletes) && selectedAthletes.length) {
+      for (const a of selectedAthletes) {
+        await pool.query(
+          'INSERT INTO booking_athletes (booking_id, athlete_name, athlete_age, athlete_gender) VALUES ($1,$2,$3,$4)',
+          [bookingId, a.name, a.age || null, a.gender || null]
+        );
+      }
+    }
+
+    res.status(201).json({ message: 'Booked using 1 credit.', bookingId, creditsRemaining: deductRes.rows[0].credits });
+  } catch (err) {
+    console.error('use-credit error:', err);
+    res.status(500).json({ error: 'Booking failed.' });
+  }
+});
+
+// 5. Send Check-In Email with Attendance Token
+app.post('/api/attendance/send-checkin', requireAdmin, async (req, res) => {
+  const { bookingId } = req.body;
+  if (!bookingId) return res.status(400).json({ error: 'Booking ID required.' });
+
+  try {
+    const bookingRes = await pool.query(
+      `SELECT b.id, b.service_title, u.email, u.username
+       FROM bookings b JOIN users u ON u.id = b.user_id
+       WHERE b.id = $1 AND b.status = 'confirmed'`,
+      [bookingId]
+    );
+    if (!bookingRes.rows.length) return res.status(404).json({ error: 'Booking not found.' });
+    const booking = bookingRes.rows[0];
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 3 * 60 * 60 * 1000); // 3 hours
 
     await pool.query(
-      `INSERT INTO attendance_tokens (booking_id, token, expires_at)
-       VALUES ($1, $2, $3)`,
+      'INSERT INTO attendance_tokens (booking_id, token, expires_at) VALUES ($1,$2,$3)',
       [bookingId, token, expiresAt]
     );
 
-    const checkInUrl = `https://kp12performance.com/api/confirm-attendance?token=${token}`;
-    res.json({ success: true, checkInUrl });
+    const confirmUrl = `${process.env.DOMAIN_URL || 'https://kp12performance.com'}/api/confirm-attendance?token=${token}`;
+
+    await resend.emails.send({
+      from: 'support@kp12performance.com',
+      to: booking.email,
+      subject: `Are you here? Confirm your attendance — KP12 Performance`,
+      html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #232529;">
+        <div style="background:#15171A;padding:26px 32px;border-bottom:1px solid #232529;">
+          <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:30px;display:block;">
+        </div>
+        <div style="padding:32px 32px 28px;text-align:center;">
+          <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#FF5630;margin:0 0 14px;">[ ATTENDANCE CHECK-IN ]</p>
+          <h1 style="font-size:26px;font-weight:800;text-transform:uppercase;margin:0 0 14px;">You Here, ${booking.username}? 👋</h1>
+          <p style="color:#8C8F96;font-size:15px;line-height:1.7;margin:0 0 32px;">
+            Your <strong style="color:#F5F4F0;">${booking.service_title}</strong> session is starting soon.
+            Tap below to confirm you've arrived.
+          </p>
+          <a href="${confirmUrl}" style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:18px 48px;font-weight:700;">
+            ✓ I'M HERE!
+          </a>
+          <p style="color:#5A5D63;font-size:12px;margin:24px 0 0;">This link expires in 3 hours and can only be used once.</p>
+        </div>
+      </div>`
+    });
+
+    res.json({ message: `Check-in email sent to ${booking.email}` });
   } catch (err) {
+    console.error('send-checkin error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 5. Confirm Attendance Link
+// 6. Confirm Attendance — user clicks link in email
 app.get('/api/confirm-attendance', async (req, res) => {
-  try {
-    const { token } = req.query;
-    if (!token) return res.status(400).send('Token required');
+  const { token } = req.query;
+  if (!token) return res.redirect('/index.html?attendance=invalid');
 
+  try {
     const tokenRes = await pool.query(
-      'SELECT * FROM attendance_tokens WHERE token = $1 AND used = FALSE AND expires_at > NOW()',
+      `SELECT at.id, at.booking_id, at.used, at.expires_at,
+              b.service_title, u.username, u.email
+       FROM attendance_tokens at
+       JOIN bookings b ON b.id = at.booking_id
+       JOIN users u ON u.id = b.user_id
+       WHERE at.token = $1`,
       [token]
     );
 
-    if (tokenRes.rows.length === 0) {
-      return res.status(400).send('Invalid or expired attendance token.');
-    }
-
+    if (!tokenRes.rows.length)    return res.redirect('/index.html?attendance=invalid');
     const record = tokenRes.rows[0];
-    await pool.query('UPDATE attendance_tokens SET used = TRUE WHERE id = $1', [record.id]);
+    if (record.used)              return res.redirect('/my-schedule.html?attendance=already_confirmed');
+    if (new Date() > new Date(record.expires_at)) return res.redirect('/index.html?attendance=expired');
 
-    res.send('<h2>✅ Attendance Confirmed! Thank you.</h2>');
+    await pool.query('UPDATE attendance_tokens SET used = TRUE WHERE id = $1', [record.id]);
+    await pool.query(
+      'UPDATE bookings SET sessions_remaining = GREATEST(0, COALESCE(sessions_remaining,1) - 1) WHERE id = $1',
+      [record.booking_id]
+    );
+
+    // Send quick confirmation email
+    resend.emails.send({
+      from: 'support@kp12performance.com',
+      to: record.email,
+      subject: `✅ Checked in — See you out there, ${record.username}! | KP12`,
+      html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:480px;margin:0 auto;border:1px solid #232529;padding:40px 32px;text-align:center;">
+        <h1 style="font-size:28px;font-weight:800;margin:0 0 12px;">✅ You're Checked In!</h1>
+        <p style="color:#8C8F96;font-size:15px;line-height:1.7;margin:0;">
+          We've got you down for <strong style="color:#F5F4F0;">${record.service_title}</strong>.
+          Your coach is ready — let's get to work!
+        </p>
+      </div>`
+    }).catch(e => console.error('Check-in email error:', e));
+
+    res.redirect('/my-schedule.html?attendance=confirmed');
   } catch (err) {
-    res.status(500).send(err.message);
+    console.error('confirm-attendance error:', err);
+    res.redirect('/index.html?attendance=error');
   }
 });
 
