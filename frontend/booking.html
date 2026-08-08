@@ -74,11 +74,12 @@
 
         <!-- Confirm button (shown when slots selected + logged in) -->
         <div id="booking-confirm-wrap" class="booking-confirm-wrap" style="display:none;">
-    <div class="booking-summary-inner" id="booking-summary-inner"></div>
-    <p class="booking-error" id="booking-error" style="display:none;"></p>
-    
-    <div id="payment-options-wrap" style="margin-top:20px;"></div>
-</div>
+            <div class="booking-summary-inner" id="booking-summary-inner"></div>
+            <p class="booking-error" id="booking-error" style="display:none;"></p>
+            <button id="booking-confirm-btn" class="booking-proceed-btn booking-confirm-btn">
+                Confirm Booking
+            </button>
+        </div>
     </div>
 
     <!-- Success state -->
@@ -113,7 +114,6 @@
 </footer>
 
 <script src="nav.js"></script>
-<script src="stripe-credits-frontend.js"></script>
 <script>
 const SERVICES = {
     'sports-performance-training': {
@@ -221,25 +221,9 @@ const todayName  = JS_TO_DAY[todayJSDay] || 'Monday';
 const todayIdx   = DAYS_ALL.indexOf(todayName);
 const validDays  = todayJSDay === 0 ? DAYS_ALL : DAYS_ALL.slice(todayIdx);
 
-const params = new URLSearchParams(window.location.search);
-let serviceKey = params.get('service');
-
-// Fallback: If URL has no ?service= (like returning from Stripe), read it from pending booking
-if (!serviceKey) {
-    const pendingRaw = sessionStorage.getItem('pending_stripe_booking');
-    if (pendingRaw) {
-        try {
-            const pending = JSON.parse(pendingRaw);
-            if (pending.serviceKey) {
-                serviceKey = pending.serviceKey;
-            }
-        } catch (e) {
-            console.error('Failed to parse pending booking', e);
-        }
-    }
-}
-
-const service = SERVICES[serviceKey];
+const params     = new URLSearchParams(window.location.search);
+const serviceKey = params.get('service');
+const service    = SERVICES[serviceKey];
 
 let selectedPkg  = null;
 let selectedSlots = new Set(); // Set of slot IDs
@@ -403,27 +387,37 @@ function updateConfirmState() {
         return di !== 0 ? di : (a.start < b.start ? -1 : 1);
     });
 
+    const pricing = calculatePricing();
+    const isMultiAthlete = pricing.numAthletes > 1;
+
+    const priceDisplay = isMultiAthlete
+        ? `<span style="font-size:13px;color:var(--text-muted);">
+               ${pricing.baseStr}/athlete × ${pricing.numAthletes} athletes
+           </span><br>
+           <span style="font-size:18px;font-weight:700;color:var(--training);">
+               Total: ${pricing.totalStr}
+           </span>`
+        : `<span style="font-size:18px;font-weight:700;color:var(--training);">${pricing.baseStr}</span>`;
+
     summaryEl.innerHTML = `
         <div>
             <p class="booking-summary-label">Package</p>
-            <p class="booking-summary-val">${selectedPkg ? selectedPkg.label + (selectedPkg.price ? ' — '+selectedPkg.price : '') : ''}</p>
+            <p class="booking-summary-val">${selectedPkg ? selectedPkg.label : '—'}</p>
+            <div style="margin-top:6px;line-height:1.6;">${priceDisplay}</div>
         </div>
         <div>
             <p class="booking-summary-label">Selected Times (${sortedSlots.length})</p>
             ${sortedSlots.map(s => `<p class="booking-summary-val" style="font-size:14px;margin-bottom:4px;">${s.day}, ${s.start} – ${s.end}</p>`).join('')}
         </div>
     `;
-    if (window.renderPaymentOptions) {
-    const slotsArray = sortedSlots.map(s => ({ day: s.day, start: s.start, end: s.end }));
-    window.renderPaymentOptions(
-        serviceKey,
-        service.title,
-        selectedPkg ? selectedPkg.label : '',
-        slotsArray,
-        (userRole === 'parent_guardian') ? getSelectedAthletes() : [],
-        selectedPkg
-    );
-}
+
+    // Update the confirm button label with the correct total
+    const confirmBtn = document.getElementById('booking-confirm-btn');
+    if (confirmBtn) {
+        confirmBtn.textContent = isMultiAthlete
+            ? `PAY ${pricing.totalStr} — BOOK ${pricing.numAthletes} ATHLETES`
+            : `CONFIRM BOOKING${pricing.baseStr !== '$0' ? ' — ' + pricing.baseStr : ''}`;
+    }
 }
 
 function showScheduleStep() {
@@ -438,7 +432,7 @@ function showScheduleStep() {
 
     const weekNote = document.getElementById('booking-week-note');
     weekNote.textContent = todayJSDay === 0
-        ? 'Showing all sessions this week. Select as many as you need.'
+        ? 'Showing all sessions for next week. Select as many as you need.'
         : `Showing sessions from ${todayName} through Saturday. Click to select — pick as many as you need.`;
 
     const wrap = document.getElementById('booking-slots-wrap');
@@ -449,12 +443,17 @@ function showScheduleStep() {
         .then(slots => {
             // Use service's own category if specified, else default to Training
             const serviceCategory = service.category || 'Training';
-            // Normalize subcategory for comparison — handles slash spacing variants
-            // e.g. "Swim Team/Clinics" == "Swim Team / Clinics"
-            const normSub = str => (str || '').replace(/\s*\/\s*/g, ' / ').trim();
+
+            // Normalize for comparison — strips slash spacing AND case
+            const normSub = str => (str || '').toLowerCase().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ').trim();
+            const normCat = str => (str || '').toLowerCase().trim();
+
+            const targetSub = normSub(service.subcategory);
+            const targetCat = normCat(serviceCategory);
+
             const relevant = slots.filter(s =>
-                s.category === serviceCategory &&
-                normSub(s.subcategory) === normSub(service.subcategory) &&
+                normCat(s.category) === targetCat &&
+                normSub(s.subcategory) === targetSub &&
                 validDays.includes(s.day_of_week)
             );
 
@@ -576,6 +575,11 @@ function loadAthleteSelection() {
             `).join('');
 
             wrap.style.display = 'block';
+
+            // Recalculate price whenever athlete selection changes
+            document.querySelectorAll('.athlete-checkbox').forEach(cb => {
+                cb.addEventListener('change', onAthleteChange);
+            });
         })
         .catch(() => {
             wrap.style.display = 'none';
@@ -588,6 +592,34 @@ function getSelectedAthletes() {
         age:    cb.dataset.age,
         gender: cb.dataset.gender
     }));
+}
+
+// ---- PRICING HELPER ----
+function calculatePricing() {
+    if (!selectedPkg) return { baseCents: 0, numAthletes: 1, totalCents: 0, baseStr: '$0', totalStr: '$0', sessions: 1 };
+
+    // Parse dollar amount from price string e.g. "$350" or "$50/session"
+    const baseAmount = parseInt((selectedPkg.price || '$0').replace(/[^0-9]/g, ''), 10) || 0;
+    const baseCents  = baseAmount * 100;
+
+    // Parse session count from label e.g. "8 Sessions" → 8
+    const sessionMatch = (selectedPkg.label || '').match(/(\d+)\s*session/i);
+    const sessions = sessionMatch ? parseInt(sessionMatch[1]) : 1;
+
+    // How many athletes selected (1 for solo athletes)
+    const numAthletes = (userRole === 'parent_guardian')
+        ? Math.max(1, getSelectedAthletes().length)
+        : 1;
+
+    const totalCents = baseCents * numAthletes;
+    const fmt = cents => '$' + (cents / 100).toLocaleString('en-US');
+
+    return { baseCents, numAthletes, totalCents, baseStr: fmt(baseCents), totalStr: fmt(totalCents), sessions };
+}
+
+// Recalculate and update the summary panel whenever athlete selection changes
+function onAthleteChange() {
+    updateConfirmState(); // rebuilds summary with fresh pricing
 }
 
 function esc(str) {
@@ -628,6 +660,24 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
         return { day: s.day, start: s.start, end: s.end };
     });
 
+    const selectedAthletes = (userRole === 'parent_guardian') ? getSelectedAthletes() : [];
+    const pricing = calculatePricing();
+
+    // If Stripe payment is needed (no free credit path), show payment options
+    if (document.getElementById('payment-options-wrap')) {
+        await renderPaymentOptions(
+            serviceKey,
+            service.title,
+            selectedPkg ? selectedPkg.label : '',
+            slots,
+            selectedAthletes,
+            { price: pricing.totalStr, label: selectedPkg?.label || '', amountCents: pricing.totalCents }
+        );
+        btn.disabled = false;
+        btn.textContent = 'Confirm Booking';
+        return;
+    }
+
     try {
         const res = await fetch('/api/bookings', {
             method: 'POST',
@@ -637,7 +687,7 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
                 serviceTitle: service.title,
                 packageLabel: selectedPkg ? selectedPkg.label : '',
                 slots,
-                selectedAthletes: (userRole === 'parent_guardian') ? getSelectedAthletes() : []
+                selectedAthletes
             })
         });
         const data = await res.json();

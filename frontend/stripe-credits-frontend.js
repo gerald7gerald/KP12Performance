@@ -22,7 +22,9 @@ async function renderPaymentOptions(serviceKey, serviceTitle, packageLabel, slot
     if (!container) return;
 
     const priceStr    = selectedPkg?.price || '$50';
-    const amountCents = selectedPkg ? parseInt(selectedPkg.price.replace(/[^0-9]/g, ''), 10) * 100 : 5000;
+    // Use pre-calculated amountCents if provided (multi-athlete total already included)
+    const amountCents = selectedPkg?.amountCents
+                        || (selectedPkg ? parseInt((selectedPkg.price || '$0').replace(/[^0-9]/g, ''), 10) * 100 : 5000);
     const packageName = selectedPkg ? `${serviceTitle} - ${selectedPkg.label}` : serviceTitle;
 
     if (credits > 0) {
