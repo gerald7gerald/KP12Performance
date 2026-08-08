@@ -8,30 +8,87 @@ const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 // Stripe Webhook MUST go before app.use(express.json())
-app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
+// Stripe Webhook MUST go BEFORE express.json()
+app.use('/api/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body, sig, process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error('Webhook signature failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
 
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error("Webhook signature verification failed:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const userId  = session.metadata?.user_id;
+      if (!userId) return res.json({ received: true });
+
+      try {
+        await pool.query(
+          'UPDATE users SET credits = COALESCE(credits, 0) + 1 WHERE id = $1',
+          [userId]
+        );
+        await pool.query(
+          "UPDATE stripe_sessions SET status = 'paid' WHERE stripe_session_id = $1",
+          [session.id]
+        );
+
+        const userRes = await pool.query(
+          'SELECT username, email FROM users WHERE id = $1', [userId]
+        );
+        const user = userRes.rows[0];
+        if (user) {
+          const sessionCount = parseInt(session.metadata?.session_count || '1');
+          await resend.emails.send({
+            from: 'support@kp12performance.com',
+            to: user.email,
+            subject: `Payment Confirmed — ${sessionCount} session credit added | KP12 Performance`,
+            html: `
+              <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #232529;">
+                <div style="background:#15171A;padding:26px 32px;border-bottom:1px solid #232529;">
+                  <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:30px;display:block;">
+                </div>
+                <div style="padding:32px 32px 28px;">
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#2ECC71;margin:0 0 14px;">[ PAYMENT CONFIRMED ]</p>
+                  <h1 style="font-size:24px;font-weight:800;text-transform:uppercase;margin:0 0 6px;">Payment Received! 💪</h1>
+                  <p style="color:#F5F4F0;font-size:15px;line-height:1.7;margin:14px 0 24px;">
+                    Hey ${user.username}! Your payment of <strong>$${(session.amount_total / 100).toFixed(2)}</strong> was successful.
+                    <strong>${sessionCount} session credit</strong> has been added to your account.
+                  </p>
+                  <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #2ECC71;padding:20px 24px;margin-bottom:20px;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#2ECC71;margin:0 0 8px;">YOUR CREDIT BALANCE</p>
+                    <p style="font-size:28px;font-weight:800;color:#F5F4F0;margin:0;">+${sessionCount} session</p>
+                    <p style="font-size:13px;color:#8C8F96;margin:6px 0 0;">Use it to book any available session this week.</p>
+                  </div>
+                  <a href="https://kp12performance.com/booking.html" style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:13px 24px;font-weight:600;">
+                    Book Your Session →
+                  </a>
+                </div>
+                <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
+                </div>
+              </div>`
+          });
+        }
+      } catch (err) {
+        console.error('Credit grant error:', err);
+      }
+    }
+
+    res.json({ received: true });
   }
+);  
 
-  // Handle the checkout.session.completed event
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    // Handle successful checkout (add credits, save session, etc.)
-    console.log("Payment received for session:", session.id);
-  }
-
-  res.json({ received: true });
-});
 
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
@@ -1842,17 +1899,62 @@ app.patch('/api/bookings/:id/sessions', requireAdmin, async (req, res) => {
     res.status(500).json({ error: "Error updating sessions." });
   }
 });
-// ==========================================
-// STRIPE CREDIT ROUTES
-// ==========================================
+// ============================================================
+// STRIPE & CREDITS API ROUTES
+// ============================================================
 
-// 1. Get user credit balance
-app.get('/api/user/credits', async (req, res) => {
+// 1. Create Checkout Session
+app.post('/api/stripe/create-checkout', async (req, res) => {
+  try {
+    const { userId, packageId, sessionCount, amountCents, packageName } = req.body;
+
+    if (!userId || !amountCents) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: { name: packageName || 'KP12 Training Package' },
+            unit_amount: amountCents,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      metadata: {
+        user_id: userId.toString(),
+        package_id: packageId || '',
+        session_count: sessionCount ? sessionCount.toString() : '1',
+      },
+      success_url: `https://kp12performance.com/booking.html?session_id={CHECKOUT_SESSION_ID}&success=true`,
+      cancel_url: `https://kp12performance.com/booking.html?canceled=true`,
+    });
+
+    // Save session in DB
+    await pool.query(
+      `INSERT INTO stripe_sessions (user_id, stripe_session_id, amount_cents, status)
+       VALUES ($1, $2, $3, 'pending')`,
+      [userId, session.id, amountCents]
+    );
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error('Checkout creation error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. Fetch User Credit Balance
+app.get('/api/credits', async (req, res) => {
   try {
     const { email } = req.query;
-    if (!email) return res.status(400).json({ error: 'Email parameter required' });
+    if (!email) return res.status(400).json({ error: 'Email required' });
 
-    const userRes = await pool.query('SELECT credits FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    const userRes = await pool.query('SELECT id, credits FROM users WHERE LOWER(email) = LOWER($1)', [email]);
     if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
     res.json({ credits: userRes.rows[0].credits || 0 });
@@ -1861,50 +1963,21 @@ app.get('/api/user/credits', async (req, res) => {
   }
 });
 
-// 2. Create Stripe Checkout Session
-app.post('/api/stripe/create-checkout-session', async (req, res) => {
-  try {
-    const { email, creditsToBuy, priceAmount, packageName } = req.body;
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: { name: packageName || `${creditsToBuy} Credits` },
-            unit_amount: priceAmount,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      customer_email: email,
-      metadata: { credits: creditsToBuy.toString() },
-      success_url: `https://kp12performance.com/booking.html?session_id={CHECKOUT_SESSION_ID}&success=true`,
-      cancel_url: `https://kp12performance.com/booking.html?canceled=true`,
-    });
-
-    res.json({ url: session.url });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 3. Use 1 credit for booking
+// 3. Book Using Credit
 app.post('/api/bookings/use-credit', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, bookingDetails } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
 
     const userRes = await pool.query('SELECT id, credits FROM users WHERE LOWER(email) = LOWER($1)', [email]);
     if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
     const user = userRes.rows[0];
-    if (user.credits < 1) {
-      return res.status(400).json({ error: 'Insufficient credits available' });
+    if ((user.credits || 0) < 1) {
+      return res.status(400).json({ error: 'Insufficient credits' });
     }
 
+    // Deduct 1 credit
     const updateRes = await pool.query(
       'UPDATE users SET credits = credits - 1 WHERE id = $1 RETURNING credits',
       [user.id]
@@ -1916,11 +1989,52 @@ app.post('/api/bookings/use-credit', async (req, res) => {
   }
 });
 
-// ==========================================
+// 4. Send Check-In Attendance Token
+app.post('/api/attendance/send-checkin', async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+    if (!bookingId) return res.status(400).json({ error: 'Booking ID required' });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await pool.query(
+      `INSERT INTO attendance_tokens (booking_id, token, expires_at)
+       VALUES ($1, $2, $3)`,
+      [bookingId, token, expiresAt]
+    );
+
+    const checkInUrl = `https://kp12performance.com/api/confirm-attendance?token=${token}`;
+    res.json({ success: true, checkInUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
+// 5. Confirm Attendance Link
+app.get('/api/confirm-attendance', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).send('Token required');
+
+    const tokenRes = await pool.query(
+      'SELECT * FROM attendance_tokens WHERE token = $1 AND used = FALSE AND expires_at > NOW()',
+      [token]
+    );
+
+    if (tokenRes.rows.length === 0) {
+      return res.status(400).send('Invalid or expired attendance token.');
+    }
+
+    const record = tokenRes.rows[0];
+    await pool.query('UPDATE attendance_tokens SET used = TRUE WHERE id = $1', [record.id]);
+
+    res.send('<h2>✅ Attendance Confirmed! Thank you.</h2>');
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
