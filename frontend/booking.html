@@ -74,12 +74,11 @@
 
         <!-- Confirm button (shown when slots selected + logged in) -->
         <div id="booking-confirm-wrap" class="booking-confirm-wrap" style="display:none;">
-            <div class="booking-summary-inner" id="booking-summary-inner"></div>
-            <p class="booking-error" id="booking-error" style="display:none;"></p>
-            <button id="booking-confirm-btn" class="booking-proceed-btn booking-confirm-btn">
-                Confirm Booking
-            </button>
-        </div>
+    <div class="booking-summary-inner" id="booking-summary-inner"></div>
+    <p class="booking-error" id="booking-error" style="display:none;"></p>
+    
+    <div id="payment-options-wrap" style="margin-top:20px;"></div>
+</div>
     </div>
 
     <!-- Success state -->
@@ -114,6 +113,7 @@
 </footer>
 
 <script src="nav.js"></script>
+<script src="stripe-credits-frontend.js"></script>
 <script>
 const SERVICES = {
     'sports-performance-training': {
@@ -397,6 +397,16 @@ function updateConfirmState() {
             ${sortedSlots.map(s => `<p class="booking-summary-val" style="font-size:14px;margin-bottom:4px;">${s.day}, ${s.start} – ${s.end}</p>`).join('')}
         </div>
     `;
+    if (window.renderPaymentOptions) {
+        const slotsArray = sortedSlots.map(s => ({ day: s.day, start: s.start, end: s.end }));
+        window.renderPaymentOptions(
+            serviceKey,
+            service.title,
+            selectedPkg ? selectedPkg.label : '',
+            slotsArray,
+            (userRole === 'parent_guardian') ? getSelectedAthletes() : []
+        );
+    }
 }
 
 function showScheduleStep() {
