@@ -663,21 +663,89 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
     const selectedAthletes = (userRole === 'parent_guardian') ? getSelectedAthletes() : [];
     const pricing = calculatePricing();
 
-    // If Stripe payment is needed (no free credit path), show payment options
-    if (document.getElementById('payment-options-wrap')) {
-        await renderPaymentOptions(
+    // ---- Check credit balance first ----
+    let credits = 0;
+    try {
+        const creditRes = await fetch('/api/credits', { credentials: 'include' });
+        if (creditRes.ok) credits = (await creditRes.json()).credits || 0;
+    } catch (e) { /* non-fatal */ }
+
+    const pkgForStripe = {
+        price:       pricing.totalStr,
+        label:       selectedPkg?.label || '',
+        amountCents: pricing.totalCents
+    };
+
+    if (credits > 0) {
+        // ---- Has credits → use 1 credit to book for free ----
+        try {
+            const res = await fetch('/api/bookings/use-credit', {
+                method:      'POST',
+                headers:     { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    serviceKey,
+                    serviceTitle:  service.title,
+                    packageLabel:  selectedPkg ? selectedPkg.label : '',
+                    slots,
+                    selectedAthletes
+                })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                if (res.status === 402) {
+                    // Credit ran out between check and deduct — fall through to Stripe
+                    credits = 0;
+                } else {
+                    errorEl.textContent = data.error || 'Booking failed. Please try again.';
+                    errorEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Confirm Booking';
+                    return;
+                }
+            } else {
+                // Credit booking success — show success screen
+                document.getElementById('step-1').style.display = 'none';
+                document.getElementById('step-2').style.display = 'none';
+                const successEl = document.getElementById('booking-success');
+                successEl.style.display = 'block';
+                const sortedSlots = slots.sort((a,b) => DAYS_ALL.indexOf(a.day) - DAYS_ALL.indexOf(b.day));
+                document.getElementById('booking-success-details').innerHTML = `
+                    <p class="booking-summary-label" style="margin-bottom:8px;">SERVICE</p>
+                    <p style="font-weight:600;margin-bottom:20px;">${service.title}${selectedPkg?.label ? ' — ' + selectedPkg.label : ''}</p>
+                    <p class="booking-summary-label" style="margin-bottom:8px;">YOUR SESSIONS</p>
+                    ${sortedSlots.map(s => `<p style="margin-bottom:6px;">• ${s.day}, ${s.start} – ${s.end}</p>`).join('')}
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--athletics);margin-top:14px;padding-top:12px;border-top:1px solid #232529;">
+                        ✓ 1 session credit used · ${data.creditsRemaining ?? 0} remaining
+                    </p>
+                `;
+                successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    // ---- No credits (or credit deduct failed) → redirect to Stripe ----
+    if (credits <= 0 && pricing.totalCents > 0) {
+        btn.textContent = 'Redirecting to payment...';
+        await startStripeCheckout(
             serviceKey,
             service.title,
             selectedPkg ? selectedPkg.label : '',
             slots,
             selectedAthletes,
-            { price: pricing.totalStr, label: selectedPkg?.label || '', amountCents: pricing.totalCents }
+            pricing.totalCents,
+            `${service.title} - ${selectedPkg?.label || ''}`
         );
         btn.disabled = false;
         btn.textContent = 'Confirm Booking';
         return;
     }
 
+    // ---- Free service (no price set) — book directly ----
     try {
         const res = await fetch('/api/bookings', {
             method: 'POST',
@@ -700,12 +768,10 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
             return;
         }
 
-        // Show success
         document.getElementById('step-1').style.display = 'none';
         document.getElementById('step-2').style.display = 'none';
         const successEl = document.getElementById('booking-success');
         successEl.style.display = 'block';
-
         const sortedSlots = slots.sort((a,b) => DAYS_ALL.indexOf(a.day) - DAYS_ALL.indexOf(b.day));
         document.getElementById('booking-success-details').innerHTML = `
             <p class="booking-summary-label" style="margin-bottom:8px;">SERVICE</p>
