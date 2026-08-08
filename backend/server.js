@@ -1375,8 +1375,14 @@ async function autoDecrementSessions() {
   const todayStr = new Date().toISOString().split('T')[0];
 
   try {
+    // Only decrement slots whose end time has already passed in Pacific time
+    const nowPacific = new Date();
+    const pacificOffset = (nowPacific.getMonth() >= 2 && nowPacific.getMonth() <= 10) ? 7 : 8;
+    const pacificHour = (nowPacific.getUTCHours() - pacificOffset + 24) % 24;
+    const pacificMin  = nowPacific.getUTCMinutes();
+
     const result = await pool.query(
-      `SELECT DISTINCT b.id
+      `SELECT DISTINCT b.id, bs.end_time
        FROM bookings b
        JOIN booking_slots bs ON bs.booking_id = b.id
        WHERE b.week_of = $1
@@ -1390,7 +1396,20 @@ async function autoDecrementSessions() {
       [weekOf, todayName, todayStr]
     );
 
-    for (const row of result.rows) {
+    // Filter to only bookings whose session end time has passed
+    const passedRows = result.rows.filter(row => {
+      if (!row.end_time) return true; // if no end time, decrement anyway
+      const parts = (row.end_time).match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (!parts) return true;
+      let h = parseInt(parts[1]);
+      const m = parseInt(parts[2]);
+      const ap = (parts[3] || '').toUpperCase();
+      if (ap === 'PM' && h < 12) h += 12;
+      if (ap === 'AM' && h === 12) h = 0;
+      return pacificHour > h || (pacificHour === h && pacificMin >= m);
+    });
+
+    for (const row of passedRows) {
       await pool.query(
         `UPDATE bookings
          SET sessions_remaining = GREATEST(0, COALESCE(sessions_remaining, 1) - 1)
@@ -1404,8 +1423,8 @@ async function autoDecrementSessions() {
       );
     }
 
-    if (result.rows.length > 0) {
-      console.log(`Auto-decremented ${result.rows.length} booking(s) for ${todayName}`);
+    if (passedRows.length > 0) {
+      console.log(`Auto-decremented ${passedRows.length} booking(s) for ${todayName}`);
     }
   } catch (err) {
     console.error('Auto-decrement error:', err);
@@ -1757,6 +1776,8 @@ app.patch('/api/bookings/:id/sessions', requireAdmin, async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  // Run auto-decrement after a short delay so tables are ready
+  // Run auto-decrement on startup, then every hour
+  // The booking_decrements table prevents double-counting — safe to run frequently
   setTimeout(autoDecrementSessions, 3000);
+  setInterval(autoDecrementSessions, 60 * 60 * 1000); // every hour
 });
