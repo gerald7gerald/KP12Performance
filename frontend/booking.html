@@ -221,9 +221,25 @@ const todayName  = JS_TO_DAY[todayJSDay] || 'Monday';
 const todayIdx   = DAYS_ALL.indexOf(todayName);
 const validDays  = todayJSDay === 0 ? DAYS_ALL : DAYS_ALL.slice(todayIdx);
 
-const params     = new URLSearchParams(window.location.search);
-const serviceKey = params.get('service');
-const service    = SERVICES[serviceKey];
+const params = new URLSearchParams(window.location.search);
+let serviceKey = params.get('service');
+
+// Fallback: If URL has no ?service= (like returning from Stripe), read it from pending booking
+if (!serviceKey) {
+    const pendingRaw = sessionStorage.getItem('pending_stripe_booking');
+    if (pendingRaw) {
+        try {
+            const pending = JSON.parse(pendingRaw);
+            if (pending.serviceKey) {
+                serviceKey = pending.serviceKey;
+            }
+        } catch (e) {
+            console.error('Failed to parse pending booking', e);
+        }
+    }
+}
+
+const service = SERVICES[serviceKey];
 
 let selectedPkg  = null;
 let selectedSlots = new Set(); // Set of slot IDs
