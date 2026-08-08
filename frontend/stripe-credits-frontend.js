@@ -118,7 +118,11 @@ async function startStripeCheckout() {
     if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to payment...'; }
 
     try {
-        const res  = await fetch('/api/stripe/create-checkout', { method: 'POST' });
+        const res = await fetch('/api/stripe/create-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}) // Sends empty object safely so req.body exists
+        });
         const data = await res.json();
 
         if (!res.ok || !data.url) {
@@ -131,7 +135,7 @@ async function startStripeCheckout() {
     } catch (err) {
         console.error(err);
         alert('Network error. Please try again.');
-        if (btn) { btn.disabled = false; }
+        if (btn) { btn.disabled = false; btn.textContent = 'PAY $50 — BOOK SESSION'; }
     }
 }
 

@@ -1905,48 +1905,44 @@ app.patch('/api/bookings/:id/sessions', requireAdmin, async (req, res) => {
 // 1. Create Checkout Session
 app.post('/api/stripe/create-checkout', async (req, res) => {
   try {
-    const { userId, packageId, sessionCount, amountCents, packageName } = req.body;
+    // Read userId/email safely from request body OR fallback to session user
+    const userId = req.body?.userId || req.user?.id || req.session?.user?.id;
+    const email  = req.body?.email  || req.user?.email || req.session?.user?.email;
 
-    if (!userId || !amountCents) {
-      return res.status(400).json({ error: 'Missing required parameters' });
+    if (!userId) {
+      return res.status(401).json({ error: 'You must be logged in to checkout.' });
     }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
+      mode: 'payment',
+      customer_email: email,
       line_items: [
         {
           price_data: {
             currency: 'usd',
-            product_data: { name: packageName || 'KP12 Training Package' },
-            unit_amount: amountCents,
+            product_data: {
+              name: 'KP12 Training Session Credit',
+              description: '1 Single Session Training Credit',
+            },
+            unit_amount: 5000, // $50.00
           },
           quantity: 1,
         },
       ],
-      mode: 'payment',
       metadata: {
-        user_id: userId.toString(),
-        package_id: packageId || '',
-        session_count: sessionCount ? sessionCount.toString() : '1',
+        user_id: String(userId),
       },
-      success_url: `https://kp12performance.com/booking.html?session_id={CHECKOUT_SESSION_ID}&success=true`,
-      cancel_url: `https://kp12performance.com/booking.html?canceled=true`,
+      success_url: `${process.env.DOMAIN_URL || 'https://kp12performance.com'}/booking.html?payment=success`,
+      cancel_url: `${process.env.DOMAIN_URL || 'https://kp12performance.com'}/booking.html?payment=cancelled`,
     });
-
-    // Save session in DB
-    await pool.query(
-      `INSERT INTO stripe_sessions (user_id, stripe_session_id, amount_cents, status)
-       VALUES ($1, $2, $3, 'pending')`,
-      [userId, session.id, amountCents]
-    );
 
     res.json({ url: session.url });
   } catch (err) {
-    console.error('Checkout creation error:', err);
+    console.error('Stripe Checkout Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
-
 // 2. Fetch User Credit Balance
 app.get('/api/credits', async (req, res) => {
   try {
