@@ -398,15 +398,16 @@ function updateConfirmState() {
         </div>
     `;
     if (window.renderPaymentOptions) {
-        const slotsArray = sortedSlots.map(s => ({ day: s.day, start: s.start, end: s.end }));
-        window.renderPaymentOptions(
-            serviceKey,
-            service.title,
-            selectedPkg ? selectedPkg.label : '',
-            slotsArray,
-            (userRole === 'parent_guardian') ? getSelectedAthletes() : []
-        );
-    }
+    const slotsArray = sortedSlots.map(s => ({ day: s.day, start: s.start, end: s.end }));
+    window.renderPaymentOptions(
+        serviceKey,
+        service.title,
+        selectedPkg ? selectedPkg.label : '',
+        slotsArray,
+        (userRole === 'parent_guardian') ? getSelectedAthletes() : [],
+        selectedPkg
+    );
+}
 }
 
 function showScheduleStep() {

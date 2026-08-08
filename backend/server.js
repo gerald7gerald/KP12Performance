@@ -1905,13 +1905,15 @@ app.patch('/api/bookings/:id/sessions', requireAdmin, async (req, res) => {
 // 1. Create Checkout Session
 app.post('/api/stripe/create-checkout', async (req, res) => {
   try {
-    // Read userId/email safely from request body OR fallback to session user
     const userId = req.body?.userId || req.user?.id || req.session?.user?.id;
     const email  = req.body?.email  || req.user?.email || req.session?.user?.email;
 
     if (!userId) {
       return res.status(401).json({ error: 'You must be logged in to checkout.' });
     }
+
+    const amountCents = req.body?.amountCents || 5000;
+    const packageName = req.body?.packageName || 'KP12 Training Package';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -1922,10 +1924,9 @@ app.post('/api/stripe/create-checkout', async (req, res) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'KP12 Training Session Credit',
-              description: '1 Single Session Training Credit',
+              name: packageName,
             },
-            unit_amount: 5000, // $50.00
+            unit_amount: amountCents, // Dynamically charges $175, $350, $250, $400, etc.
           },
           quantity: 1,
         },

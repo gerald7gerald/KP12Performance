@@ -1,9 +1,8 @@
 // ============================================================
 // STRIPE + CREDIT BOOKING FLOW — KP12 Performance
-// Add this to booking.html (or a shared script)
 // ============================================================
 
-// ---- CHECK CREDIT BALANCE + SHOW CORRECT BUTTON ----
+// ---- CHECK CREDIT BALANCE ----
 async function loadCreditBalance() {
     try {
         const res  = await fetch('/api/credits');
@@ -14,14 +13,19 @@ async function loadCreditBalance() {
     }
 }
 
-// Call this when the booking confirm step is shown
-async function renderPaymentOptions(serviceKey, serviceTitle, packageLabel, slots, selectedAthletes) {
+// ---- RENDER PAYMENT OR CREDIT BUTTONS ----
+async function renderPaymentOptions(serviceKey, serviceTitle, packageLabel, slots, selectedAthletes, selectedPkg) {
     const credits = await loadCreditBalance();
     const container = document.getElementById('payment-options-wrap');
     if (!container) return;
 
+    // Extract dynamic package details from selectedPkg
+    const priceStr = selectedPkg?.price || '$50';
+    const amountCents = selectedPkg ? parseInt(selectedPkg.price.replace('$', ''), 10) * 100 : 5000;
+    const packageName = selectedPkg ? `${serviceTitle} - ${selectedPkg.label}` : serviceTitle;
+
     if (credits > 0) {
-        // Has credits — show credit button AND pay option
+        // User has credits — allow using 1 credit OR buying this package
         container.innerHTML = `
             <div style="background:rgba(61,158,255,0.07);border:1px solid rgba(61,158,255,0.3);
                         padding:16px 20px;margin-bottom:16px;border-radius:2px;">
@@ -46,7 +50,7 @@ async function renderPaymentOptions(serviceKey, serviceTitle, packageLabel, slot
                 style="width:100%;background:transparent;color:var(--text-muted);border:1px solid #2A2D31;
                        padding:14px;font-family:'JetBrains Mono',monospace;font-size:12px;
                        letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
-                OR PAY $50 FOR A NEW SESSION
+                OR PAY ${priceStr} FOR THIS PACKAGE
             </button>
         `;
 
@@ -54,11 +58,11 @@ async function renderPaymentOptions(serviceKey, serviceTitle, packageLabel, slot
             bookWithCredit(serviceKey, serviceTitle, packageLabel, slots, selectedAthletes)
         );
         document.getElementById('pay-new-btn').addEventListener('click', () =>
-            startStripeCheckout()
+            startStripeCheckout(amountCents, packageName)
         );
 
     } else {
-        // No credits — show pay button only
+        // No credits — show pay button with dynamic package price
         container.innerHTML = `
             <p style="font-family:'JetBrains Mono',monospace;font-size:12px;
                       color:var(--text-muted);margin:0 0 14px;">
@@ -68,13 +72,14 @@ async function renderPaymentOptions(serviceKey, serviceTitle, packageLabel, slot
                 style="width:100%;background:#FF5630;color:#0D0E10;border:none;
                        padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;
                        letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
-                PAY $50 — BOOK SESSION
+                PAY ${priceStr} — BOOK PACKAGE
             </button>
         `;
-        document.getElementById('pay-stripe-btn').addEventListener('click', startStripeCheckout);
+        document.getElementById('pay-stripe-btn').addEventListener('click', () =>
+            startStripeCheckout(amountCents, packageName)
+        );
     }
 }
-
 
 // ---- BOOK USING A CREDIT ----
 async function bookWithCredit(serviceKey, serviceTitle, packageLabel, slots, selectedAthletes) {
@@ -91,7 +96,6 @@ async function bookWithCredit(serviceKey, serviceTitle, packageLabel, slots, sel
 
         if (!res.ok) {
             if (res.status === 402) {
-                // No credits — fall back to Stripe
                 alert('Your credit was already used. Redirecting to payment...');
                 startStripeCheckout();
             } else {
@@ -101,7 +105,6 @@ async function bookWithCredit(serviceKey, serviceTitle, packageLabel, slots, sel
             return;
         }
 
-        // Success — show confirmation
         showBookingSuccess(data.bookingId, serviceTitle, slots, data.creditsRemaining);
 
     } catch (err) {
@@ -111,33 +114,32 @@ async function bookWithCredit(serviceKey, serviceTitle, packageLabel, slots, sel
     }
 }
 
-
-// ---- START STRIPE CHECKOUT ----
-async function startStripeCheckout() {
+// ---- START STRIPE CHECKOUT WITH DYNAMIC PRICE ----
+async function startStripeCheckout(amountCents = 5000, packageName = 'KP12 Training Package') {
     const btn = document.getElementById('pay-stripe-btn') || document.getElementById('pay-new-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to payment...'; }
 
     try {
-        // Fetch logged-in user profile info first
         const meRes = await fetch('/api/auth/me', { credentials: 'include' });
         const meData = meRes.ok ? await meRes.json() : {};
-        const user = meData.user || {};
+        const user = meData.user || meData;
 
-        const res = await fetch('/api/stripe/create-checkout', {
+        const res  = await fetch('/api/stripe/create-checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include', // Ensure session cookies are sent
+            credentials: 'include',
             body: JSON.stringify({
                 userId: user.id || null,
-                email: user.email || null
+                email: user.email || null,
+                amountCents: amountCents,
+                packageName: packageName
             })
         });
-
         const data = await res.json();
 
         if (!res.ok || !data.url) {
             alert(data.error || 'Could not start checkout. Please try again.');
-            if (btn) { btn.disabled = false; btn.textContent = 'PAY $50 — BOOK SESSION'; }
+            if (btn) { btn.disabled = false; btn.textContent = 'PAY TO BOOK'; }
             return;
         }
 
@@ -145,10 +147,9 @@ async function startStripeCheckout() {
     } catch (err) {
         console.error(err);
         alert('Network error. Please try again.');
-        if (btn) { btn.disabled = false; btn.textContent = 'PAY $50 — BOOK SESSION'; }
+        if (btn) { btn.disabled = false; btn.textContent = 'PAY TO BOOK'; }
     }
 }
-
 
 // ---- SHOW BOOKING SUCCESS STATE ----
 function showBookingSuccess(bookingId, serviceTitle, slots, creditsRemaining) {
@@ -192,15 +193,13 @@ function showBookingSuccess(bookingId, serviceTitle, slots, creditsRemaining) {
     `;
 }
 
-
-// ---- HANDLE RETURN FROM STRIPE (on page load) ----
+// ---- HANDLE RETURN FROM STRIPE ----
 (function checkPaymentReturn() {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get('payment');
     if (!payment) return;
 
     if (payment === 'success') {
-        // Show success banner
         const banner = document.createElement('div');
         banner.style.cssText = `
             position:fixed;top:80px;left:50%;transform:translateX(-50%);
@@ -212,8 +211,6 @@ function showBookingSuccess(bookingId, serviceTitle, slots, creditsRemaining) {
         banner.textContent = '✓ Payment received! 1 session credit added to your account.';
         document.body.appendChild(banner);
         setTimeout(() => banner.remove(), 6000);
-
-        // Clean up URL
         window.history.replaceState({}, '', window.location.pathname);
     } else if (payment === 'cancelled') {
         const banner = document.createElement('div');
@@ -228,36 +225,4 @@ function showBookingSuccess(bookingId, serviceTitle, slots, creditsRemaining) {
         setTimeout(() => banner.remove(), 5000);
         window.history.replaceState({}, '', window.location.pathname);
     }
-})();
-
-
-// ---- HANDLE ATTENDANCE CONFIRMATION RETURN ----
-(function checkAttendanceReturn() {
-    const params = new URLSearchParams(window.location.search);
-    const attendance = params.get('attendance');
-    if (!attendance) return;
-
-    const messages = {
-        confirmed:         { text: '✓ Attendance confirmed! See you out there.', color: '#2ECC71' },
-        already_confirmed: { text: 'You already confirmed attendance for this session.', color: '#FFC247' },
-        expired:           { text: 'This check-in link has expired.', color: '#FF5630' },
-        invalid:           { text: 'Invalid check-in link.', color: '#FF5630' },
-        error:             { text: 'Something went wrong. Please contact us.', color: '#FF5630' },
-    };
-
-    const msg = messages[attendance];
-    if (!msg) return;
-
-    const banner = document.createElement('div');
-    banner.style.cssText = `
-        position:fixed;top:80px;left:50%;transform:translateX(-50%);
-        background:${msg.color};color:#0D0E10;padding:14px 28px;
-        font-family:'JetBrains Mono',monospace;font-size:13px;
-        letter-spacing:0.08em;z-index:999;border-radius:2px;
-        box-shadow:0 8px 24px rgba(0,0,0,0.3);max-width:90vw;text-align:center;
-    `;
-    banner.textContent = msg.text;
-    document.body.appendChild(banner);
-    setTimeout(() => banner.remove(), 7000);
-    window.history.replaceState({}, '', window.location.pathname);
 })();
