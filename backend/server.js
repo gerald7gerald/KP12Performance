@@ -43,6 +43,32 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+// Database Migrations (Claude setup)
+pool.query('SELECT NOW()')
+  .then(() => pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0'))
+  .then(() => pool.query(`
+    CREATE TABLE IF NOT EXISTS stripe_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      stripe_session_id TEXT UNIQUE NOT NULL,
+      amount_cents INTEGER,
+      status TEXT DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `))
+  .then(() => pool.query(`
+    CREATE TABLE IF NOT EXISTS attendance_tokens (
+      id SERIAL PRIMARY KEY,
+      booking_id INTEGER REFERENCES bookings(id) ON DELETE CASCADE,
+      token TEXT UNIQUE NOT NULL,
+      used BOOLEAN DEFAULT FALSE,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `))
+  .then(() => console.log('✅ Database migrations finished successfully!'))
+  .catch(err => console.error('❌ Migration error:', err));
+
 // ---- Helpers ----
 function timeToMinutes(t) {
   if (!t) return 0;
@@ -1815,6 +1841,85 @@ app.patch('/api/bookings/:id/sessions', requireAdmin, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Error updating sessions." });
   }
+});
+// ==========================================
+// STRIPE CREDIT ROUTES
+// ==========================================
+
+// 1. Get user credit balance
+app.get('/api/user/credits', async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Email parameter required' });
+
+    const userRes = await pool.query('SELECT credits FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    res.json({ credits: userRes.rows[0].credits || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. Create Stripe Checkout Session
+app.post('/api/stripe/create-checkout-session', async (req, res) => {
+  try {
+    const { email, creditsToBuy, priceAmount, packageName } = req.body;
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: { name: packageName || `${creditsToBuy} Credits` },
+            unit_amount: priceAmount,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      customer_email: email,
+      metadata: { credits: creditsToBuy.toString() },
+      success_url: `https://kp12performance.com/booking.html?session_id={CHECKOUT_SESSION_ID}&success=true`,
+      cancel_url: `https://kp12performance.com/booking.html?canceled=true`,
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. Use 1 credit for booking
+app.post('/api/bookings/use-credit', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+
+    const userRes = await pool.query('SELECT id, credits FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    const user = userRes.rows[0];
+    if (user.credits < 1) {
+      return res.status(400).json({ error: 'Insufficient credits available' });
+    }
+
+    const updateRes = await pool.query(
+      'UPDATE users SET credits = credits - 1 WHERE id = $1 RETURNING credits',
+      [user.id]
+    );
+
+    res.json({ success: true, remainingCredits: updateRes.rows[0].credits });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 app.listen(PORT, () => {
