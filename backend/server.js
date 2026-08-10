@@ -2155,10 +2155,14 @@ app.post('/api/bookings/use-credit', async (req, res) => {
     if (!deductRes.rows.length) return res.status(402).json({ error: 'Credit deduction failed.' });
 
     const weekOf = currentWeekMonday();
+    // Parse session count from package label e.g. "8 Sessions" → 8
+    const sessionMatch = (packageLabel || '').match(/(\d+)\s*session/i);
+    const sessionCount  = sessionMatch ? parseInt(sessionMatch[1]) : 1;
+
     const bookingRes = await pool.query(
       `INSERT INTO bookings (user_id, service_key, service_title, package_label, sessions_remaining, week_of, status)
-       VALUES ($1,$2,$3,$4,1,$5,'confirmed') RETURNING id`,
-      [userId, serviceKey, serviceTitle, packageLabel || '1 Session (Credit)', weekOf]
+       VALUES ($1,$2,$3,$4,$5,$6,'confirmed') RETURNING id`,
+      [userId, serviceKey, serviceTitle, packageLabel || '1 Session (Credit)', sessionCount, weekOf]
     );
     const bookingId = bookingRes.rows[0].id;
 

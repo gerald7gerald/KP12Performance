@@ -663,85 +663,136 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
     const selectedAthletes = (userRole === 'parent_guardian') ? getSelectedAthletes() : [];
     const pricing = calculatePricing();
 
-    // ---- Check credit balance first ----
-    let credits = 0;
-    try {
-        const creditRes = await fetch('/api/credits', { credentials: 'include' });
-        if (creditRes.ok) credits = (await creditRes.json()).credits || 0;
-    } catch (e) { /* non-fatal */ }
-
-    const pkgForStripe = {
-        price:       pricing.totalStr,
-        label:       selectedPkg?.label || '',
-        amountCents: pricing.totalCents
-    };
-
-    if (credits > 0) {
-        // ---- Has credits → use 1 credit to book for free ----
-        try {
-            const res = await fetch('/api/bookings/use-credit', {
-                method:      'POST',
-                headers:     { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    serviceKey,
-                    serviceTitle:  service.title,
-                    packageLabel:  selectedPkg ? selectedPkg.label : '',
-                    slots,
-                    selectedAthletes
-                })
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-                if (res.status === 402) {
-                    // Credit ran out between check and deduct — fall through to Stripe
-                    credits = 0;
-                } else {
-                    errorEl.textContent = data.error || 'Booking failed. Please try again.';
-                    errorEl.style.display = 'block';
-                    btn.disabled = false;
-                    btn.textContent = 'Confirm Booking';
-                    return;
-                }
-            } else {
-                // Credit booking success — show success screen
-                document.getElementById('step-1').style.display = 'none';
-                document.getElementById('step-2').style.display = 'none';
-                const successEl = document.getElementById('booking-success');
-                successEl.style.display = 'block';
-                const sortedSlots = slots.sort((a,b) => DAYS_ALL.indexOf(a.day) - DAYS_ALL.indexOf(b.day));
-                document.getElementById('booking-success-details').innerHTML = `
-                    <p class="booking-summary-label" style="margin-bottom:8px;">SERVICE</p>
-                    <p style="font-weight:600;margin-bottom:20px;">${service.title}${selectedPkg?.label ? ' — ' + selectedPkg.label : ''}</p>
-                    <p class="booking-summary-label" style="margin-bottom:8px;">YOUR SESSIONS</p>
-                    ${sortedSlots.map(s => `<p style="margin-bottom:6px;">• ${s.day}, ${s.start} – ${s.end}</p>`).join('')}
-                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--athletics);margin-top:14px;padding-top:12px;border-top:1px solid #232529;">
-                        ✓ 1 session credit used · ${data.creditsRemaining ?? 0} remaining
-                    </p>
-                `;
-                successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                return;
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
-    // ---- No credits (or credit deduct failed) → redirect to Stripe ----
-    if (credits <= 0 && pricing.totalCents > 0) {
-        btn.textContent = 'Redirecting to payment...';
-        await startStripeCheckout(
-            serviceKey,
-            service.title,
-            selectedPkg ? selectedPkg.label : '',
-            slots,
-            selectedAthletes,
-            pricing.totalCents,
-            `${service.title} - ${selectedPkg?.label || ''}`
-        );
+    // ---- Show payment options — let the user choose credit OR Stripe ----
+    if (pricing.totalCents > 0) {
         btn.disabled = false;
         btn.textContent = 'Confirm Booking';
+
+        // Check credit balance
+        let credits = 0;
+        try {
+            const creditRes = await fetch('/api/credits', { credentials: 'include' });
+            if (creditRes.ok) credits = (await creditRes.json()).credits || 0;
+        } catch (e) {}
+
+        // Show options in the confirm wrap
+        const optWrap = document.getElementById('booking-confirm-wrap');
+        const existingOpts = document.getElementById('payment-choice-wrap');
+        if (existingOpts) existingOpts.remove();
+
+        const choiceDiv = document.createElement('div');
+        choiceDiv.id = 'payment-choice-wrap';
+        choiceDiv.style.cssText = 'margin-top:20px;display:flex;flex-direction:column;gap:12px;';
+
+        if (credits > 0) {
+            choiceDiv.innerHTML = `
+                <div style="background:rgba(61,158,255,0.07);border:1px solid rgba(61,158,255,0.3);
+                            padding:14px 18px;border-radius:2px;margin-bottom:4px;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                              letter-spacing:0.1em;color:var(--athletics);margin:0 0 4px;">
+                        ✓ YOU HAVE ${credits} CREDIT${credits !== 1 ? 'S' : ''} AVAILABLE
+                    </p>
+                    <p style="font-size:13px;color:var(--text-muted);margin:0;">
+                        Use a credit to book for free, or pay for a new package.
+                    </p>
+                </div>
+                <button id="use-credit-btn" style="width:100%;background:var(--athletics);color:#0D0E10;
+                    border:none;padding:15px;font-family:'JetBrains Mono',monospace;font-size:13px;
+                    letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
+                    ✓ USE 1 CREDIT — BOOK FREE
+                </button>
+                <button id="pay-stripe-choice-btn" style="width:100%;background:transparent;
+                    color:var(--text-muted);border:1px solid #2A2D31;padding:13px;
+                    font-family:'JetBrains Mono',monospace;font-size:12px;
+                    letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
+                    OR PAY ${pricing.totalStr} FOR THIS PACKAGE
+                </button>
+            `;
+        } else {
+            choiceDiv.innerHTML = `
+                <button id="pay-stripe-choice-btn" style="width:100%;background:#FF5630;color:#0D0E10;
+                    border:none;padding:15px;font-family:'JetBrains Mono',monospace;font-size:13px;
+                    letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
+                    PAY ${pricing.totalStr} — BOOK PACKAGE
+                </button>
+            `;
+        }
+
+        optWrap.appendChild(choiceDiv);
+        choiceDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // ---- Use credit ----
+        const creditBtn = document.getElementById('use-credit-btn');
+        if (creditBtn) {
+            creditBtn.addEventListener('click', async () => {
+                creditBtn.disabled = true;
+                creditBtn.textContent = 'Booking...';
+                try {
+                    const res = await fetch('/api/bookings/use-credit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            serviceKey,
+                            serviceTitle: service.title,
+                            packageLabel: selectedPkg ? selectedPkg.label : '',
+                            slots,
+                            selectedAthletes
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        errorEl.textContent = data.error || 'Booking failed.';
+                        errorEl.style.display = 'block';
+                        creditBtn.disabled = false;
+                        creditBtn.textContent = '✓ USE 1 CREDIT — BOOK FREE';
+                        return;
+                    }
+                    choiceDiv.remove();
+                    document.getElementById('step-1').style.display = 'none';
+                    document.getElementById('step-2').style.display = 'none';
+                    const successEl = document.getElementById('booking-success');
+                    successEl.style.display = 'block';
+                    const sortedSlots = slots.sort((a,b) => DAYS_ALL.indexOf(a.day) - DAYS_ALL.indexOf(b.day));
+                    document.getElementById('booking-success-details').innerHTML = `
+                        <p class="booking-summary-label" style="margin-bottom:8px;">SERVICE</p>
+                        <p style="font-weight:600;margin-bottom:20px;">${service.title}${selectedPkg?.label ? ' — ' + selectedPkg.label : ''}</p>
+                        <p class="booking-summary-label" style="margin-bottom:8px;">YOUR SESSIONS</p>
+                        ${sortedSlots.map(s => '<p style="margin-bottom:6px;">• ' + s.day + ', ' + s.start + ' – ' + s.end + '</p>').join('')}
+                        <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--athletics);margin-top:14px;padding-top:12px;border-top:1px solid #232529;">
+                            ✓ 1 session credit used · ${data.creditsRemaining ?? 0} remaining
+                        </p>
+                    `;
+                    successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } catch (err) {
+                    errorEl.textContent = "Couldn't connect. Please try again.";
+                    errorEl.style.display = 'block';
+                    creditBtn.disabled = false;
+                    creditBtn.textContent = '✓ USE 1 CREDIT — BOOK FREE';
+                }
+            });
+        }
+
+        // ---- Pay with Stripe ----
+        const stripeBtn = document.getElementById('pay-stripe-choice-btn');
+        if (stripeBtn) {
+            stripeBtn.addEventListener('click', async () => {
+                stripeBtn.disabled = true;
+                stripeBtn.textContent = 'Redirecting to payment...';
+                await startStripeCheckout(
+                    serviceKey,
+                    service.title,
+                    selectedPkg ? selectedPkg.label : '',
+                    slots,
+                    selectedAthletes,
+                    pricing.totalCents,
+                    service.title + (selectedPkg?.label ? ' - ' + selectedPkg.label : '')
+                );
+                stripeBtn.disabled = false;
+                stripeBtn.textContent = 'PAY ' + pricing.totalStr + ' — BOOK PACKAGE';
+            });
+        }
+
         return;
     }
 
