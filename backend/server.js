@@ -2030,7 +2030,7 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
     const totalCredits = pending.total_credits || 1;
     const numAthletes  = pending.num_athletes  || 1;
 
-    // Idempotently grant credits (skip if webhook already did it)
+    // Idempotently grant ALL credits from the package (skip if webhook already did it)
     if (pending.status !== 'paid') {
       await pool.query(
         'UPDATE users SET credits = COALESCE(credits,0) + $1 WHERE id = $2',
@@ -2042,14 +2042,15 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
     // Mark booking attempted to prevent double-booking on refresh
     await pool.query('UPDATE stripe_sessions SET booking_attempted = TRUE WHERE stripe_session_id = $1', [stripeSessionId]);
 
-    // Deduct exactly totalCredits atomically
+    // Deduct 1 credit per slot selected (e.g. Tuesday + Thursday = 2 credits)
+    const slotsBooked = (slots || []).length || 1;
     const deductRes = await pool.query(
       'UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1 RETURNING credits',
-      [totalCredits, userId]
+      [slotsBooked, userId]
     );
     if (!deductRes.rows.length) return res.status(402).json({ error: 'Insufficient credits after payment.' });
 
-    // Create the booking — sessions_remaining = totalCredits (one per session purchased)
+    // sessions_remaining = totalCredits (full package count — counts down weekly)
     const weekOf = currentWeekMonday();
     const slots  = pending.slots || [];
     const selectedAthletes = pending.selected_athletes || [];
@@ -2058,7 +2059,7 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
       `INSERT INTO bookings (user_id, service_key, service_title, package_label, sessions_remaining, week_of, status)
        VALUES ($1,$2,$3,$4,$5,$6,'confirmed') RETURNING id`,
       [userId, pending.service_key, pending.service_key,
-       pending.package_label || `${totalCredits} Sessions (Credit)`,
+       pending.package_label || `${totalCredits} Sessions`,
        totalCredits, weekOf]
     );
     const bookingId = bookingRes.rows[0].id;
@@ -2148,11 +2149,13 @@ app.post('/api/bookings/use-credit', async (req, res) => {
       return res.status(402).json({ error: 'No credits available. Please purchase a session.' });
     }
 
+    // Deduct 1 credit per slot (e.g. Tuesday + Thursday = 2 credits)
+    const slotsBooked = (slots || []).length || 1;
     const deductRes = await pool.query(
-      'UPDATE users SET credits = credits - 1 WHERE id = $1 AND credits > 0 RETURNING credits',
-      [userId]
+      'UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1 RETURNING credits',
+      [slotsBooked, userId]
     );
-    if (!deductRes.rows.length) return res.status(402).json({ error: 'Credit deduction failed.' });
+    if (!deductRes.rows.length) return res.status(402).json({ error: 'Not enough credits. You need ' + slotsBooked + ' credit(s) for the slots selected.' });
 
     const weekOf = currentWeekMonday();
     // Parse session count from package label e.g. "8 Sessions" → 8

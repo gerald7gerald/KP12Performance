@@ -685,7 +685,10 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
         choiceDiv.id = 'payment-choice-wrap';
         choiceDiv.style.cssText = 'margin-top:20px;display:flex;flex-direction:column;gap:12px;';
 
-        if (credits > 0) {
+        const slotsNeeded = slots.length || 1;
+        const hasEnoughCredits = credits >= slotsNeeded;
+
+        if (hasEnoughCredits) {
             choiceDiv.innerHTML = `
                 <div style="background:rgba(61,158,255,0.07);border:1px solid rgba(61,158,255,0.3);
                             padding:14px 18px;border-radius:2px;margin-bottom:4px;">
@@ -694,19 +697,41 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
                         ✓ YOU HAVE ${credits} CREDIT${credits !== 1 ? 'S' : ''} AVAILABLE
                     </p>
                     <p style="font-size:13px;color:var(--text-muted);margin:0;">
-                        Use a credit to book for free, or pay for a new package.
+                        ${slotsNeeded > 1
+                            ? slotsNeeded + ' credits will be used for your ' + slotsNeeded + ' selected slots.'
+                            : 'Use 1 credit to book for free, or pay for a new package.'}
                     </p>
                 </div>
                 <button id="use-credit-btn" style="width:100%;background:var(--athletics);color:#0D0E10;
                     border:none;padding:15px;font-family:'JetBrains Mono',monospace;font-size:13px;
                     letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
-                    ✓ USE 1 CREDIT — BOOK FREE
+                    ✓ USE ${slotsNeeded} CREDIT${slotsNeeded !== 1 ? 'S' : ''} — BOOK FREE
                 </button>
                 <button id="pay-stripe-choice-btn" style="width:100%;background:transparent;
                     color:var(--text-muted);border:1px solid #2A2D31;padding:13px;
                     font-family:'JetBrains Mono',monospace;font-size:12px;
                     letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
                     OR PAY ${pricing.totalStr} FOR THIS PACKAGE
+                </button>
+            `;
+        } else if (credits > 0 && !hasEnoughCredits) {
+            // Has some credits but not enough for all selected slots
+            choiceDiv.innerHTML = `
+                <div style="background:rgba(255,194,71,0.07);border:1px solid rgba(255,194,71,0.3);
+                            padding:14px 18px;border-radius:2px;margin-bottom:4px;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                              letter-spacing:0.1em;color:#FFC247;margin:0 0 4px;">
+                        ⚠ YOU HAVE ${credits} CREDIT${credits !== 1 ? 'S' : ''} — NEED ${slotsNeeded}
+                    </p>
+                    <p style="font-size:13px;color:var(--text-muted);margin:0;">
+                        You selected ${slotsNeeded} slots but only have ${credits} credit${credits !== 1 ? 's' : ''}.
+                        Deselect a slot or pay for a new package.
+                    </p>
+                </div>
+                <button id="pay-stripe-choice-btn" style="width:100%;background:#FF5630;color:#0D0E10;
+                    border:none;padding:15px;font-family:'JetBrains Mono',monospace;font-size:13px;
+                    letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
+                    PAY ${pricing.totalStr} — BOOK PACKAGE
                 </button>
             `;
         } else {
@@ -746,7 +771,7 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
                         errorEl.textContent = data.error || 'Booking failed.';
                         errorEl.style.display = 'block';
                         creditBtn.disabled = false;
-                        creditBtn.textContent = '✓ USE 1 CREDIT — BOOK FREE';
+                        creditBtn.textContent = '✓ USE ' + slotsNeeded + ' CREDIT' + (slotsNeeded !== 1 ? 'S' : '') + ' — BOOK FREE';
                         return;
                     }
                     choiceDiv.remove();
@@ -769,7 +794,7 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
                     errorEl.textContent = "Couldn't connect. Please try again.";
                     errorEl.style.display = 'block';
                     creditBtn.disabled = false;
-                    creditBtn.textContent = '✓ USE 1 CREDIT — BOOK FREE';
+                    creditBtn.textContent = '✓ USE ' + slotsNeeded + ' CREDIT' + (slotsNeeded !== 1 ? 'S' : '') + ' — BOOK FREE';
                 }
             });
         }
