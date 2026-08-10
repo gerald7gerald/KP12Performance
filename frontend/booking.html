@@ -114,6 +114,7 @@
 </footer>
 
 <script src="nav.js"></script>
+    <script src="stripe-credits-frontend.js"></script>
 <script>
 const SERVICES = {
     'sports-performance-training': {
@@ -777,19 +778,29 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
         const stripeBtn = document.getElementById('pay-stripe-choice-btn');
         if (stripeBtn) {
             stripeBtn.addEventListener('click', async () => {
+                if (typeof startStripeCheckout !== 'function') {
+                    alert('Payment system not loaded. Please refresh the page and try again.');
+                    return;
+                }
                 stripeBtn.disabled = true;
                 stripeBtn.textContent = 'Redirecting to payment...';
-                await startStripeCheckout(
-                    serviceKey,
-                    service.title,
-                    selectedPkg ? selectedPkg.label : '',
-                    slots,
-                    selectedAthletes,
-                    pricing.totalCents,
-                    service.title + (selectedPkg?.label ? ' - ' + selectedPkg.label : '')
-                );
-                stripeBtn.disabled = false;
-                stripeBtn.textContent = 'PAY ' + pricing.totalStr + ' — BOOK PACKAGE';
+                try {
+                    await startStripeCheckout(
+                        serviceKey,
+                        service.title,
+                        selectedPkg ? selectedPkg.label : '',
+                        slots,
+                        selectedAthletes,
+                        pricing.totalCents,
+                        service.title + (selectedPkg?.label ? ' - ' + selectedPkg.label : '')
+                    );
+                } catch (err) {
+                    console.error('Stripe redirect error:', err);
+                    stripeBtn.disabled = false;
+                    stripeBtn.textContent = 'PAY ' + pricing.totalStr + ' — BOOK PACKAGE';
+                    errorEl.textContent = 'Could not redirect to payment. Please try again.';
+                    errorEl.style.display = 'block';
+                }
             });
         }
 
