@@ -888,6 +888,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${esc(u.referral_source)}</td>
                     <td>${esc(u.referral_detail)}</td>
                     <td>${u.is_admin ? '<span class="emp-admin-badge">ADMIN</span>' : "—"}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span id="credits-display-${u.id}" style="font-family:'JetBrains Mono',monospace;
+                                font-size:14px;color:var(--athletics);font-weight:600;min-width:20px;">
+                                ${u.credits ?? 0}
+                            </span>
+                            <button onclick="openCreditEditor(${u.id},'${esc(u.username)}')"
+                                style="background:transparent;border:1px solid #2A2D31;color:var(--text-muted);
+                                       font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.06em;
+                                       padding:3px 8px;cursor:pointer;border-radius:2px;
+                                       transition:border-color 0.2s,color 0.2s;"
+                                onmouseover="this.style.borderColor='var(--athletics)';this.style.color='var(--athletics)'"
+                                onmouseout="this.style.borderColor='#2A2D31';this.style.color='var(--text-muted)'">
+                                EDIT
+                            </button>
+                        </div>
+                    </td>
                 </tr>`;
             if (isParent && athletes.length) {
                 rows += `<tr id="athletes-${u.id}" style="display:none;">
@@ -907,7 +924,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th>ID</th><th>Username</th><th>Email</th><th>Phone</th>
                     <th>Age</th><th>Gender</th><th>Role</th>
                     <th>Heard From</th><th>Referral Detail</th><th>Admin</th>
-                </tr></thead>
+                <th>Credits</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>`;
     }
@@ -932,6 +949,124 @@ document.addEventListener("DOMContentLoaded", () => {
         ));
     });
 });
+
+// ---- CREDIT EDITOR ----
+function openCreditEditor(userId, username) {
+    const existing = document.getElementById('credit-editor-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'credit-editor-modal';
+    modal.style.cssText = `position:fixed;inset:0;z-index:9999;background:rgba(13,14,16,0.88);
+        backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;`;
+
+    modal.innerHTML = `
+        <div style="background:#15171A;border:1px solid #232529;max-width:400px;width:100%;padding:32px;">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;
+                      color:var(--athletics);margin:0 0 8px;">[ EDIT CREDITS ]</p>
+            <h3 style="font-family:'Anton',sans-serif;font-size:22px;text-transform:uppercase;
+                       margin:0 0 24px;">${username}</h3>
+
+            <div style="display:flex;flex-direction:column;gap:16px;">
+                <!-- Set exact amount -->
+                <div style="background:var(--bg);border:1px solid #2A2D31;padding:16px;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);
+                              margin:0 0 10px;letter-spacing:0.1em;">SET EXACT AMOUNT</p>
+                    <div style="display:flex;gap:8px;">
+                        <input type="number" id="credit-set-val" min="0" placeholder="e.g. 4"
+                            style="flex:1;background:var(--bg-panel);border:1px solid #2A2D31;
+                                   color:var(--text);padding:10px 12px;font-family:'JetBrains Mono',monospace;
+                                   font-size:14px;border-radius:2px;">
+                        <button onclick="setCredits(${userId}, 'set')"
+                            style="background:var(--athletics);color:#0D0E10;border:none;
+                                   padding:10px 18px;font-family:'JetBrains Mono',monospace;
+                                   font-size:12px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">
+                            SET
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Add or subtract -->
+                <div style="background:var(--bg);border:1px solid #2A2D31;padding:16px;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);
+                              margin:0 0 10px;letter-spacing:0.1em;">ADD OR SUBTRACT</p>
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="setCredits(${userId}, 'subtract')"
+                            style="flex:1;background:transparent;border:1px solid rgba(255,86,48,0.4);
+                                   color:var(--training);padding:10px;font-family:'JetBrains Mono',monospace;
+                                   font-size:12px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">
+                            − REMOVE 1
+                        </button>
+                        <button onclick="setCredits(${userId}, 'add')"
+                            style="flex:1;background:transparent;border:1px solid rgba(46,204,113,0.4);
+                                   color:#2ECC71;padding:10px;font-family:'JetBrains Mono',monospace;
+                                   font-size:12px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">
+                            + ADD 1
+                        </button>
+                    </div>
+                </div>
+
+                <p id="credit-editor-msg" style="font-family:'JetBrains Mono',monospace;font-size:12px;
+                    color:#2ECC71;min-height:16px;margin:0;text-align:center;"></p>
+
+                <button onclick="document.getElementById('credit-editor-modal').remove()"
+                    style="background:transparent;border:1px solid #2A2D31;color:var(--text-muted);
+                           padding:11px;font-family:'JetBrains Mono',monospace;font-size:12px;
+                           letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">
+                    CLOSE
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+async function setCredits(userId, mode) {
+    const msgEl = document.getElementById('credit-editor-msg');
+    msgEl.style.color = '#2ECC71';
+    msgEl.textContent = 'Saving...';
+
+    let body = {};
+    if (mode === 'set') {
+        const val = parseInt(document.getElementById('credit-set-val').value);
+        if (isNaN(val) || val < 0) { msgEl.style.color='var(--training)'; msgEl.textContent = 'Enter a valid number.'; return; }
+        body = { credits: val };
+    } else if (mode === 'add') {
+        body = { adjustment: 1 };
+    } else if (mode === 'subtract') {
+        body = { adjustment: -1 };
+    }
+
+    try {
+        const res  = await fetch('/api/admin/users/' + userId + '/credits', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            msgEl.style.color = 'var(--training)';
+            msgEl.textContent = data.error || 'Error.';
+            return;
+        }
+
+        const newCredits = data.user.credits;
+        msgEl.textContent = `✓ Updated — ${newCredits} credit${newCredits !== 1 ? 's' : ''} now`;
+
+        // Update the display in the table
+        const display = document.getElementById('credits-display-' + userId);
+        if (display) display.textContent = newCredits;
+
+        if (mode === 'set') document.getElementById('credit-set-val').value = '';
+
+    } catch (err) {
+        msgEl.style.color = 'var(--training)';
+        msgEl.textContent = "Couldn't reach server.";
+    }
+}
 </script>
 
 </body>

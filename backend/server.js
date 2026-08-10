@@ -642,6 +642,7 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
     const r = await pool.query(
       `SELECT u.id,u.username,u.email,u.phone,u.age,u.gender,u.role,
               u.referral_source,u.referral_detail,u.is_admin,
+              COALESCE(u.credits, 0) AS credits,
               COALESCE(json_agg(json_build_object('name',a.name,'age',a.age,'gender',a.gender))
                 FILTER (WHERE a.id IS NOT NULL),'[]') AS athletes
        FROM users u LEFT JOIN athletes a ON a.user_id=u.id
@@ -2006,6 +2007,41 @@ app.get('/api/credits', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Admin: view and set credits for any user
+app.get('/api/admin/users/:id/credits', requireAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT id, username, email, credits FROM users WHERE id=$1', [req.params.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'User not found.' });
+    res.json(r.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.patch('/api/admin/users/:id/credits', requireAdmin, async (req, res) => {
+  const { credits, adjustment } = req.body;
+  try {
+    let r;
+    if (typeof credits === 'number') {
+      // Set to exact value
+      r = await pool.query(
+        'UPDATE users SET credits=$1 WHERE id=$2 RETURNING id,username,email,credits',
+        [Math.max(0, credits), req.params.id]
+      );
+    } else if (typeof adjustment === 'number') {
+      // Add or subtract
+      r = await pool.query(
+        'UPDATE users SET credits=GREATEST(0, COALESCE(credits,0)+$1) WHERE id=$2 RETURNING id,username,email,credits',
+        [adjustment, req.params.id]
+      );
+    } else {
+      return res.status(400).json({ error: 'Provide credits (set) or adjustment (add/subtract).' });
+    }
+    if (!r.rows.length) return res.status(404).json({ error: 'User not found.' });
+    res.json({ message: 'Credits updated.', user: r.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // 3. Complete Booking After Stripe Return
