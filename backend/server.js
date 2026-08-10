@@ -1447,33 +1447,39 @@ app.post('/api/admin/send-email', requireAdmin, async (req, res) => {
 
     if (!recipients.length) return res.status(400).json({ error: "No recipients found." });
 
-    // Resend supports up to 50 recipients per call — chunk if needed
-    const CHUNK = 50;
+    // Send one individual email per recipient so no one sees anyone else's address
+    const emailHtml = `
+      <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
+        <div style="background:#15171A;padding:28px 36px;border-bottom:3px solid #FF5630;">
+          <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:32px;display:block;">
+        </div>
+        <div style="padding:36px 36px 28px;">
+          <div style="font-size:15px;line-height:1.75;color:#F5F4F0;white-space:pre-wrap;">${message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        </div>
+        <div style="padding:20px 36px;border-top:1px solid #232529;text-align:center;">
+          <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">KP12 Performance · kp12performance.com</p>
+        </div>
+      </div>
+    `;
+
     let sent = 0;
-    for (let i = 0; i < recipients.length; i += CHUNK) {
-      const chunk = recipients.slice(i, i + CHUNK);
-      await resend.emails.send({
-        from: 'support@kp12performance.com',
-        to: chunk,
-        subject,
-        html: `
-          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
-            <div style="background:#15171A;padding:28px 36px;border-bottom:3px solid #FF5630;">
-              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:32px;display:block;">
-            </div>
-            <div style="padding:36px 36px 28px;">
-              <div style="font-size:15px;line-height:1.75;color:#F5F4F0;white-space:pre-wrap;">${message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-            </div>
-            <div style="padding:20px 36px;border-top:1px solid #232529;text-align:center;">
-              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">KP12 Performance · kp12performance.com</p>
-            </div>
-          </div>
-        `
-      });
-      sent += chunk.length;
+    let failed = 0;
+    for (const email of recipients) {
+      try {
+        await resend.emails.send({
+          from: 'support@kp12performance.com',
+          to: [email],   // one at a time — recipient sees only their own address
+          subject,
+          html: emailHtml,
+        });
+        sent++;
+      } catch (e) {
+        console.error(`Failed to send to ${email}:`, e.message);
+        failed++;
+      }
     }
 
-    res.json({ message: `Email sent to ${sent} recipient${sent !== 1 ? 's' : ''}.` });
+    res.json({ message: `Email sent to ${sent} recipient${sent !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.` });
   } catch (err) {
     console.error('Mass email error:', err);
     res.status(500).json({ error: "Failed to send email. Check server logs." });
