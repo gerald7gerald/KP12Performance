@@ -1430,7 +1430,7 @@ pool.query(`
 
 // POST /api/admin/send-email — mass or single email from the employee dashboard
 app.post('/api/admin/send-email', requireAdmin, async (req, res) => {
-  const { subject, message, recipientType, singleEmail } = req.body;
+  const { subject, message, recipientType, singleEmail, specificEmails } = req.body;
   if (!subject || !message) return res.status(400).json({ error: "Subject and message are required." });
 
   try {
@@ -1440,6 +1440,11 @@ app.post('/api/admin/send-email', requireAdmin, async (req, res) => {
       if (!singleEmail || !singleEmail.includes('@'))
         return res.status(400).json({ error: "Please provide a valid email address." });
       recipients = [singleEmail.trim()];
+    } else if (recipientType === 'specific') {
+      // Multiple specific emails
+      if (!Array.isArray(specificEmails) || specificEmails.length === 0)
+        return res.status(400).json({ error: "Please provide at least one email address." });
+      recipients = specificEmails.filter(e => e && e.includes('@'));
     } else {
       // All members
       const result = await pool.query("SELECT email FROM users WHERE email IS NOT NULL");

@@ -175,18 +175,39 @@
     </div>
 
     <div class="email-blast-form">
-        <div class="email-blast-row">
-            <div class="field">
-                <label>Recipients</label>
-                <select id="email-recipient-type" class="email-select">
-                    <option value="all">Everyone (all members)</option>
-                    <option value="single">A specific person</option>
-                </select>
+        <div class="field">
+            <label>Recipients</label>
+            <select id="email-recipient-type" class="email-select">
+                <option value="all">Everyone (all members)</option>
+                <option value="specific">Specific people</option>
+            </select>
+        </div>
+
+        <!-- Multi-email input — shown when "Specific people" selected -->
+        <div id="email-specific-wrap" style="display:none;">
+            <label style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;
+                          text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:8px;">
+                Email Addresses
+            </label>
+            <div id="email-chips-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;
+                                               min-height:20px;"></div>
+            <div style="display:flex;gap:8px;">
+                <input type="email" id="email-chip-input" placeholder="Enter email and press Add"
+                    style="flex:1;background:var(--bg-panel);border:1px solid #2A2D31;color:var(--text);
+                           padding:11px 14px;font-family:var(--font-body);font-size:14px;border-radius:2px;">
+                <button type="button" id="email-add-chip-btn"
+                    style="background:var(--athletics);color:#0D0E10;border:none;padding:11px 18px;
+                           font-family:var(--font-mono);font-size:12px;letter-spacing:0.08em;
+                           text-transform:uppercase;cursor:pointer;border-radius:2px;white-space:nowrap;">
+                    + Add
+                </button>
             </div>
-            <div class="field" id="email-single-wrap" style="display:none;">
-                <label>Email Address</label>
-                <input type="email" id="email-single-input" placeholder="athlete@email.com">
-            </div>
+            <p style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin:6px 0 0;">
+                Add each email then click Send Email when ready.
+            </p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:0;">
         </div>
         <div class="field">
             <label>Subject</label>
@@ -659,47 +680,82 @@ async function updateSessions(bookingId) {
     }
 }
 
-// ---- Send Email (mass or single) ----
+// ---- Send Email (mass or multi-specific) ----
+let emailChips = [];
+
 document.getElementById('email-recipient-type')?.addEventListener('change', function() {
-    document.getElementById('email-single-wrap').style.display =
-        this.value === 'single' ? 'block' : 'none';
+    const wrap = document.getElementById('email-specific-wrap');
+    if (wrap) wrap.style.display = this.value === 'specific' ? 'flex' : 'none';
 });
+
+document.getElementById('email-add-chip-btn')?.addEventListener('click', addEmailChip);
+document.getElementById('email-chip-input')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addEmailChip(); }
+});
+
+function addEmailChip() {
+    const input = document.getElementById('email-chip-input');
+    const email = (input.value || '').trim().toLowerCase();
+    if (!email || !email.includes('@')) return;
+    if (emailChips.includes(email)) { input.value = ''; return; }
+    emailChips.push(email);
+    input.value = '';
+
+    const chipsWrap = document.getElementById('email-chips-wrap');
+    const chip = document.createElement('div');
+    chip.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:rgba(61,158,255,0.1);border:1px solid rgba(61,158,255,0.3);padding:4px 10px;border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--athletics);';
+    chip.dataset.email = email;
+    chip.innerHTML = email + ' <button type="button" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:0;line-height:1;" onclick="removeEmailChip(this)">×</button>';
+    chipsWrap.appendChild(chip);
+}
+
+function removeEmailChip(btn) {
+    const chip = btn.closest('div');
+    emailChips = emailChips.filter(e => e !== chip.dataset.email);
+    chip.remove();
+}
 
 document.getElementById('email-blast-btn')?.addEventListener('click', async () => {
     const errorEl   = document.getElementById('email-blast-error');
     const successEl = document.getElementById('email-blast-success');
-    errorEl.style.display   = 'none';
-    successEl.style.display = 'none';
+    errorEl.style.display = successEl.style.display = 'none';
 
     const recipientType = document.getElementById('email-recipient-type').value;
-    const singleEmail   = document.getElementById('email-single-input')?.value.trim();
     const subject       = document.getElementById('email-subject').value.trim();
     const message       = document.getElementById('email-message').value.trim();
 
     if (!subject) { errorEl.textContent = 'Please add a subject.'; errorEl.style.display = 'block'; return; }
     if (!message) { errorEl.textContent = 'Please write a message.'; errorEl.style.display = 'block'; return; }
-    if (recipientType === 'single' && !singleEmail) {
-        errorEl.textContent = 'Please enter an email address.'; errorEl.style.display = 'block'; return;
+    if (recipientType === 'specific' && emailChips.length === 0) {
+        errorEl.textContent = 'Add at least one email address.'; errorEl.style.display = 'block'; return;
     }
 
     const btn = document.getElementById('email-blast-btn');
-    btn.disabled = true;
-    btn.textContent = 'Sending...';
+    btn.disabled = true; btn.textContent = 'Sending...';
 
     try {
-        const res = await fetch('/api/admin/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subject, message, recipientType, singleEmail })
+        const payload = recipientType === 'specific'
+            ? { subject, message, recipientType: 'specific', specificEmails: emailChips }
+            : { subject, message, recipientType: 'all' };
+
+        const res  = await fetch('/api/admin/send-email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (!res.ok) { errorEl.textContent = data.error || 'Error sending.'; errorEl.style.display = 'block'; }
-        else { successEl.textContent = `✓ ${data.message}`; successEl.style.display = 'block'; }
+        else {
+            successEl.textContent = '✓ ' + data.message;
+            successEl.style.display = 'block';
+            if (recipientType === 'specific') {
+                emailChips = [];
+                document.getElementById('email-chips-wrap').innerHTML = '';
+            }
+        }
     } catch (e) {
         errorEl.textContent = "Couldn't reach server."; errorEl.style.display = 'block';
     }
-    btn.disabled = false;
-    btn.textContent = 'Send Email';
+    btn.disabled = false; btn.textContent = 'Send Email';
 });
 
 // ---- Elite Players Admin ----
