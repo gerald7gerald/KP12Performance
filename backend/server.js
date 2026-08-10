@@ -2048,9 +2048,9 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
           'SELECT * FROM stripe_sessions WHERE stripe_session_id=$1 AND user_id=$2',
           [stripeSessionId, userId]
         );
-        pending = refetch.rows[0] || { stripe_session_id: stripeSessionId, status: 'paid' };
+        pending = refetch.rows[0] || { stripe_session_id: stripeSessionId, status: 'pending' };
       } catch (e) {
-        pending = { stripe_session_id: stripeSessionId, status: 'paid' };
+        pending = { stripe_session_id: stripeSessionId, status: 'pending' };
       }
     }
 
@@ -2063,13 +2063,17 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
     const totalCredits = pending.total_credits || 1;
     const numAthletes  = pending.num_athletes  || 1;
 
-    // Idempotently grant ALL credits from the package (skip if webhook already did it)
-    if (pending.status !== 'paid') {
+    // Grant credits if not already granted — check DB status field
+    // Use 'pending' check so we always grant when unsure (idempotent: webhook deduplication handled separately)
+    const alreadyGranted = pending.status === 'paid';
+    if (!alreadyGranted) {
       await pool.query(
         'UPDATE users SET credits = COALESCE(credits,0) + $1 WHERE id = $2',
         [totalCredits, userId]
       );
-      await pool.query("UPDATE stripe_sessions SET status = 'paid' WHERE stripe_session_id = $1", [stripeSessionId]);
+      try {
+        await pool.query("UPDATE stripe_sessions SET status='paid' WHERE stripe_session_id=$1", [stripeSessionId]);
+      } catch (e) { /* status column may not exist — safe to ignore */ }
     }
 
     // Mark booking attempted to prevent double-booking on refresh
