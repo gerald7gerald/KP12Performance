@@ -1960,6 +1960,7 @@ app.post('/api/stripe/create-checkout', async (req, res) => {
         session_count: String(totalCredits),
         num_athletes:  String(numAthletes),
       },
+      allow_promotion_codes: true,  // shows a promo code field on the Stripe checkout page
       // {CHECKOUT_SESSION_ID} is a Stripe template variable — DO NOT change to a JS variable
       success_url: `${domain}/booking.html?service=${encodeURIComponent(serviceKey)}&payment=success&sid={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${domain}/booking.html?service=${encodeURIComponent(serviceKey)}&payment=cancelled`,
