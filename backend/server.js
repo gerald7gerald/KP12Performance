@@ -2079,18 +2079,7 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
     // Mark booking attempted to prevent double-booking on refresh
     await pool.query('UPDATE stripe_sessions SET booking_attempted = TRUE WHERE stripe_session_id = $1', [stripeSessionId]);
 
-    // Deduct 1 credit per slot selected (e.g. Tuesday + Thursday = 2 credits)
-    const slotsBooked = (slots || []).length || 1;
-    const deductRes = await pool.query(
-      'UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1 RETURNING credits',
-      [slotsBooked, userId]
-    );
-    if (!deductRes.rows.length) return res.status(402).json({ error: 'Insufficient credits after payment.' });
-
-    // sessions_remaining = totalCredits (full package count — counts down weekly)
-    const weekOf = currentWeekMonday();
-
-    // Safely parse slots — handles null if column migration hasn't run yet
+    // Safely parse slots FIRST — needed for slotsBooked calculation below
     let slots = [];
     try {
       if (pending.slots) {
@@ -2110,6 +2099,17 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
     const pkgLabel   = pending.package_label || `${totalCredits} Sessions`;
 
     console.log(`[complete-booking] userId=${userId} serviceKey=${serviceKey} slots=${slots.length} credits=${totalCredits}`);
+
+    // Deduct 1 credit per slot selected (e.g. Tuesday + Thursday = 2 credits)
+    const slotsBooked = slots.length || 1;
+    const deductRes = await pool.query(
+      'UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1 RETURNING credits',
+      [slotsBooked, userId]
+    );
+    if (!deductRes.rows.length) return res.status(402).json({ error: 'Insufficient credits after payment.' });
+
+    // sessions_remaining = totalCredits (full package count — counts down weekly)
+    const weekOf = currentWeekMonday();
 
     const bookingRes = await pool.query(
       `INSERT INTO bookings (user_id, service_key, service_title, package_label, sessions_remaining, week_of, status)
