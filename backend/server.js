@@ -1964,17 +1964,30 @@ app.post('/api/stripe/create-checkout', async (req, res) => {
       cancel_url:  `${domain}/booking.html?service=${encodeURIComponent(serviceKey)}&payment=cancelled`,
     });
 
-    // Save full booking intent + pricing breakdown to DB
+    // Step 1: Insert base record — uses only original columns, always works
     await pool.query(
-      `INSERT INTO stripe_sessions
-         (user_id, stripe_session_id, amount_cents, service_key, package_label,
-          slots, selected_athletes, num_athletes, total_credits)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      `INSERT INTO stripe_sessions (user_id, stripe_session_id, amount_cents, status)
+       VALUES ($1,$2,$3,'pending')
        ON CONFLICT (stripe_session_id) DO NOTHING`,
-      [userId, stripeSession.id, totalAmountCents, serviceKey, packageLabel || null,
-       JSON.stringify(slots), JSON.stringify(selectedAthletes || []),
-       numAthletes, totalCredits]
+      [userId, stripeSession.id, totalAmountCents]
     );
+
+    // Step 2: Save extended booking data — requires new columns
+    // If ALTER TABLE migrations haven't run yet, fails silently
+    // complete-booking falls back to Stripe metadata in that case
+    try {
+      await pool.query(
+        `UPDATE stripe_sessions
+         SET service_key=$1, package_label=$2, slots=$3::jsonb,
+             selected_athletes=$4::jsonb, num_athletes=$5, total_credits=$6
+         WHERE stripe_session_id=$7`,
+        [serviceKey, packageLabel || null,
+         JSON.stringify(slots), JSON.stringify(selectedAthletes || []),
+         numAthletes, totalCredits, stripeSession.id]
+      );
+    } catch (colErr) {
+      console.warn('[create-checkout] Extended columns not ready:', colErr.message);
+    }
 
     res.json({ url: stripeSession.url, totalAmountCents, numAthletes, totalCredits });
   } catch (err) {
@@ -2012,18 +2025,38 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
       'SELECT * FROM stripe_sessions WHERE stripe_session_id = $1 AND user_id = $2',
       [stripeSessionId, userId]
     );
-    if (!sessionRes.rows.length) return res.status(404).json({ error: 'Session not found.' });
-    const pending = sessionRes.rows[0];
-
-    // Already completed — safe on refresh
-    if (pending.booking_attempted && pending.booking_id) {
-      return res.json({ status: 'already_booked', bookingId: pending.booking_id });
-    }
+    // If no local record, the base INSERT in create-checkout also failed — critical
+    // Try to look up from Stripe directly as last resort
+    let pending = sessionRes.rows[0] || null;
 
     // Ask Stripe directly if payment succeeded (avoids webhook timing issue)
     const stripeSession = await stripe.checkout.sessions.retrieve(stripeSessionId);
     if (stripeSession.payment_status !== 'paid') {
       return res.status(402).json({ error: 'payment_not_complete', status: stripeSession.payment_status });
+    }
+
+    // If no local record at all, create a minimal one from Stripe metadata
+    if (!pending) {
+      console.warn('[complete-booking] No stripe_sessions record found — creating from Stripe metadata');
+      try {
+        await pool.query(
+          `INSERT INTO stripe_sessions (user_id, stripe_session_id, amount_cents, status)
+           VALUES ($1,$2,$3,'paid') ON CONFLICT (stripe_session_id) DO NOTHING`,
+          [userId, stripeSessionId, stripeSession.amount_total || 0]
+        );
+        const refetch = await pool.query(
+          'SELECT * FROM stripe_sessions WHERE stripe_session_id=$1 AND user_id=$2',
+          [stripeSessionId, userId]
+        );
+        pending = refetch.rows[0] || { stripe_session_id: stripeSessionId, status: 'paid' };
+      } catch (e) {
+        pending = { stripe_session_id: stripeSessionId, status: 'paid' };
+      }
+    }
+
+    // Already completed — safe on refresh
+    if (pending.booking_attempted && pending.booking_id) {
+      return res.json({ status: 'already_booked', bookingId: pending.booking_id });
     }
 
     // Read the correct credit amount from the DB record
