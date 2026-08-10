@@ -2052,15 +2052,32 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
 
     // sessions_remaining = totalCredits (full package count — counts down weekly)
     const weekOf = currentWeekMonday();
-    const slots  = pending.slots || [];
-    const selectedAthletes = pending.selected_athletes || [];
+
+    // Safely parse slots — handles null if column migration hasn't run yet
+    let slots = [];
+    try {
+      if (pending.slots) {
+        slots = Array.isArray(pending.slots) ? pending.slots : JSON.parse(pending.slots);
+      }
+    } catch (e) { slots = []; }
+
+    const selectedAthletes = (() => {
+      try {
+        if (!pending.selected_athletes) return [];
+        return Array.isArray(pending.selected_athletes) ? pending.selected_athletes : JSON.parse(pending.selected_athletes);
+      } catch (e) { return []; }
+    })();
+
+    // Fallback service info from Stripe metadata if DB columns missing
+    const serviceKey = pending.service_key || stripeSession.metadata?.service_key || 'training';
+    const pkgLabel   = pending.package_label || `${totalCredits} Sessions`;
+
+    console.log(`[complete-booking] userId=${userId} serviceKey=${serviceKey} slots=${slots.length} credits=${totalCredits}`);
 
     const bookingRes = await pool.query(
       `INSERT INTO bookings (user_id, service_key, service_title, package_label, sessions_remaining, week_of, status)
        VALUES ($1,$2,$3,$4,$5,$6,'confirmed') RETURNING id`,
-      [userId, pending.service_key, pending.service_key,
-       pending.package_label || `${totalCredits} Sessions`,
-       totalCredits, weekOf]
+      [userId, serviceKey, serviceKey, pkgLabel, totalCredits, weekOf]
     );
     const bookingId = bookingRes.rows[0].id;
 
@@ -2127,11 +2144,14 @@ app.post('/api/stripe/complete-booking', async (req, res) => {
       }).catch(e => console.error('Email error:', e));
     }
 
-    res.json({ status: 'booked', bookingId, creditsRemaining: deductRes.rows[0].credits, slots, serviceKey: pending.service_key });
+    res.json({ status: 'booked', bookingId, creditsRemaining: deductRes.rows[0].credits, slots, serviceKey });
 
   } catch (err) {
-    console.error('complete-booking error:', err);
-    res.status(500).json({ error: 'Booking failed. Your payment was received — contact support@kp12performance.com' });
+    console.error('complete-booking error:', err.message, err.stack);
+    res.status(500).json({
+      error: 'Booking failed. Your payment was received — contact support@kp12performance.com',
+      detail: err.message  // visible in browser console for debugging
+    });
   }
 });
 
