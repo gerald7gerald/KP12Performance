@@ -685,7 +685,14 @@ let emailChips = [];
 
 document.getElementById('email-recipient-type')?.addEventListener('change', function() {
     const wrap = document.getElementById('email-specific-wrap');
-    if (wrap) wrap.style.display = this.value === 'specific' ? 'flex' : 'none';
+    if (!wrap) return;
+    if (this.value === 'specific') {
+        wrap.style.display = 'flex';
+        wrap.style.flexDirection = 'column';
+        wrap.style.gap = '10px';
+    } else {
+        wrap.style.display = 'none';
+    }
 });
 
 document.getElementById('email-add-chip-btn')?.addEventListener('click', addEmailChip);
@@ -703,8 +710,7 @@ function addEmailChip() {
 
     const chipsWrap = document.getElementById('email-chips-wrap');
     const chip = document.createElement('div');
-    chip.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:rgba(61,158,255,0.1);border:1px solid rgba(61,158,255,0.3);padding:4px 10px;border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--athletics);';
-    chip.dataset.email = email;
+chip.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:rgba(61,158,255,0.1);border:1px solid rgba(61,158,255,0.3);padding:4px 10px;border-radius:2px;font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--athletic...)';    chip.dataset.email = email;
     chip.innerHTML = email + ' <button type="button" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:0;line-height:1;" onclick="removeEmailChip(this)">×</button>';
     chipsWrap.appendChild(chip);
 }
