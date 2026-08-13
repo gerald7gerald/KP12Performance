@@ -2401,6 +2401,163 @@ app.post('/api/bookings/use-credit', async (req, res) => {
       }
     }
 
+    // Fetch user info for emails
+    const userRes = await pool.query('SELECT username, email, phone, age, role FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
+
+    const slotTable = (slots || []).map(s =>
+      `<tr><td style="padding:9px 14px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:12px;color:#3D9EFF;">${s.day}</td>
+       <td style="padding:9px 14px;border-bottom:1px solid #232529;font-family:'JetBrains Mono',monospace;font-size:12px;color:#F5F4F0;">${s.start} – ${s.end}</td></tr>`
+    ).join('');
+
+    // ---- Client booking confirmation email ----
+    if (user?.email) {
+      resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: user.email,
+        subject: `You're booked — ${serviceTitle || serviceKey} | KP12 Performance`,
+        html: `<div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #232529;">
+          <div style="background:#15171A;padding:26px 32px;border-bottom:1px solid #232529;">
+            <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:30px;display:block;">
+          </div>
+          <div style="padding:32px 32px 28px;">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#3D9EFF;margin:0 0 14px;">[ BOOKING CONFIRMED ]</p>
+            <h1 style="font-size:24px;font-weight:800;text-transform:uppercase;margin:0 0 6px;">You're Booked, ${user.username}! 💪</h1>
+            <p style="color:#8C8F96;font-size:14px;margin:0 0 24px;">${slotsBooked} session credit${slotsBooked > 1 ? 's' : ''} used. Your slot${slotsBooked > 1 ? 's are' : ' is'} locked in.</p>
+            <table style="width:100%;border-collapse:collapse;background:#15171A;border:1px solid #232529;margin-bottom:18px;">
+              <thead><tr style="background:#1d1f23;">
+                <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">DAY</th>
+                <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">TIME</th>
+              </tr></thead><tbody>${slotTable}</tbody>
+            </table>
+            <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #3D9EFF;padding:16px 20px;margin-bottom:18px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#3D9EFF;margin:0 0 6px;">📍 LOCATION</p>
+              <p style="font-size:14px;color:#F5F4F0;font-weight:600;margin:0 0 4px;">St. John Bosco High School</p>
+              <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8C8F96;margin:0;">13640 Bellflower Blvd, Bellflower, CA 90706</p>
+            </div>
+            <div style="background:#1a1209;border:1px solid rgba(255,194,71,0.3);border-left:3px solid #FFC247;padding:16px 20px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#FFC247;margin:0 0 6px;">[ CANCELLATION POLICY ]</p>
+              <p style="font-size:13px;color:#F5F4F0;line-height:1.6;margin:0;">Cancel at least <strong>6 hours before your session</strong> to avoid a fee.
+                Contact <a href="mailto:support@kp12performance.com" style="color:#FFC247;">support@kp12performance.com</a></p>
+            </div>
+          </div>
+          <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">© 2025 KP12 Performance · kp12performance.com</p>
+          </div>
+        </div>`
+      }).catch(e => console.error('Credit booking email error:', e));
+    }
+
+    // ---- Employee notification email ----
+    try {
+      if (user) {
+        let athleteSection = '';
+        if (Array.isArray(selectedAthletes) && selectedAthletes.length > 0) {
+          const athleteRows = selectedAthletes
+            .map(a => `<tr>
+              <td style="padding:8px 14px;border-bottom:1px solid #232529;color:#F5F4F0;font-size:13px;">${a.name || '—'}</td>
+              <td style="padding:8px 14px;border-bottom:1px solid #232529;color:#8C8F96;font-size:13px;">${a.age || '—'}</td>
+              <td style="padding:8px 14px;border-bottom:1px solid #232529;color:#8C8F96;font-size:13px;">${a.gender || '—'}</td>
+            </tr>`)
+            .join('');
+          athleteSection = `
+            <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:20px 0 8px;">ATTENDING ATHLETES</p>
+            <table style="width:100%;border-collapse:collapse;background:#15171A;border:1px solid #232529;">
+              <thead>
+                <tr style="background:#1d1f23;">
+                  <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">NAME</th>
+                  <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">AGE</th>
+                  <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">GENDER</th>
+                </tr>
+              </thead>
+              <tbody>${athleteRows}</tbody>
+            </table>`;
+        }
+
+        await resend.emails.send({
+          from: 'support@kp12performance.com',
+          to: ['performancekp12@gmail.com', 'geraldcgarcia7@gmail.com'],
+          subject: `[NEW BOOKING] ${user.username} — ${serviceTitle || serviceKey} (credit)`,
+          html: `
+            <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
+              <div style="background:#15171A;padding:24px 32px;border-bottom:3px solid #FF5630;">
+                <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:28px;display:block;margin-bottom:12px;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#FF5630;margin:0;">[ NEW BOOKING ALERT — CREDIT ]</p>
+              </div>
+              <div style="padding:28px 32px;">
+                <h2 style="font-size:20px;font-weight:700;text-transform:uppercase;margin:0 0 20px;line-height:1.2;">
+                  ${user.username} just booked using a session credit.
+                </h2>
+
+                <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #FF5630;padding:18px 20px;margin-bottom:20px;">
+                  <table style="width:100%;border-collapse:collapse;">
+                    <tr>
+                      <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;width:110px;">SERVICE</td>
+                      <td style="padding:6px 0;font-size:14px;font-weight:600;color:#F5F4F0;">${serviceTitle || serviceKey}</td>
+                    </tr>
+                    ${packageLabel ? `<tr>
+                      <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;">PACKAGE</td>
+                      <td style="padding:6px 0;font-size:14px;color:#F5F4F0;">${packageLabel}</td>
+                    </tr>` : ''}
+                    <tr>
+                      <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;">ROLE</td>
+                      <td style="padding:6px 0;font-size:14px;color:#F5F4F0;">${user.role === 'parent_guardian' ? 'Parent / Guardian' : 'Athlete'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;">CREDITS USED</td>
+                      <td style="padding:6px 0;font-size:14px;color:#F5F4F0;">${slotsBooked} (${deductRes.rows[0].credits} remaining)</td>
+                    </tr>
+                  </table>
+                </div>
+
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 8px;">CONTACT INFO</p>
+                <div style="background:#15171A;border:1px solid #232529;padding:16px 20px;margin-bottom:20px;">
+                  <table style="width:100%;border-collapse:collapse;">
+                    <tr>
+                      <td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;width:70px;">EMAIL</td>
+                      <td style="padding:5px 0;font-size:13px;"><a href="mailto:${user.email}" style="color:#3D9EFF;">${user.email}</a></td>
+                    </tr>
+                    ${user.phone ? `<tr>
+                      <td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">PHONE</td>
+                      <td style="padding:5px 0;font-size:13px;"><a href="tel:${user.phone}" style="color:#3D9EFF;">${user.phone}</a></td>
+                    </tr>` : ''}
+                    ${user.age ? `<tr>
+                      <td style="padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">AGE</td>
+                      <td style="padding:5px 0;font-size:13px;color:#F5F4F0;">${user.age}</td>
+                    </tr>` : ''}
+                  </table>
+                </div>
+
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 8px;">SELECTED TIMES</p>
+                <table style="width:100%;border-collapse:collapse;background:#15171A;border:1px solid #232529;margin-bottom:4px;">
+                  <thead>
+                    <tr style="background:#1d1f23;">
+                      <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">DAY</th>
+                      <th style="padding:8px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;">TIME</th>
+                    </tr>
+                  </thead>
+                  <tbody>${slotTable}</tbody>
+                </table>
+
+                ${athleteSection}
+
+                <div style="margin-top:24px;padding-top:20px;border-top:1px solid #232529;text-align:center;">
+                  <a href="https://kp12performance.com/employee.html" style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 24px;font-weight:600;">View in Employee Dashboard →</a>
+                </div>
+              </div>
+              <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">KP12 Performance · Internal Notification</p>
+              </div>
+            </div>
+          `
+        });
+        console.log(`Employee notification sent for credit booking by ${user.username}`);
+      }
+    } catch (notifErr) {
+      console.error('Employee notification email error (credit booking):', notifErr);
+      // Don't fail the booking if notification fails
+    }
+
     res.status(201).json({ message: 'Booked using 1 credit.', bookingId, creditsRemaining: deductRes.rows[0].credits });
   } catch (err) {
     console.error('use-credit error:', err);
