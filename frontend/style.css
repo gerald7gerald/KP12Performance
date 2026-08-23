@@ -6084,6 +6084,31 @@ transform:translateY(70px);
     max-width: 620px;
 }
 
+.abt-bio-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.abt-bio-list li {
+    position: relative;
+    padding-left: 22px;
+}
+
+.abt-bio-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--athletics);
+}
+
 .abt-chips {
     display: flex;
     flex-wrap: wrap;
