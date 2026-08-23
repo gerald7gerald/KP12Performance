@@ -3516,6 +3516,43 @@ transform:translateY(70px);
     padding: 24px 28px;
     margin-bottom: 32px;
 }
+
+/* ---------- MONTHLY SCHEDULE — MONTH/WEEK PICKER ---------- */
+#sched-month-select {
+    background: var(--bg-panel);
+    border: 1px solid #2A2D31;
+    color: var(--text);
+    padding: 12px 14px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    border-radius: 2px;
+    width: 100%;
+    transition: border-color 0.3s ease;
+}
+
+#sched-month-select:focus {
+    outline: none;
+    border-color: var(--athletics);
+}
+
+.week-pill {
+    flex: none;
+    min-width: 0;
+    width: auto;
+    padding: 10px 16px;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-size: 12px;
+}
+
+#sched-dup-weeks label:hover {
+    border-color: var(--athletics) !important;
+    color: var(--athletics) !important;
+}
+
+#sched-dup-weeks input[type="checkbox"] {
+    accent-color: var(--athletics);
+}
 /* ---------- TRA.HTML — SPOTS BADGES ---------- */
 .tra-spots-badge {
     display: block;

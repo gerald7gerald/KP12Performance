@@ -28,9 +28,25 @@
     <!-- ===== SCHEDULE BUILDER ===== -->
     <div class="emp-header">
         <p class="eyebrow">[ SCHEDULE ]</p>
-        <h1 class="emp-title">Weekly Schedule</h1>
-        <p class="emp-sub">Set session times for the current week. Resets automatically every Sunday.</p>
+        <h1 class="emp-title">Monthly Schedule</h1>
+        <p class="emp-sub">Plan sessions out a full month at a time. Clients only ever see the current week on the site.</p>
     </div>
+
+    <!-- Month / Week picker -->
+    <div class="sched-month-picker" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;">
+        <div class="field" style="min-width:180px;">
+            <label>Month</label>
+            <select id="sched-month-select"></select>
+        </div>
+        <div style="flex:1;min-width:240px;">
+            <label style="display:block;font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-bottom:6px;">Week</label>
+            <div id="sched-week-pills" style="display:flex;flex-wrap:wrap;gap:8px;">
+                <p class="emp-loading" style="margin:0;">Loading weeks...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="sched-selected-week-label" style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);margin-bottom:18px;"></div>
 
     <div class="sched-builder-days">
         <button class="sched-day-box" data-day="Monday">Mon</button>
@@ -79,12 +95,26 @@
 
     <div class="sched-preview">
         <div class="sched-preview-header">
-            <p class="eyebrow" style="color:var(--athletics);">[ CURRENT SCHEDULE ]</p>
-            <button id="sched-clear-btn" class="sched-clear-btn">Clear This Week</button>
+            <p class="eyebrow" style="color:var(--athletics);">[ SELECTED WEEK ]</p>
+            <div style="display:flex;gap:8px;">
+                <button id="sched-dup-week-btn" class="sched-save-btn" style="padding:8px 14px;font-size:12px;">Duplicate This Week →</button>
+                <button id="sched-clear-btn" class="sched-clear-btn">Clear This Week</button>
+            </div>
         </div>
         <div id="sched-live-grid" class="sched-admin-grid">
             <p class="emp-loading">Loading schedule...</p>
         </div>
+    </div>
+
+    <!-- Duplicate target-week panel (shared by slot/day/week duplication) -->
+    <div id="sched-dup-panel" class="sched-edit-panel" style="display:none;">
+        <p class="sched-add-label" id="sched-dup-label">Duplicate to which week(s)?</p>
+        <div id="sched-dup-weeks" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;"></div>
+        <div style="display:flex;gap:10px;">
+            <button type="button" id="sched-dup-confirm-btn" class="sched-save-btn">Duplicate</button>
+            <button type="button" id="sched-dup-cancel-btn" class="sched-clear-btn">Cancel</button>
+        </div>
+        <p class="sched-error" id="sched-dup-error" style="display:none;"></p>
     </div>
 
     <div id="sched-edit-panel" class="sched-edit-panel" style="display:none;">
@@ -338,6 +368,80 @@ document.getElementById('sched-category').addEventListener('change', function ()
     }
 });
 
+// ---- Month / Week state ----
+let selectedMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+let selectedWeekOf = null; // set once weeks load
+let weeksCache = []; // [{weekOf, hasSlots, isCurrent}]
+
+function monthLabel(monthStr) {
+    const [y, m] = monthStr.split('-').map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+function weekLabel(weekOf) {
+    const d = new Date(weekOf + 'T00:00:00');
+    const end = new Date(d); end.setDate(d.getDate() + 5);
+    const opts = { month: 'short', day: 'numeric' };
+    return `${d.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', opts)}`;
+}
+
+function populateMonthSelect() {
+    const sel = document.getElementById('sched-month-select');
+    sel.innerHTML = '';
+    const base = new Date();
+    for (let i = -1; i <= 5; i++) { // last month through 5 months ahead
+        const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+        const val = d.toISOString().slice(0, 7);
+        const o = document.createElement('option');
+        o.value = val; o.textContent = monthLabel(val);
+        if (val === selectedMonth) o.selected = true;
+        sel.appendChild(o);
+    }
+}
+document.getElementById('sched-month-select').addEventListener('change', function () {
+    selectedMonth = this.value;
+    loadWeeks();
+});
+
+async function loadWeeks() {
+    const pillsWrap = document.getElementById('sched-week-pills');
+    pillsWrap.innerHTML = '<p class="emp-loading" style="margin:0;">Loading weeks...</p>';
+    try {
+        const data = await fetch(`/api/schedule/weeks?month=${selectedMonth}`).then(r => r.json());
+        weeksCache = data.weeks || [];
+        // Preserve current selection if it's still in this month's list, else default sensibly
+        if (!weeksCache.find(w => w.weekOf === selectedWeekOf)) {
+            const cur = weeksCache.find(w => w.isCurrent);
+            selectedWeekOf = cur ? cur.weekOf : (weeksCache[0] ? weeksCache[0].weekOf : null);
+        }
+        renderWeekPills();
+        loadSchedule();
+    } catch {
+        pillsWrap.innerHTML = '<p class="emp-loading" style="margin:0;">Couldn\'t load weeks.</p>';
+    }
+}
+
+function renderWeekPills() {
+    const pillsWrap = document.getElementById('sched-week-pills');
+    if (!weeksCache.length) { pillsWrap.innerHTML = '<p class="emp-loading" style="margin:0;">No weeks found.</p>'; return; }
+    pillsWrap.innerHTML = weeksCache.map(w => `
+        <button type="button" class="sched-day-box week-pill ${w.weekOf === selectedWeekOf ? 'is-active' : ''}"
+            data-week="${w.weekOf}" style="position:relative;">
+            ${weekLabel(w.weekOf)}${w.isCurrent ? ' (Live)' : ''}
+            ${w.hasSlots ? '<span style="position:absolute;top:4px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--athletics);"></span>' : ''}
+        </button>
+    `).join('');
+    pillsWrap.querySelectorAll('.week-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedWeekOf = btn.dataset.week;
+            renderWeekPills();
+            loadSchedule();
+        });
+    });
+    const label = document.getElementById('sched-selected-week-label');
+    const w = weeksCache.find(w => w.weekOf === selectedWeekOf);
+    label.textContent = w ? `Editing week of ${weekLabel(w.weekOf)}${w.isCurrent ? ' — this is the week clients currently see' : ' — upcoming, not yet visible to clients'}` : '';
+}
+
 // ---- Day box selection ----
 let selectedDay = null;
 document.querySelectorAll('.sched-day-box').forEach(btn => {
@@ -378,7 +482,7 @@ document.getElementById('sched-save-btn').addEventListener('click', async () => 
         const res = await fetch('/api/schedule', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ day: selectedDay, category, subcategory, startTime, endTime,
-            maxSpots: document.getElementById('sched-max-spots')?.value || null })
+            maxSpots: document.getElementById('sched-max-spots')?.value || null, weekOf: selectedWeekOf })
         });
         const data = await res.json();
         if (!res.ok) { errorEl.textContent = data.error || 'Error.'; errorEl.style.display = 'block'; }
@@ -389,9 +493,12 @@ document.getElementById('sched-save-btn').addEventListener('click', async () => 
 
 // ---- Clear schedule ----
 document.getElementById('sched-clear-btn').addEventListener('click', async () => {
-    if (!confirm('Clear all slots for this week?')) return;
-    try { await fetch('/api/schedule', { method: 'DELETE' }); loadSchedule(); }
-    catch { alert('Failed to clear.'); }
+    if (!selectedWeekOf) return;
+    if (!confirm(`Clear all slots for the week of ${weekLabel(selectedWeekOf)}?`)) return;
+    try {
+        await fetch(`/api/schedule?weekOf=${selectedWeekOf}`, { method: 'DELETE' });
+        loadWeeks(); // refreshes the "has slots" dot on the pill too
+    } catch { alert('Failed to clear.'); }
 });
 
 // ---- Edit panel ----
@@ -439,12 +546,14 @@ async function deleteSlot(id) {
     } catch { alert("Couldn't reach server."); }
 }
 
-// ---- Load schedule ----
+// ---- Load schedule (for the currently selected week) ----
 async function loadSchedule() {
     const grid = document.getElementById('sched-live-grid');
+    if (!selectedWeekOf) { grid.innerHTML = '<p class="emp-loading">Pick a week above.</p>'; return; }
     grid.innerHTML = '<p class="emp-loading">Loading...</p>';
     try {
-        const slots = await fetch('/api/schedule').then(r => r.json());
+        const data = await fetch(`/api/schedule/admin?weekOf=${selectedWeekOf}`).then(r => r.json());
+        const slots = data.slots || [];
         if (!slots.length) { grid.innerHTML = '<p class="emp-loading">No slots this week — add some above.</p>'; return; }
         const byDay = {};
         DAYS_ORDER.forEach(d => { byDay[d] = []; });
@@ -452,7 +561,12 @@ async function loadSchedule() {
         let html = '<div class="sched-admin-days">';
         DAYS_ORDER.forEach(day => {
             if (!byDay[day].length) return;
-            html += `<div class="sched-admin-day"><p class="sched-day-label">${day.toUpperCase()}</p><div class="sched-admin-slot-list">`;
+            html += `<div class="sched-admin-day">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <p class="sched-day-label">${day.toUpperCase()}</p>
+                    <button class="sched-slot-edit-btn" onclick="openDuplicatePanel('day', '${day}', null)">Duplicate Day →</button>
+                </div>
+                <div class="sched-admin-slot-list">`;
             byDay[day].forEach(s => {
                 const color = CAT_COLORS[s.category] || '#8C8F96';
                 html += `<div class="sched-admin-slot" style="border-left-color:${color}">
@@ -464,6 +578,7 @@ async function loadSchedule() {
                     </div>
                     <div class="sched-admin-slot-actions">
                         <button class="sched-slot-edit-btn" onclick='openEditPanel(${JSON.stringify(s)})'>Edit</button>
+                        <button class="sched-slot-edit-btn" onclick="openDuplicatePanel('slot', null, ${s.id})">Duplicate</button>
                         <button class="sched-slot-delete-btn" onclick="deleteSlot(${s.id})">Delete</button>
                     </div>
                 </div>`;
@@ -474,6 +589,63 @@ async function loadSchedule() {
         grid.innerHTML = html;
     } catch { grid.innerHTML = '<p class="emp-loading">Couldn\'t load schedule.</p>'; }
 }
+
+// ---- Duplicate (slot / day / week) ----
+let dupMode = null, dupDay = null, dupSlotId = null;
+
+function openDuplicatePanel(mode, day, slotId) {
+    dupMode = mode; dupDay = day; dupSlotId = slotId;
+    const labelText = mode === 'week' ? 'Duplicate this whole week to:'
+        : mode === 'day' ? `Duplicate ${day} to:`
+        : 'Duplicate this session to:';
+    document.getElementById('sched-dup-label').textContent = labelText;
+    const targets = weeksCache.filter(w => w.weekOf !== selectedWeekOf);
+    const wrap = document.getElementById('sched-dup-weeks');
+    if (!targets.length) {
+        wrap.innerHTML = '<p class="emp-loading" style="margin:0;">No other weeks in this month — pick a different month above first.</p>';
+    } else {
+        wrap.innerHTML = targets.map(w => `
+            <label style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;color:var(--text);border:1px solid #2A2D31;padding:8px 10px;border-radius:2px;cursor:pointer;">
+                <input type="checkbox" class="dup-week-check" value="${w.weekOf}"> ${weekLabel(w.weekOf)}${w.isCurrent ? ' (Live)' : ''}
+            </label>
+        `).join('');
+    }
+    document.getElementById('sched-dup-error').style.display = 'none';
+    const panel = document.getElementById('sched-dup-panel');
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+document.getElementById('sched-dup-week-btn').addEventListener('click', () => openDuplicatePanel('week', null, null));
+document.getElementById('sched-dup-cancel-btn').addEventListener('click', () => {
+    document.getElementById('sched-dup-panel').style.display = 'none';
+});
+document.getElementById('sched-dup-confirm-btn').addEventListener('click', async () => {
+    const err = document.getElementById('sched-dup-error');
+    err.style.display = 'none';
+    const targetWeeks = Array.from(document.querySelectorAll('.dup-week-check:checked')).map(c => c.value);
+    if (!targetWeeks.length) { err.textContent = 'Select at least one week.'; err.style.display = 'block'; return; }
+    const btn = document.getElementById('sched-dup-confirm-btn');
+    btn.disabled = true; btn.textContent = 'Duplicating...';
+    try {
+        const res = await fetch('/api/schedule/duplicate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mode: dupMode, sourceWeekOf: selectedWeekOf,
+                sourceDay: dupMode === 'day' ? dupDay : undefined,
+                sourceSlotId: dupMode === 'slot' ? dupSlotId : undefined,
+                targetWeeks
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) { err.textContent = data.error || 'Duplicate failed.'; err.style.display = 'block'; }
+        else {
+            document.getElementById('sched-dup-panel').style.display = 'none';
+            loadWeeks(); // refresh "has slots" dots
+        }
+    } catch { err.textContent = "Couldn't reach server."; err.style.display = 'block'; }
+    btn.disabled = false; btn.textContent = 'Duplicate';
+});
 
 // ---- Load appointments ----
 async function loadAppointments() {
@@ -904,7 +1076,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!data || !data.user || !data.user.is_admin) {
                 window.location.href = "index.html"; return;
             }
-            loadSchedule();
+            populateMonthSelect();
+            loadWeeks(); // this also triggers the first loadSchedule() once weeks resolve
             loadAppointments();
             loadElitePlayers();
             loadUsers();

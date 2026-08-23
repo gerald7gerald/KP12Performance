@@ -144,6 +144,26 @@ function currentWeekMonday() {
   return mon.toISOString().split('T')[0];
 }
 
+// Returns every Monday (YYYY-MM-DD) whose week overlaps the given month.
+// monthStr format: "YYYY-MM". Used only by the admin/employee schedule builder —
+// does not affect client-facing week logic (currentWeekMonday) at all.
+function getWeeksInMonth(monthStr) {
+  const [y, m] = (monthStr || '').split('-').map(Number);
+  if (!y || !m) throw new Error('Invalid month format, expected YYYY-MM');
+  const firstOfMonth = new Date(y, m - 1, 1);
+  const lastOfMonth = new Date(y, m, 0);
+  const firstDow = firstOfMonth.getDay(); // 0=Sun..6=Sat
+  const diffToMonday = firstDow === 0 ? -6 : 1 - firstDow;
+  const cur = new Date(firstOfMonth);
+  cur.setDate(cur.getDate() + diffToMonday);
+  const weeks = [];
+  while (cur <= lastOfMonth) {
+    weeks.push(cur.toISOString().split('T')[0]);
+    cur.setDate(cur.getDate() + 7);
+  }
+  return weeks;
+}
+
 function setLoginCookie(res, userId) {
   res.cookie('userId', userId, {
     httpOnly: true,
@@ -653,68 +673,114 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
 });
 
 // ---- Schedule ----
+
+// Shared logic for fetching a week's schedule (used by both the public
+// client-facing endpoint and the admin/employee endpoint below). Behavior
+// is identical to the original single-week implementation — just parameterized
+// by weekOf instead of hardcoding currentWeekMonday() inline.
+async function getScheduleForWeek(weekOf) {
+  const r = await pool.query(
+    `SELECT s.id,s.day_of_week,s.category,s.subcategory,s.start_time,s.end_time,s.max_spots,s.week_of,
+            u.username AS created_by
+     FROM schedule s LEFT JOIN users u ON s.created_by=u.id
+     WHERE s.week_of=$1 OR s.week_of IS NULL`, [weekOf]
+  );
+
+  const slots = r.rows;
+  const enriched = await Promise.all(slots.map(async (slot) => {
+    if (!slot.max_spots) return { ...slot, spots_taken: null, spots_available: null };
+    const countRes = await pool.query(
+      `SELECT COALESCE(SUM(
+         CASE
+           WHEN u.role = 'parent_guardian' AND COALESCE(ba.cnt, 0) > 0 THEN ba.cnt
+           ELSE 1
+         END
+       ), 0) AS taken
+       FROM booking_slots bs
+       JOIN bookings b ON b.id = bs.booking_id
+       JOIN users u ON u.id = b.user_id
+       LEFT JOIN (
+         SELECT booking_id, COUNT(*) AS cnt
+         FROM booking_athletes
+         GROUP BY booking_id
+       ) ba ON ba.booking_id = b.id
+       WHERE b.week_of = $1
+         AND b.status = 'confirmed'
+         AND bs.day_of_week = $2
+         AND bs.start_time = $3`,
+      [weekOf, slot.day_of_week, slot.start_time]
+    );
+    const taken = parseInt(countRes.rows[0].taken) || 0;
+    return { ...slot, spots_taken: taken, spots_available: slot.max_spots - taken };
+  }));
+
+  // Normalize subcategory slash spacing so "Swim Team/Clinics" → "Swim Team / Clinics"
+  const normalized = enriched.map(s => ({
+    ...s,
+    subcategory: s.subcategory ? s.subcategory.replace(/\s*\/\s*/g, ' / ').trim() : s.subcategory
+  }));
+  return sortSlots(normalized);
+}
+
+// PUBLIC / CLIENT-FACING — unchanged behavior. Always shows only the current
+// week, exactly as before. This is what schedule-widget.js and the booking
+// pages call, and it is NOT affected by the monthly employee scheduling below.
 app.get('/api/schedule', async (req, res) => {
   try {
     const weekOf = currentWeekMonday();
-    // Get slots with max_spots
-    const r = await pool.query(
-      `SELECT s.id,s.day_of_week,s.category,s.subcategory,s.start_time,s.end_time,s.max_spots,s.week_of,
-              u.username AS created_by
-       FROM schedule s LEFT JOIN users u ON s.created_by=u.id
-       WHERE s.week_of=$1 OR s.week_of IS NULL`, [weekOf]
-    );
-
-    // For each slot, count how many confirmed bookings include that day+time this week
-    const slots = r.rows;
-    const enriched = await Promise.all(slots.map(async (slot) => {
-      if (!slot.max_spots) return { ...slot, spots_taken: null, spots_available: null };
-      const countRes = await pool.query(
-        `SELECT COALESCE(SUM(
-           CASE
-             WHEN u.role = 'parent_guardian' AND COALESCE(ba.cnt, 0) > 0 THEN ba.cnt
-             ELSE 1
-           END
-         ), 0) AS taken
-         FROM booking_slots bs
-         JOIN bookings b ON b.id = bs.booking_id
-         JOIN users u ON u.id = b.user_id
-         LEFT JOIN (
-           SELECT booking_id, COUNT(*) AS cnt
-           FROM booking_athletes
-           GROUP BY booking_id
-         ) ba ON ba.booking_id = b.id
-         WHERE b.week_of = $1
-           AND b.status = 'confirmed'
-           AND bs.day_of_week = $2
-           AND bs.start_time = $3`,
-        [weekOf, slot.day_of_week, slot.start_time]
-      );
-      const taken = parseInt(countRes.rows[0].taken) || 0;
-      return { ...slot, spots_taken: taken, spots_available: slot.max_spots - taken };
-    }));
-
-    // Normalize subcategory slash spacing so "Swim Team/Clinics" → "Swim Team / Clinics"
-    const normalized = enriched.map(s => ({
-      ...s,
-      subcategory: s.subcategory ? s.subcategory.replace(/\s*\/\s*/g, ' / ').trim() : s.subcategory
-    }));
-    res.json(sortSlots(normalized));
+    const slots = await getScheduleForWeek(weekOf);
+    res.json(slots);
   } catch (err) { console.error(err); res.status(500).json({ error: "Error fetching schedule." }); }
+});
+
+// ADMIN — view any week (defaults to current week if no weekOf given).
+// Lets the employee dashboard browse/manage weeks across a whole month.
+app.get('/api/schedule/admin', requireAdmin, async (req, res) => {
+  try {
+    const weekOf = req.query.weekOf || currentWeekMonday();
+    const slots = await getScheduleForWeek(weekOf);
+    res.json({ weekOf, slots });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error fetching schedule." }); }
+});
+
+// ADMIN — list every Monday-of-week in a given month, with a flag for
+// whether that week already has any slots, for the employee week-picker UI.
+app.get('/api/schedule/weeks', requireAdmin, async (req, res) => {
+  try {
+    const month = req.query.month || new Date().toISOString().slice(0, 7); // "YYYY-MM"
+    const weeks = getWeeksInMonth(month);
+    const current = currentWeekMonday();
+    const counts = await pool.query(
+      `SELECT week_of, COUNT(*) AS cnt FROM schedule WHERE week_of = ANY($1::date[]) GROUP BY week_of`,
+      [weeks]
+    );
+    const countMap = {};
+    counts.rows.forEach(r => {
+      const key = new Date(r.week_of).toISOString().split('T')[0];
+      countMap[key] = parseInt(r.cnt);
+    });
+    res.json({
+      month,
+      weeks: weeks.map(w => ({ weekOf: w, hasSlots: !!countMap[w], isCurrent: w === current }))
+    });
+  } catch (err) { console.error(err); res.status(400).json({ error: "Error loading weeks. Expected month=YYYY-MM." }); }
 });
 
 app.post('/api/schedule', requireAdmin, async (req, res) => {
   const userId = getUserIdFromCookies(req);
-  const { day, category, subcategory, startTime, endTime, maxSpots } = req.body;
+  const { day, category, subcategory, startTime, endTime, maxSpots, weekOf } = req.body;
   if (!day || !category || !startTime || !endTime)
     return res.status(400).json({ error: "All fields required." });
   if (!DAYS_ORDER.includes(day)) return res.status(400).json({ error: "Invalid day." });
   const spotLimit = (maxSpots && parseInt(maxSpots) > 0) ? parseInt(maxSpots) : null;
   try {
-    const weekOf = currentWeekMonday();
+    // weekOf is optional — defaults to the current week exactly like before,
+    // but the employee dashboard can now pass any week within the month.
+    const targetWeek = weekOf || currentWeekMonday();
     const r = await pool.query(
       `INSERT INTO schedule (day_of_week,category,subcategory,start_time,end_time,max_spots,week_of,created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [day, category, subcategory||null, startTime, endTime, spotLimit, weekOf, userId]
+      [day, category, subcategory||null, startTime, endTime, spotLimit, targetWeek, userId]
     );
     res.status(201).json({ message: "Slot saved!", slot: r.rows[0] });
   } catch (err) { res.status(500).json({ error: "Error saving slot." }); }
@@ -746,11 +812,93 @@ app.delete('/api/schedule/:id', requireAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ error: "Error deleting slot." }); }
 });
 
+// weekOf is optional — omitting it clears the current week exactly like
+// before (including legacy week_of IS NULL rows). Passing a weekOf clears
+// just that specific week instead.
 app.delete('/api/schedule', requireAdmin, async (req, res) => {
   try {
-    await pool.query("DELETE FROM schedule WHERE week_of=$1 OR week_of IS NULL", [currentWeekMonday()]);
+    const weekOf = req.query.weekOf || currentWeekMonday();
+    const isCurrent = weekOf === currentWeekMonday();
+    await pool.query(
+      isCurrent
+        ? "DELETE FROM schedule WHERE week_of=$1 OR week_of IS NULL"
+        : "DELETE FROM schedule WHERE week_of=$1",
+      [weekOf]
+    );
     res.json({ message: "Schedule cleared." });
   } catch (err) { res.status(500).json({ error: "Error clearing schedule." }); }
+});
+
+// ADMIN — duplicate a single session, a whole day, or a whole week of slots
+// onto one or more other weeks within the month. Purely additive: it only
+// INSERTs new rows, and skips any slot that would be an exact duplicate of
+// one already sitting in the target week.
+app.post('/api/schedule/duplicate', requireAdmin, async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  const { mode, sourceWeekOf, sourceDay, sourceSlotId, targetWeeks } = req.body;
+
+  if (!mode || !['slot', 'day', 'week'].includes(mode))
+    return res.status(400).json({ error: "mode must be 'slot', 'day', or 'week'." });
+  if (!sourceWeekOf) return res.status(400).json({ error: "sourceWeekOf is required." });
+  if (!Array.isArray(targetWeeks) || !targetWeeks.length)
+    return res.status(400).json({ error: "targetWeeks must be a non-empty array." });
+  if (mode === 'slot' && !sourceSlotId) return res.status(400).json({ error: "sourceSlotId is required for mode 'slot'." });
+  if (mode === 'day' && !sourceDay) return res.status(400).json({ error: "sourceDay is required for mode 'day'." });
+
+  try {
+    let sourceRows;
+    if (mode === 'slot') {
+      const r = await pool.query(
+        `SELECT day_of_week, category, subcategory, start_time, end_time, max_spots
+         FROM schedule WHERE id=$1 AND (week_of=$2 OR week_of IS NULL)`,
+        [sourceSlotId, sourceWeekOf]
+      );
+      sourceRows = r.rows;
+    } else if (mode === 'day') {
+      const r = await pool.query(
+        `SELECT day_of_week, category, subcategory, start_time, end_time, max_spots
+         FROM schedule WHERE day_of_week=$1 AND (week_of=$2 OR week_of IS NULL)`,
+        [sourceDay, sourceWeekOf]
+      );
+      sourceRows = r.rows;
+    } else {
+      const r = await pool.query(
+        `SELECT day_of_week, category, subcategory, start_time, end_time, max_spots
+         FROM schedule WHERE (week_of=$1 OR week_of IS NULL)`,
+        [sourceWeekOf]
+      );
+      sourceRows = r.rows;
+    }
+
+    if (!sourceRows.length) return res.status(404).json({ error: "No slots found to duplicate." });
+
+    let inserted = 0, skipped = 0;
+    for (const targetWeek of targetWeeks) {
+      if (targetWeek === sourceWeekOf) continue; // skip duplicating a week onto itself
+      for (const row of sourceRows) {
+        const existing = await pool.query(
+          `SELECT id FROM schedule
+           WHERE week_of=$1 AND day_of_week=$2 AND start_time=$3 AND end_time=$4
+             AND category=$5 AND COALESCE(subcategory,'')=COALESCE($6,'')`,
+          [targetWeek, row.day_of_week, row.start_time, row.end_time, row.category, row.subcategory]
+        );
+        if (existing.rows.length) { skipped++; continue; }
+        await pool.query(
+          `INSERT INTO schedule (day_of_week,category,subcategory,start_time,end_time,max_spots,week_of,created_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [row.day_of_week, row.category, row.subcategory, row.start_time, row.end_time, row.max_spots, targetWeek, userId]
+        );
+        inserted++;
+      }
+    }
+    res.status(201).json({
+      message: `Duplicated: ${inserted} slot(s) added, ${skipped} skipped (already existed).`,
+      inserted, skipped
+    });
+  } catch (err) {
+    console.error('duplicate schedule error:', err);
+    res.status(500).json({ error: "Error duplicating schedule." });
+  }
 });
 
 // ---- Capacity ----
