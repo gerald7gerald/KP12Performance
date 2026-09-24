@@ -38,11 +38,13 @@
         let current = 0;
         const mobile = isMobile();
 
-        section.style.cssText = 'padding:56px 5vw;background:var(--bg-panel,#15171A);border-bottom:1px solid #232529;';
+        section.style.cssText = mobile
+            ? 'padding:32px 5vw;background:var(--bg-panel,#15171A);border-bottom:1px solid #232529;'
+            : 'padding:56px 5vw;background:var(--bg-panel,#15171A);border-bottom:1px solid #232529;';
 
         // Header
         const header = document.createElement('div');
-        header.style.cssText = 'text-align:center;margin-bottom:28px;';
+        header.style.cssText = mobile ? 'text-align:center;margin-bottom:18px;' : 'text-align:center;margin-bottom:28px;';
         header.innerHTML = `
             <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;color:var(--athletics,#3D9EFF);margin:0 0 10px;">[ ELITE PLAYERS ]</p>
             <h2 style="font-family:'Anton',sans-serif;font-size:clamp(22px,4vw,38px);text-transform:uppercase;margin:0;color:#F5F4F0;line-height:1.05;">ATHLETES WE'VE<br>WORKED WITH</h2>
@@ -69,7 +71,7 @@
             // Photo
             const photoDiv = document.createElement('div');
             if (mobile) {
-                photoDiv.style.cssText = 'width:100%;height:200px;overflow:hidden;flex-shrink:0;background:#15171A;flex-shrink:0;';
+                photoDiv.style.cssText = 'width:100%;aspect-ratio:4/3;max-height:260px;overflow:hidden;flex-shrink:0;background:#15171A;';
             } else {
                 photoDiv.style.cssText = 'flex:0 0 260px;width:260px;height:auto;min-height:200px;overflow:hidden;background:#15171A;flex-shrink:0;';
             }
@@ -78,7 +80,7 @@
                 const img = document.createElement('img');
                 img.src = p.image_data;
                 img.alt = esc(p.name);
-                img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block;';
+                img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center 35%;display:block;';
                 img.loading = 'lazy';
                 photoDiv.appendChild(img);
             }
@@ -86,7 +88,7 @@
             // Info — the key is flex:1 + min-width:0 + overflow:hidden to prevent text blowout
             const infoDiv = document.createElement('div');
             infoDiv.style.cssText = mobile
-                ? 'padding:20px 18px 24px;box-sizing:border-box;width:100%;'
+                ? 'padding:16px 18px 20px;box-sizing:border-box;width:100%;'
                 : 'flex:1;min-width:0;width:0;overflow:hidden;padding:24px 28px;box-sizing:border-box;display:block;';
 
             if (p.sport) {
