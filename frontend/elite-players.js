@@ -54,13 +54,17 @@
         const outerWrap = document.createElement('div');
         outerWrap.style.cssText = 'max-width:780px;width:100%;margin:0 auto;box-sizing:border-box;overflow:hidden;';
 
-        // Clip window — overflow:hidden is the key
+        // Clip window — overflow:hidden is the key. Height is set dynamically per
+        // slide below (see slideHeights) so a shorter athlete bio doesn't leave a
+        // stretched blank gap, and a longer one never gets clipped off.
         const clipWindow = document.createElement('div');
-        clipWindow.style.cssText = 'overflow:hidden;width:100%;max-width:100%;border:1px solid #232529;border-left:3px solid var(--athletics,#3D9EFF);box-sizing:border-box;';
+        clipWindow.style.cssText = 'overflow:hidden;width:100%;max-width:100%;border:1px solid #232529;border-left:3px solid var(--athletics,#3D9EFF);box-sizing:border-box;transition:height 0.35s ease;';
 
-        // Track
+        // Track — width:100% is required here. Without it, translateX(%) resolves
+        // against the track's own (ambiguous) content width instead of the visible
+        // window's width, causing "next" to not reliably land on exactly one slide.
         const track = document.createElement('div');
-        track.style.cssText = 'display:flex;flex-direction:row;transition:transform 0.55s cubic-bezier(0.4,0,0.2,1);';
+        track.style.cssText = 'display:flex;flex-direction:row;align-items:flex-start;width:100%;max-width:100%;transition:transform 0.55s cubic-bezier(0.4,0,0.2,1);';
 
         players.forEach(p => {
             const slide = document.createElement('div');
@@ -71,7 +75,11 @@
             // Photo
             const photoDiv = document.createElement('div');
             if (mobile) {
-                photoDiv.style.cssText = 'width:100%;aspect-ratio:4/3;max-height:260px;overflow:hidden;flex-shrink:0;background:#15171A;';
+                // object-fit:contain (not cover) — athlete photos vary between portrait
+                // and landscape, and a fixed aspect-ratio box with `cover` was cropping
+                // tall/portrait photos down to an unrecognizable sliver. `contain` always
+                // shows the whole photo, letterboxed on the dark background if needed.
+                photoDiv.style.cssText = 'width:100%;height:240px;overflow:hidden;flex-shrink:0;background:#15171A;display:flex;align-items:center;justify-content:center;';
             } else {
                 photoDiv.style.cssText = 'flex:0 0 260px;width:260px;height:auto;min-height:200px;overflow:hidden;background:#15171A;flex-shrink:0;';
             }
@@ -80,7 +88,9 @@
                 const img = document.createElement('img');
                 img.src = p.image_data;
                 img.alt = esc(p.name);
-                img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center 35%;display:block;';
+                img.style.cssText = mobile
+                    ? 'width:100%;height:100%;object-fit:contain;display:block;'
+                    : 'width:100%;height:100%;object-fit:cover;object-position:center 35%;display:block;';
                 img.loading = 'lazy';
                 photoDiv.appendChild(img);
             }
@@ -143,9 +153,17 @@
         section.appendChild(outerWrap);
         if (players.length <= 1) return;
 
+        // Each slide's own natural height (track no longer stretches slides to
+        // match the tallest sibling — see align-items:flex-start above — so this
+        // reads each slide's real content height for its own athlete's bio).
+        const slideEls = Array.from(track.children);
+        const slideHeights = slideEls.map(s => s.offsetHeight);
+        clipWindow.style.height = slideHeights[0] + 'px';
+
         function goTo(idx) {
             current = (idx + players.length) % players.length;
             track.style.transform = `translateX(${-100 * current}%)`;
+            clipWindow.style.height = slideHeights[current] + 'px';
             dots.forEach((d, i) => {
                 d.style.background = i === current ? 'var(--athletics,#3D9EFF)' : '#2A2D31';
                 d.style.transform  = i === current ? 'scale(1.3)' : 'scale(1)';
@@ -157,6 +175,21 @@
             goTo(parseInt(dot.dataset.index));
             timer = setInterval(() => goTo(current + 1), INTERVAL);
         }));
+
+        // Swipe support (touch) — previously missing entirely, so swiping did nothing.
+        let touchStartX = 0, touchStartY = 0;
+        clipWindow.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        clipWindow.addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return; // not a horizontal swipe
+            clearInterval(timer);
+            goTo(current + (dx < 0 ? 1 : -1));
+            timer = setInterval(() => goTo(current + 1), INTERVAL);
+        }, { passive: true });
 
         let timer = setInterval(() => goTo(current + 1), INTERVAL);
     }
