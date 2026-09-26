@@ -54,23 +54,31 @@
         const outerWrap = document.createElement('div');
         outerWrap.style.cssText = 'max-width:780px;width:100%;margin:0 auto;box-sizing:border-box;overflow:hidden;';
 
-        // Clip window — overflow:hidden is the key. Height is set dynamically per
-        // slide below (see slideHeights) so a shorter athlete bio doesn't leave a
-        // stretched blank gap, and a longer one never gets clipped off.
+        // Clip window — no longer needs a height transition or JS-measured
+        // heights. Only the ACTIVE slide sits in normal document flow (see
+        // goTo() below), so this box's height is always naturally correct
+        // for whichever athlete is showing, with zero JS height math.
         const clipWindow = document.createElement('div');
-        clipWindow.style.cssText = 'overflow:hidden;width:100%;max-width:100%;border:1px solid #232529;border-left:3px solid var(--athletics,#3D9EFF);box-sizing:border-box;transition:height 0.35s ease;';
+        clipWindow.style.cssText = 'overflow:hidden;width:100%;max-width:100%;border:1px solid #232529;border-left:3px solid var(--athletics,#3D9EFF);box-sizing:border-box;position:relative;';
 
-        // Track — width:100% is required here. Without it, translateX(%) resolves
-        // against the track's own (ambiguous) content width instead of the visible
-        // window's width, causing "next" to not reliably land on exactly one slide.
+        // Track — just a positioning context now. Slides are no longer laid
+        // out side-by-side with translateX; each one crossfades in place.
+        // (The old translateX(%) approach is correct per spec, but proved
+        // unreliable in real iOS Safari testing, so this avoids that entirely.)
         const track = document.createElement('div');
-        track.style.cssText = 'display:flex;flex-direction:row;align-items:flex-start;width:100%;max-width:100%;transition:transform 0.55s cubic-bezier(0.4,0,0.2,1);';
+        track.style.cssText = 'position:relative;width:100%;';
 
-        players.forEach(p => {
+        players.forEach((p, playerIndex) => {
             const slide = document.createElement('div');
-            slide.style.cssText = mobile
-                ? 'min-width:100%;flex-shrink:0;box-sizing:border-box;display:flex;flex-direction:column;background:var(--bg,#0D0E10);'
-                : 'min-width:100%;flex-shrink:0;box-sizing:border-box;display:flex;flex-direction:row;align-items:stretch;background:var(--bg,#0D0E10);';
+            const baseSlideStyle = mobile
+                ? 'box-sizing:border-box;display:flex;flex-direction:column;background:var(--bg,#0D0E10);width:100%;'
+                : 'box-sizing:border-box;display:flex;flex-direction:row;align-items:stretch;background:var(--bg,#0D0E10);width:100%;';
+            // First slide starts active (in normal flow); the rest start
+            // absolutely positioned + invisible, stacked directly on top.
+            slide.style.cssText = baseSlideStyle + (playerIndex === 0
+                ? 'position:relative;opacity:1;'
+                : 'position:absolute;top:0;left:0;opacity:0;pointer-events:none;');
+            slide.style.transition = 'opacity 0.4s ease';
 
             // Photo
             const photoDiv = document.createElement('div');
@@ -153,17 +161,23 @@
         section.appendChild(outerWrap);
         if (players.length <= 1) return;
 
-        // Each slide's own natural height (track no longer stretches slides to
-        // match the tallest sibling — see align-items:flex-start above — so this
-        // reads each slide's real content height for its own athlete's bio).
         const slideEls = Array.from(track.children);
-        const slideHeights = slideEls.map(s => s.offsetHeight);
-        clipWindow.style.height = slideHeights[0] + 'px';
 
         function goTo(idx) {
             current = (idx + players.length) % players.length;
-            track.style.transform = `translateX(${-100 * current}%)`;
-            clipWindow.style.height = slideHeights[current] + 'px';
+            slideEls.forEach((el, i) => {
+                if (i === current) {
+                    el.style.position = 'relative';
+                    el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
+                } else {
+                    el.style.position = 'absolute';
+                    el.style.top = '0';
+                    el.style.left = '0';
+                    el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
+                }
+            });
             dots.forEach((d, i) => {
                 d.style.background = i === current ? 'var(--athletics,#3D9EFF)' : '#2A2D31';
                 d.style.transform  = i === current ? 'scale(1.3)' : 'scale(1)';
