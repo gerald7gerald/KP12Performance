@@ -241,6 +241,8 @@ pool.query(`
       created_at TIMESTAMP DEFAULT NOW()
     );
   `))
+  .then(() => pool.query('ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_user_id_fkey;'))
+  .then(() => pool.query('ALTER TABLE bookings ADD CONSTRAINT bookings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;'))
   .then(() => console.log("Users and Stripe tables ready!"))
   .catch(err => console.error("User setup error:", err));
 
@@ -670,6 +672,27 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
     );
     res.json(r.rows);
   } catch (err) { res.status(500).json({ error: "Error." }); }
+});
+// DELETE /api/admin/users/:id — admin deletes a registered user
+app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
+  const targetUserId = parseInt(req.params.id);
+  const currentAdminId = parseInt(getUserIdFromCookies(req));
+
+  // Safeguard: Prevent admin from deleting their own active account
+  if (targetUserId === currentAdminId) {
+    return res.status(400).json({ error: "You cannot delete your own admin account." });
+  }
+
+  try {
+    const r = await pool.query("DELETE FROM users WHERE id = $1 RETURNING id", [targetUserId]);
+    if (!r.rows.length) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    res.json({ message: "User deleted successfully." });
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    res.status(500).json({ error: "Error deleting user from database." });
+  }
 });
 
 // ---- Schedule ----

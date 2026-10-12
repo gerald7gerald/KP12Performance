@@ -1097,6 +1097,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const d = document.createElement("div"); d.textContent = String(str); return d.innerHTML;
     }
 
+    // ===== REPLACE YOUR OLD renderTable FUNCTION HERE =====
     function renderTable(users) {
         const wrap = document.getElementById("emp-table-wrap");
         const countEl = document.getElementById("emp-count");
@@ -1140,10 +1141,20 @@ document.addEventListener("DOMContentLoaded", () => {
                             </button>
                         </div>
                     </td>
+                    <td>
+                        <button onclick="deleteUser(${u.id}, '${esc(u.username)}')"
+                            style="background:transparent;border:1px solid rgba(255,86,48,0.4);color:var(--training);
+                                   font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.06em;
+                                   padding:4px 8px;cursor:pointer;border-radius:2px;transition:background 0.2s;"
+                            onmouseover="this.style.background='rgba(255,86,48,0.1)'"
+                            onmouseout="this.style.background='transparent'">
+                            DELETE
+                        </button>
+                    </td>
                 </tr>`;
             if (isParent && athletes.length) {
                 rows += `<tr id="athletes-${u.id}" style="display:none;">
-                    <td colspan="10" class="emp-athlete-cell">
+                    <td colspan="12" class="emp-athlete-cell">
                         <table class="emp-athlete-table">
                             <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th></tr></thead>
                             <tbody>${athletes.map((a,i) => `<tr><td class="emp-id">${i+1}</td><td>${esc(a.name)}</td><td>${esc(a.age)}</td><td>${esc(a.gender)}</td></tr>`).join('')}</tbody>
@@ -1159,7 +1170,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th>ID</th><th>Username</th><th>Email</th><th>Phone</th>
                     <th>Age</th><th>Gender</th><th>Role</th>
                     <th>Heard From</th><th>Referral Detail</th><th>Admin</th>
-                <th>Credits</th></tr></thead>
+                    <th>Credits</th><th>Actions</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>`;
     }
@@ -1302,6 +1313,28 @@ async function setCredits(userId, mode) {
         msgEl.textContent = "Couldn't reach server.";
     }
 }
+async function deleteUser(userId, username) {
+    if (!confirm(`Are you sure you want to delete user "${username}"? This will permanently remove their account.`)) return;
+    
+    try {
+        const res = await fetch(`/api/admin/users/${userId}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+            alert(data.error || 'Failed to delete user.');
+            return;
+        }
+        
+        allUsers = allUsers.filter(u => u.id !== userId);
+        renderTable(allUsers);
+    } catch (err) {
+        console.error(err);
+        alert("Couldn't reach the server.");
+    }
+}
+
 </script>
 
 </body>
