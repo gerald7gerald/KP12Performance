@@ -377,6 +377,18 @@ pool.query(`
 `).then(() => console.log("Booking athletes table ready!"))
   .catch(err => console.error("Booking athletes:", err));
 
+// Liability waiver — one signed record per user, required before their first booking
+pool.query(`
+  CREATE TABLE IF NOT EXISTS waivers (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    full_name VARCHAR(150) NOT NULL,
+    ip_address VARCHAR(64),
+    signed_at TIMESTAMP DEFAULT NOW()
+  );
+`).then(() => console.log("Waivers table ready!"))
+  .catch(err => console.error("Waivers:", err));
+
 // ---- Static ----
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, '..', 'frontend', 'index.html')));
 app.get('/abt.html', (req, res) => res.sendFile(path.resolve(__dirname, '..', 'frontend', 'abt.html')));
@@ -967,6 +979,110 @@ app.get('/api/capacity', async (req, res) => {
 
     res.json(capacity);
   } catch (err) { console.error(err); res.status(500).json({ error: "Error fetching capacity." }); }
+});
+
+// ---- Liability Waiver ----
+
+// GET /api/waiver/status — has the logged-in user already signed?
+app.get('/api/waiver/status', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: "Please sign in." });
+  try {
+    const result = await pool.query("SELECT full_name, signed_at FROM waivers WHERE user_id = $1", [userId]);
+    if (result.rows.length === 0) return res.json({ signed: false });
+    res.json({ signed: true, fullName: result.rows[0].full_name, signedAt: result.rows[0].signed_at });
+  } catch (err) {
+    console.error("Waiver status error:", err);
+    res.status(500).json({ error: "Error checking waiver status." });
+  }
+});
+
+// POST /api/waiver/sign — records the typed-name signature, emails admins the completed form
+app.post('/api/waiver/sign', async (req, res) => {
+  const userId = getUserIdFromCookies(req);
+  if (!userId) return res.status(401).json({ error: "Please sign in." });
+
+  const { fullName } = req.body;
+  if (!fullName || !fullName.trim()) return res.status(400).json({ error: "Please type your full name." });
+
+  try {
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().split(',')[0].trim();
+
+    const result = await pool.query(
+      `INSERT INTO waivers (user_id, full_name, ip_address)
+       VALUES ($1,$2,$3)
+       ON CONFLICT (user_id) DO UPDATE SET full_name = EXCLUDED.full_name, ip_address = EXCLUDED.ip_address, signed_at = NOW()
+       RETURNING signed_at`,
+      [userId, fullName.trim(), ip || null]
+    );
+    const signedAt = result.rows[0].signed_at;
+
+    // Notify admins with the completed waiver details — non-blocking
+    try {
+      const userResult = await pool.query("SELECT username, email FROM users WHERE id = $1", [userId]);
+      const user = userResult.rows[0];
+      const signedAtStr = new Date(signedAt).toLocaleString('en-US', { timeZone: 'America/Los_Angeles', dateStyle: 'medium', timeStyle: 'short' });
+
+      await resend.emails.send({
+        from: 'support@kp12performance.com',
+        to: ['performancekp12@gmail.com', 'geraldcgarcia7@gmail.com'],
+        subject: `[WAIVER SIGNED] ${fullName.trim()}`,
+        html: `
+          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:0;border:1px solid #232529;">
+            <div style="background:#15171A;padding:24px 32px;border-bottom:3px solid #2ECC71;">
+              <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:28px;display:block;margin-bottom:12px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#2ECC71;margin:0;">[ LIABILITY WAIVER SIGNED ]</p>
+            </div>
+            <div style="padding:28px 32px;">
+              <h2 style="font-size:20px;font-weight:700;text-transform:uppercase;margin:0 0 20px;line-height:1.2;">
+                ${user ? user.username : 'A user'} completed the Trainer's Release of Liability.
+              </h2>
+
+              <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #2ECC71;padding:18px 20px;margin-bottom:20px;">
+                <table style="width:100%;border-collapse:collapse;">
+                  <tr>
+                    <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;width:130px;">TYPED SIGNATURE</td>
+                    <td style="padding:6px 0;font-size:14px;font-weight:600;color:#F5F4F0;">${fullName.trim()}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;">ACCOUNT</td>
+                    <td style="padding:6px 0;font-size:14px;color:#F5F4F0;">${user ? user.username : '—'}${user && user.email ? ` (<a href="mailto:${user.email}" style="color:#3D9EFF;">${user.email}</a>)` : ''}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8C8F96;letter-spacing:0.1em;">SIGNED AT</td>
+                    <td style="padding:6px 0;font-size:14px;color:#F5F4F0;">${signedAtStr}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:#8C8F96;margin:0 0 8px;">FORM TEXT AGREED TO</p>
+              <div style="background:#15171A;border:1px solid #232529;padding:16px 20px;font-size:12px;line-height:1.6;color:#8C8F96;">
+                <p style="margin:0 0 10px;">I <strong style="color:#F5F4F0;">${fullName.trim()}</strong> hereby affirm that I am voluntarily starting a course of instruction in physical fitness and performance training (The Activity). I am voluntarily participating in the Activity entirely at my own risk.</p>
+                <p style="margin:0 0 10px;">I waive any and all rights, claims or causes of action arising out of my participation in the Activity against the trainer/instructor and their affiliates, managers, members, agents, attorneys, staff, volunteers, heirs, representatives, predecessors, successors and assigns, for risks including physical or psychological injury, pain, suffering, illness, disfigurement, temporary or permanent disability, or economic loss.</p>
+                <p style="margin:0 0 10px;">I grant permission to KP12 Performance to use my likeness in photographs, videos, or other media taken during the Activities for promotional purposes, without compensation.</p>
+                <p style="margin:0;">I acknowledge that I have carefully read this form, understand it is a release of liability, and voluntarily give up my right to bring a legal action for personal injury or property damage.</p>
+              </div>
+
+              <div style="margin-top:24px;padding-top:20px;border-top:1px solid #232529;text-align:center;">
+                <a href="https://kp12performance.com/employee.html" style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:12px 24px;font-weight:600;">View in Employee Dashboard →</a>
+              </div>
+            </div>
+            <div style="padding:16px 32px;border-top:1px solid #232529;text-align:center;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0;">KP12 Performance · Internal Notification</p>
+            </div>
+          </div>
+        `
+      });
+    } catch (notifErr) {
+      console.error('Waiver admin notification email error:', notifErr);
+      // Don't fail the signature if the notification email fails
+    }
+
+    res.json({ signed: true, signedAt });
+  } catch (err) {
+    console.error("Waiver sign error:", err);
+    res.status(500).json({ error: "Error saving waiver." });
+  }
 });
 
 // ---- Bookings ----

@@ -92,6 +92,82 @@
 
 </section>
 
+<!-- Liability waiver modal — must be signed once before a booking can go through -->
+<div id="waiver-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(13,14,16,0.85);
+     z-index:999;align-items:center;justify-content:center;padding:20px;">
+    <div id="waiver-modal-card" style="background:var(--bg-panel,#15171A);border:1px solid #2A2D31;
+         border-top:3px solid var(--athletics,#3D9EFF);max-width:560px;width:100%;max-height:88vh;
+         overflow-y:auto;padding:32px 30px;box-sizing:border-box;">
+
+        <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;
+                   color:var(--athletics,#3D9EFF);margin:0 0 10px;">[ REQUIRED BEFORE BOOKING ]</p>
+        <h2 style="font-size:22px;font-weight:800;text-transform:uppercase;margin:0 0 18px;line-height:1.2;">
+            Trainer's Release of Liability
+        </h2>
+
+        <div style="background:#0D0E10;border:1px solid #232529;padding:18px 20px;margin-bottom:22px;
+                     font-size:13px;line-height:1.65;color:var(--text-muted,#8C8F96);">
+            <p style="margin:0 0 12px;">
+                I <strong id="waiver-name-preview" style="color:var(--text,#F5F4F0);">________________</strong>
+                hereby affirm that I am voluntarily starting a course of instruction in physical fitness and
+                performance training (The Activity). I am voluntarily participating in the Activity entirely
+                at my own risk.
+            </p>
+            <p style="margin:0 0 12px;">
+                In full consideration of the risk of injury while participating in the Activity, and for the
+                right to participate in the Activity, I hereby, for myself, my heirs, executors, administrators,
+                assigns, or personal representatives, knowingly and voluntarily participate in this waiver and
+                release of liability and hereby waive any and all rights, claims or causes of action of any kind
+                whatsoever arising out of my participation in the Activity, their affiliates, managers, members,
+                agents, attorneys, staff, volunteers, heirs, representatives, predecessors, successors and
+                assigns, for any kind of risks related to traveling to and from as well as participating the
+                Activity, which may include, but are not limited to, physical or psychological injury, pain,
+                suffering, illness, disfigurement, temporary or permanent disability, or economic loss.
+            </p>
+            <p style="margin:0 0 12px;">
+                I also grant permission to KP12 Performance to use my likeness in photographs, videos, or other
+                media taken during the Activities for promotional purposes, without compensation.
+            </p>
+            <p style="margin:0;">
+                I acknowledge that I have carefully read this form and fully understand that it is a release of
+                liability. I expressly agree to release and discharge the trainer or instructor from any and all
+                claims or causes of action and I agree to voluntarily give up or waive any right that I may
+                otherwise have to bring a legal action for personal injury or property damage.
+            </p>
+        </div>
+
+        <label for="waiver-name-input" style="display:block;font-family:'JetBrains Mono',monospace;
+               font-size:11px;letter-spacing:0.1em;color:var(--text-muted,#8C8F96);margin-bottom:8px;">
+            TYPE YOUR FULL NAME TO SIGN
+        </label>
+        <input id="waiver-name-input" type="text" placeholder="Full legal name" autocomplete="name"
+               style="width:100%;box-sizing:border-box;background:#0D0E10;border:1px solid #2A2D31;
+                      color:var(--text,#F5F4F0);padding:13px 14px;font-size:15px;margin-bottom:16px;
+                      font-family:inherit;">
+
+        <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;cursor:pointer;">
+            <input id="waiver-agree-check" type="checkbox" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;">
+            <span style="font-size:13px;color:var(--text-muted,#8C8F96);line-height:1.5;">
+                I have read and understood this release of liability and I am signing it by typing my name above.
+            </span>
+        </label>
+
+        <p id="waiver-error" style="display:none;color:var(--training);font-family:'JetBrains Mono',monospace;
+           font-size:12px;margin:0 0 16px;"></p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button id="waiver-submit-btn" class="booking-proceed-btn" style="flex:1;min-width:180px;">
+                Sign &amp; Continue Booking
+            </button>
+            <button id="waiver-cancel-btn" type="button" style="background:transparent;color:var(--text-muted,#8C8F96);
+                    border:1px solid #2A2D31;padding:13px 20px;font-family:'JetBrains Mono',monospace;
+                    font-size:12px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
 <footer class="site-footer">
     <div class="site-footer-inner">
         <a href="index.html" class="site-footer-brand"><img src="logo.png" alt="KP12 Performance" class="site-footer-logo"></a>
@@ -235,6 +311,109 @@ let isLoggedIn   = false;
 let userRole = null;
 let userAthletes = [];
 let existingPackageLabel = null; // package the user already booked for this service this week
+
+// ---- Liability waiver gate ----
+let waiverSignedCache = null; // null = unknown, true/false once checked
+
+// Resolves true once the logged-in user has a signed waiver on file (signs it via modal if not).
+// Resolves false if the user cancels out of the modal.
+function ensureWaiverSigned() {
+    return new Promise(async (resolve) => {
+        if (waiverSignedCache === true) return resolve(true);
+
+        if (waiverSignedCache === null) {
+            try {
+                const res = await fetch('/api/waiver/status', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    waiverSignedCache = !!data.signed;
+                }
+            } catch (e) { /* fall through to showing the modal */ }
+        }
+
+        if (waiverSignedCache === true) return resolve(true);
+
+        // Not signed yet — show the modal and wait for the person to sign or cancel
+        const overlay    = document.getElementById('waiver-modal-overlay');
+        const nameInput  = document.getElementById('waiver-name-input');
+        const agreeCheck = document.getElementById('waiver-agree-check');
+        const namePreview= document.getElementById('waiver-name-preview');
+        const errorEl    = document.getElementById('waiver-error');
+        const submitBtn  = document.getElementById('waiver-submit-btn');
+        const cancelBtn  = document.getElementById('waiver-cancel-btn');
+
+        errorEl.style.display = 'none';
+        nameInput.value = '';
+        agreeCheck.checked = false;
+        namePreview.textContent = '________________';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign & Continue Booking';
+
+        overlay.style.display = 'flex';
+        nameInput.focus();
+
+        const onNameInput = () => {
+            namePreview.textContent = nameInput.value.trim() || '________________';
+        };
+        nameInput.addEventListener('input', onNameInput);
+
+        function cleanup() {
+            overlay.style.display = 'none';
+            nameInput.removeEventListener('input', onNameInput);
+            submitBtn.removeEventListener('click', onSubmit);
+            cancelBtn.removeEventListener('click', onCancel);
+        }
+
+        function onCancel() {
+            cleanup();
+            resolve(false);
+        }
+
+        async function onSubmit() {
+            const fullName = nameInput.value.trim();
+            if (!fullName || fullName.length < 2) {
+                errorEl.textContent = 'Please type your full name.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            if (!agreeCheck.checked) {
+                errorEl.textContent = 'Please check the box to confirm you agree.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            errorEl.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing...';
+            try {
+                const res = await fetch('/api/waiver/sign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ fullName })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errorEl.textContent = data.error || 'Something went wrong. Please try again.';
+                    errorEl.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign & Continue Booking';
+                    return;
+                }
+                waiverSignedCache = true;
+                cleanup();
+                resolve(true);
+            } catch (err) {
+                errorEl.textContent = "Couldn't reach the server. Please try again.";
+                errorEl.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign & Continue Booking';
+            }
+        }
+
+        submitBtn.addEventListener('click', onSubmit);
+        cancelBtn.addEventListener('click', onCancel);
+    });
+}
 
 fetch('/api/auth/me')
     .then(r => r.ok ? r.json() : null)
@@ -651,6 +830,10 @@ document.getElementById('booking-confirm-btn').addEventListener('click', async (
         }
         if (athleteErr) athleteErr.style.display = 'none';
     }
+
+    // Must sign the liability waiver before a booking can go through
+    const waiverOk = await ensureWaiverSigned();
+    if (!waiverOk) return;
 
     const btn = document.getElementById('booking-confirm-btn');
     btn.disabled = true;
