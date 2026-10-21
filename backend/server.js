@@ -1485,23 +1485,33 @@ app.get('/api/bookings/mine', async (req, res) => {
 app.get('/api/bookings', requireAdmin, async (req, res) => {
   try {
     const weekOf = currentWeekMonday();
+    // Exclude a slot's day from the returned list once that specific day has
+    // already been marked complete (via /complete-day or the auto-decrement job) —
+    // otherwise a finished Monday would keep reappearing in the dashboard even
+    // though only Friday is still outstanding on a Monday+Friday booking.
     const r = await pool.query(
       `SELECT b.id,b.service_key,b.service_title,b.package_label,b.sessions_remaining,b.status,b.created_at,
               u.username, u.email, u.phone, u.age, u.role,
               COALESCE(json_agg(DISTINCT jsonb_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
-                FILTER (WHERE bs.id IS NOT NULL),'[]') AS slots,
+                FILTER (WHERE bs.id IS NOT NULL AND bd.id IS NULL),'[]') AS slots,
               COALESCE(json_agg(DISTINCT jsonb_build_object('name',ba.athlete_name,'age',ba.athlete_age,'gender',ba.athlete_gender))
                 FILTER (WHERE ba.id IS NOT NULL),'[]') AS attending_athletes
        FROM bookings b
        JOIN users u ON b.user_id=u.id
        LEFT JOIN booking_slots bs ON bs.booking_id=b.id
+       LEFT JOIN booking_decrements bd
+         ON bd.booking_id = b.id
+        AND bd.decremented_date = b.week_of + CASE bs.day_of_week
+              WHEN 'Monday' THEN 0 WHEN 'Tuesday' THEN 1 WHEN 'Wednesday' THEN 2
+              WHEN 'Thursday' THEN 3 WHEN 'Friday' THEN 4 WHEN 'Saturday' THEN 5
+              ELSE 0 END
        LEFT JOIN booking_athletes ba ON ba.booking_id=b.id
        WHERE b.week_of=$1 AND b.status='confirmed'
        GROUP BY b.id,u.username,u.email,u.phone,u.age,u.role ORDER BY b.created_at DESC`,
       [weekOf]
     );
     res.json(r.rows);
-  } catch (err) { res.status(500).json({ error: "Error." }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: "Error." }); }
 });
 
 // DELETE /api/bookings/:id — admin can cancel a booking
@@ -1595,109 +1605,6 @@ app.post('/api/auth/reset-password', async (req, res) => {
     setLoginCookie(res, row.user_id);
     res.json({ message: "Password reset!" });
   } catch (err) { res.status(500).json({ error: "Error." }); }
-});
-
-// POST /api/bookings/:id/complete — admin marks a booking as complete,
-// sends a thank-you email, and frees up the capacity slot
-app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
-  const { id } = req.params;
-  try {
-    // Get booking + user details before updating
-    const bookingResult = await pool.query(
-      `SELECT b.id, b.service_title, b.package_label,
-              u.email, u.username
-       FROM bookings b
-       JOIN users u ON b.user_id = u.id
-       WHERE b.id = $1`,
-      [id]
-    );
-
-    if (!bookingResult.rows.length) {
-      return res.status(404).json({ error: "Booking not found." });
-    }
-
-    const booking = bookingResult.rows[0];
-
-    // Mark as completed (frees up the capacity slot since count queries only look at 'confirmed')
-    await pool.query(
-      "UPDATE bookings SET status='completed', sessions_remaining=0 WHERE id=$1",
-      [id]
-    );
-
-    // Send professional thank-you + review encouragement email
-    try {
-      await resend.emails.send({
-        from: 'support@kp12performance.com',
-        to: booking.email,
-        subject: `Training Complete — Great Work, ${booking.username}!`,
-        html: `
-          <div style="background:#0D0E10;color:#F5F4F0;font-family:'Work Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:48px 40px;border:1px solid #232529;">
-            <img src="https://kp12performance.com/logo.png" alt="KP12 Performance" style="height:40px;margin-bottom:32px;display:block;">
-            <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.15em;color:#3D9EFF;margin-bottom:16px;">[ SESSION COMPLETE ]</p>
-            <h1 style="font-size:30px;font-weight:900;text-transform:uppercase;margin:0 0 8px;line-height:1.1;">You Put In<br>The Work, ${booking.username}.</h1>
-            <p style="color:#8C8F96;font-size:15px;line-height:1.6;margin:20px 0 28px;">
-              We want to take a moment to recognize your commitment. Completing your
-              <strong style="color:#F5F4F0;">${booking.service_title}</strong> program
-              ${booking.package_label ? '(' + booking.package_label + ')' : ''}
-              takes consistency and dedication — and you showed up every time.
-            </p>
-
-            <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #3D9EFF;padding:24px;margin-bottom:28px;">
-              <p style="font-size:16px;font-weight:700;color:#F5F4F0;margin:0 0 10px;">What's next?</p>
-              <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0;">
-                Progress doesn't stop here. Whether you're looking to level up your current program,
-                try something new, or bring in a teammate — we're ready when you are.
-                <br><br>
-                <a href="https://kp12performance.com/tra.html" style="color:#3D9EFF;text-decoration:none;font-weight:600;">Browse Training Programs →</a>
-                &nbsp;&nbsp;|&nbsp;&nbsp;
-                <a href="https://kp12performance.com/ath.html" style="color:#3D9EFF;text-decoration:none;font-weight:600;">Explore Athletics →</a>
-              </p>
-            </div>
-
-            <div style="background:#15171A;border:1px solid #232529;border-left:3px solid #FF5630;padding:24px;margin-bottom:28px;">
-              <p style="font-size:15px;font-weight:700;color:#F5F4F0;margin:0 0 10px;">How did we do?</p>
-              <p style="color:#8C8F96;font-size:14px;line-height:1.6;margin:0 0 16px;">
-                Your feedback helps us improve and helps other athletes find the right program.
-                It only takes 60 seconds and means a lot to our team.
-              </p>
-              <a href="https://kp12performance.com/review.html"
-                 style="display:inline-block;background:#FF5630;color:#0D0E10;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:14px 24px;font-weight:700;">
-                Leave a Review →
-              </a>
-            </div>
-
-
-            <div style="background:#15171A;border:1px solid #2A2D31;border-left:3px solid #2ECC71;padding:20px 24px;margin-bottom:20px;">
-              <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#2ECC71;margin:0 0 12px;">&#x1F4B3; PAYMENT REMINDER</p>
-              <p style="font-size:13px;color:#8C8F96;line-height:1.6;margin:0 0 16px;">If you haven't paid yet, please do so using one of the options below:</p>
-              <table style="width:100%;border-collapse:collapse;"><tr>
-                <td style="padding:0 16px 0 0;vertical-align:top;width:50%;">
-                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Venmo</p>
-                  <a href="https://venmo.com/u/Kyle-Perera-12" style="color:#2ECC71;font-family:'JetBrains Mono',monospace;font-size:12px;text-decoration:none;">@Kyle-Perera-12</a>
-                </td>
-                <td style="padding:0;vertical-align:top;width:50%;">
-                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#F5F4F0;font-weight:600;margin:0 0 6px;">Zelle</p>
-                  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8F96;margin:0 0 8px;">Kyle Perera</p>
-                  <img src="https://kp12performance.com/zelle-qr.jpg" alt="Zelle QR Code" style="width:110px;height:110px;display:block;border:2px solid #2A2D31;">
-                </td>
-              </tr></table>
-            </div>
-            <p style="color:#8C8F96;font-size:13px;line-height:1.5;border-top:1px solid #232529;padding-top:24px;margin-top:8px;">
-              Thank you for training with KP12 Performance. We'll see you on the other side of the next goal.<br><br>
-              — The KP12 Team<br>
-              <a href="mailto:support@kp12performance.com" style="color:#3D9EFF;">support@kp12performance.com</a>
-            </p>
-          </div>`
-      });
-    } catch (emailErr) {
-      console.error("Completion email failed:", emailErr);
-    }
-
-    res.json({ message: "Booking marked complete and user notified." });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error completing booking." });
-  }
 });
 
 // Elite players table — admin-managed showcase athletes on the homepage
@@ -1988,20 +1895,73 @@ async function sendUpcomingReminders() {
 setTimeout(sendUpcomingReminders, 5000);
 setInterval(sendUpcomingReminders, 30 * 60 * 1000);
 
-// POST /api/bookings/:id/complete — admin marks a booking complete
-// Sends a thank-you email and frees the capacity slot
-app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
+// POST /api/bookings/:id/complete-day — admin marks ONE specific day's session
+// complete, decrementing sessions_remaining by 1 for that day only. A booking that
+// spans multiple days (e.g. Monday + Friday) is NOT fully closed out until every
+// day has been marked — only then does status flip to 'completed' and the
+// thank-you email go out. This mirrors autoDecrementSessions' day-key so a manual
+// click and the automatic end-of-day decrement never double-count the same day.
+const DAY_OFFSET_MAP = { Monday:0, Tuesday:1, Wednesday:2, Thursday:3, Friday:4, Saturday:5 };
+
+app.post('/api/bookings/:id/complete-day', requireAdmin, async (req, res) => {
   const { id } = req.params;
+  const { day } = req.body;
+
+  if (!day || !(day in DAY_OFFSET_MAP)) {
+    return res.status(400).json({ error: "Missing or invalid day." });
+  }
+
   try {
-    // Mark as completed
+    const bookingRes = await pool.query(
+      "SELECT id, user_id, week_of, sessions_remaining, status, service_title, package_label FROM bookings WHERE id = $1",
+      [id]
+    );
+    if (!bookingRes.rows.length) {
+      return res.status(404).json({ error: "Booking not found." });
+    }
+    const existingBooking = bookingRes.rows[0];
+    if (existingBooking.status !== 'confirmed') {
+      return res.status(400).json({ error: "This booking is no longer active." });
+    }
+
+    // Compute the actual calendar date this day falls on within the booking's week
+    const weekOfDate = new Date(existingBooking.week_of);
+    weekOfDate.setDate(weekOfDate.getDate() + DAY_OFFSET_MAP[day]);
+    const targetDateStr = weekOfDate.toISOString().split('T')[0];
+
+    // Guard against marking the same day complete twice (double-click, or already
+    // picked up by the automatic end-of-day decrement)
+    const already = await pool.query(
+      "SELECT 1 FROM booking_decrements WHERE booking_id = $1 AND decremented_date = $2",
+      [id, targetDateStr]
+    );
+    if (already.rows.length) {
+      return res.status(400).json({ error: `${day}'s session for this booking is already marked complete.` });
+    }
+
+    const newRemaining = Math.max(0, (existingBooking.sessions_remaining ?? 1) - 1);
+    await pool.query("UPDATE bookings SET sessions_remaining = $1 WHERE id = $2", [newRemaining, id]);
+    await pool.query(
+      "INSERT INTO booking_decrements (booking_id, decremented_date) VALUES ($1,$2) ON CONFLICT DO NOTHING",
+      [id, targetDateStr]
+    );
+
+    // Only the LAST session in the package fully closes out the booking and sends
+    // the thank-you email — a Monday click on a Monday+Friday booking should not
+    // touch Friday at all.
+    if (newRemaining > 0) {
+      return res.json({
+        message: `${day}'s session marked complete.`,
+        sessionsRemaining: newRemaining,
+        bookingCompleted: false
+      });
+    }
+
     const bookingResult = await pool.query(
-      `UPDATE bookings SET status='completed', sessions_remaining=0 WHERE id=$1
+      `UPDATE bookings SET status='completed' WHERE id=$1
        RETURNING user_id, service_title, package_label, service_key`,
       [id]
     );
-    if (!bookingResult.rows.length) {
-      return res.status(404).json({ error: "Booking not found." });
-    }
     const booking = bookingResult.rows[0];
 
     // Fetch user, their role, and their booking athletes for a personalized thank-you
@@ -2108,7 +2068,11 @@ app.post('/api/bookings/:id/complete', requireAdmin, async (req, res) => {
       }
     }
 
-    res.json({ message: "Booking marked complete. Thank-you email sent." });
+    res.json({
+      message: `${day}'s session marked complete — final session of the package, booking closed out and thank-you email sent.`,
+      sessionsRemaining: 0,
+      bookingCompleted: true
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error completing booking." });

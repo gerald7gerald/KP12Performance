@@ -648,6 +648,8 @@ document.getElementById('sched-dup-confirm-btn').addEventListener('click', async
 });
 
 // ---- Load appointments ----
+let apptCardSeq = 0; // unique suffix so one booking's several day-cards never share a DOM id
+
 async function loadAppointments() {
     const wrap = document.getElementById('appt-wrap');
     wrap.innerHTML = '<p class="emp-loading">Loading appointments...</p>';
@@ -693,6 +695,10 @@ async function loadAppointments() {
         DAYS_ORDER.forEach(d => { byDay[d] = []; });
         rows.forEach(r => { if (byDay[r.day]) byDay[r.day].push(r); else byDay['—'] ? byDay['—'].push(r) : null; });
 
+        // Resets each render — guarantees a unique DOM id per card even though
+        // several cards can share the same underlying booking id
+        apptCardSeq = 0;
+
         function esc(str) {
             if (!str) return '—';
             const d = document.createElement('div');
@@ -720,8 +726,14 @@ async function loadAppointments() {
             byDay[day].forEach(row => {
                 const b = row.booking;
                 const serviceColor = 'var(--training)';
+                // Unique per CARD (one booking can have several cards — one per
+                // scheduled day), while data-booking-id groups cards that share
+                // the same underlying booking/session pool for syncing updates.
+                const cardKey = `${b.id}-${apptCardSeq++}`;
+                const dayAttr = esc(row.day).replace(/"/g, '&quot;');
+                const noDay = row.day === '—';
                 html += `
-                    <div class="appt-card" id="appt-booking-${b.id}">
+                    <div class="appt-card" id="appt-card-${cardKey}" data-booking-id="${b.id}">
                         <div class="appt-card-time">
                             <span class="appt-time-main">${esc(row.start)}</span>
                             <span class="appt-time-end">to ${esc(row.end)}</span>
@@ -747,19 +759,20 @@ async function loadAppointments() {
                         </div>
                         <div class="appt-sessions-col">
                             <p class="appt-sessions-label">Sessions Left</p>
-                            <div class="appt-sessions-display" id="sessions-display-${b.id}">
+                            <div class="appt-sessions-display" data-booking-id="${b.id}">
                                 <span class="appt-sessions-num ${b.sessions_remaining === 0 ? 'appt-sessions-done' : b.sessions_remaining <= 2 ? 'appt-sessions-low' : ''}">
                                     ${b.sessions_remaining !== null && b.sessions_remaining !== undefined ? b.sessions_remaining : '—'}
                                 </span>
                             </div>
                             <div class="appt-sessions-edit">
-                                <input type="number" class="appt-sessions-input" id="sessions-input-${b.id}"
+                                <input type="number" class="appt-sessions-input" id="sessions-input-${cardKey}" data-booking-id="${b.id}"
                                     value="${b.sessions_remaining !== null && b.sessions_remaining !== undefined ? b.sessions_remaining : ''}"
                                     min="0" max="99" placeholder="—">
-                                <button class="sched-slot-edit-btn" onclick="updateSessions(${b.id})">Save</button>
+                                <button class="sched-slot-edit-btn" onclick="updateSessions(${b.id}, 'sessions-input-${cardKey}')">Save</button>
                             </div>
-                            <button class="appt-complete-btn" onclick="completeBooking(${b.id}, this)">
-                                ✓ Complete
+                            <button class="appt-complete-btn" onclick="completeDaySession(${b.id}, '${dayAttr}', '${cardKey}', this)"
+                                ${noDay ? 'disabled title="No scheduled day on this booking — use Sessions Left to adjust it instead."' : ''}>
+                                ✓ Complete ${noDay ? '' : esc(row.day)}
                             </button>
                         </div>
                     </div>`;
@@ -783,51 +796,78 @@ function esc(str) {
     return d.innerHTML;
 }
 
-// ---- Mark booking complete ----
-async function completeBooking(bookingId, btn) {
-    if (!confirm('Mark this booking as complete? This will remove it from appointments and send the client a thank-you email.')) return;
+// ---- Mark ONE day's session complete (decrements 1 credit from the shared
+// package pool — does NOT touch any other scheduled day on the same booking) ----
+function removeApptCard(cardKey) {
+    const card = document.getElementById(`appt-card-${cardKey}`);
+    if (!card) return;
+    card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'translateX(20px)';
+    setTimeout(() => {
+        const dayCards = card.closest('.appt-cards');
+        card.remove();
+        if (dayCards && !dayCards.children.length) {
+            dayCards.closest('.appt-day-group')?.remove();
+        }
+        const wrap = document.getElementById('appt-wrap');
+        if (wrap && !wrap.querySelector('.appt-day-group')) {
+            wrap.innerHTML = '<p class="emp-loading">No bookings this week yet.</p>';
+        }
+    }, 400);
+}
+
+async function completeDaySession(bookingId, day, cardKey, btn) {
+    if (!confirm(`Mark ${day}'s session as complete? This uses 1 session from their remaining package — other scheduled days on this booking are not affected.`)) return;
     btn.disabled = true;
     btn.textContent = 'Completing...';
     try {
-        const res = await fetch(`/api/bookings/${bookingId}/complete`, { method: 'POST' });
+        const res = await fetch(`/api/bookings/${bookingId}/complete-day`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day })
+        });
         const data = await res.json();
         if (!res.ok) {
-            alert(data.error || 'Failed to complete booking.');
+            alert(data.error || 'Failed to complete session.');
             btn.disabled = false;
-            btn.textContent = '✓ Complete';
+            btn.textContent = `✓ Complete ${day}`;
             return;
         }
-        // Animate out the card
-        const card = document.getElementById(`appt-booking-${bookingId}`);
-        if (card) {
-            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-            card.style.opacity = '0';
-            card.style.transform = 'translateX(20px)';
-            setTimeout(() => {
-                // Remove the whole day group if this was the only card
-                const dayCards = card.closest('.appt-cards');
-                card.remove();
-                if (dayCards && !dayCards.children.length) {
-                    dayCards.closest('.appt-day-group').remove();
-                }
-                // If no more appointments at all, show empty state
-                const wrap = document.getElementById('appt-wrap');
-                if (wrap && !wrap.querySelector('.appt-day-group')) {
-                    wrap.innerHTML = '<p class="emp-loading">No bookings this week yet.</p>';
-                }
-            }, 400);
+
+        // Keep every card for this booking (its other scheduled days) in sync
+        // with the shared sessions-remaining pool
+        const remaining = data.sessionsRemaining;
+        if (remaining !== undefined && remaining !== null) {
+            const cls = remaining === 0 ? 'appt-sessions-done' : remaining <= 2 ? 'appt-sessions-low' : '';
+            document.querySelectorAll(`.appt-sessions-display[data-booking-id="${bookingId}"]`).forEach(el => {
+                el.innerHTML = `<span class="appt-sessions-num ${cls}">${remaining}</span>`;
+            });
+            document.querySelectorAll(`.appt-sessions-input[data-booking-id="${bookingId}"]`).forEach(el => {
+                el.value = remaining;
+            });
+        }
+
+        if (data.bookingCompleted) {
+            // Whole package is used up — every remaining card for this booking closes
+            document.querySelectorAll(`.appt-card[data-booking-id="${bookingId}"]`).forEach(card => {
+                const key = card.id.replace('appt-card-', '');
+                removeApptCard(key);
+            });
+        } else {
+            removeApptCard(cardKey);
         }
     } catch (err) {
         console.error(err);
         alert("Couldn't reach the server.");
         btn.disabled = false;
-        btn.textContent = '✓ Complete';
+        btn.textContent = `✓ Complete ${day}`;
     }
 }
 
 // ---- Update sessions remaining (admin) ----
-async function updateSessions(bookingId) {
-    const input = document.getElementById(`sessions-input-${bookingId}`);
+async function updateSessions(bookingId, inputId) {
+    const input = document.getElementById(inputId);
     const val = parseInt(input.value);
     if (isNaN(val) || val < 0) {
         alert('Please enter a valid number (0 or more).');
@@ -842,10 +882,15 @@ async function updateSessions(bookingId) {
         const data = await res.json();
         if (!res.ok) { alert(data.error || 'Failed to update.'); return; }
 
-        // Update the display number in place
-        const display = document.getElementById(`sessions-display-${bookingId}`);
+        // Update the display number on every card for this booking (its other
+        // scheduled days share the same session pool)
         const cls = val === 0 ? 'appt-sessions-done' : val <= 2 ? 'appt-sessions-low' : '';
-        display.innerHTML = `<span class="appt-sessions-num ${cls}">${val}</span>`;
+        document.querySelectorAll(`.appt-sessions-display[data-booking-id="${bookingId}"]`).forEach(el => {
+            el.innerHTML = `<span class="appt-sessions-num ${cls}">${val}</span>`;
+        });
+        document.querySelectorAll(`.appt-sessions-input[data-booking-id="${bookingId}"]`).forEach(el => {
+            el.value = val;
+        });
     } catch (err) {
         console.error(err);
         alert("Couldn't reach the server.");
@@ -1097,7 +1142,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const d = document.createElement("div"); d.textContent = String(str); return d.innerHTML;
     }
 
-    // ===== REPLACE YOUR OLD renderTable FUNCTION HERE =====
     function renderTable(users) {
         const wrap = document.getElementById("emp-table-wrap");
         const countEl = document.getElementById("emp-count");
@@ -1141,20 +1185,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             </button>
                         </div>
                     </td>
-                    <td>
-                        <button onclick="deleteUser(${u.id}, '${esc(u.username)}')"
-                            style="background:transparent;border:1px solid rgba(255,86,48,0.4);color:var(--training);
-                                   font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.06em;
-                                   padding:4px 8px;cursor:pointer;border-radius:2px;transition:background 0.2s;"
-                            onmouseover="this.style.background='rgba(255,86,48,0.1)'"
-                            onmouseout="this.style.background='transparent'">
-                            DELETE
-                        </button>
-                    </td>
                 </tr>`;
             if (isParent && athletes.length) {
                 rows += `<tr id="athletes-${u.id}" style="display:none;">
-                    <td colspan="12" class="emp-athlete-cell">
+                    <td colspan="10" class="emp-athlete-cell">
                         <table class="emp-athlete-table">
                             <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th></tr></thead>
                             <tbody>${athletes.map((a,i) => `<tr><td class="emp-id">${i+1}</td><td>${esc(a.name)}</td><td>${esc(a.age)}</td><td>${esc(a.gender)}</td></tr>`).join('')}</tbody>
@@ -1170,7 +1204,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th>ID</th><th>Username</th><th>Email</th><th>Phone</th>
                     <th>Age</th><th>Gender</th><th>Role</th>
                     <th>Heard From</th><th>Referral Detail</th><th>Admin</th>
-                    <th>Credits</th><th>Actions</th></tr></thead>
+                <th>Credits</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>`;
     }
@@ -1313,28 +1347,6 @@ async function setCredits(userId, mode) {
         msgEl.textContent = "Couldn't reach server.";
     }
 }
-async function deleteUser(userId, username) {
-    if (!confirm(`Are you sure you want to delete user "${username}"? This will permanently remove their account.`)) return;
-    
-    try {
-        const res = await fetch(`/api/admin/users/${userId}`, {
-            method: 'DELETE'
-        });
-        const data = await res.json();
-        
-        if (!res.ok) {
-            alert(data.error || 'Failed to delete user.');
-            return;
-        }
-        
-        allUsers = allUsers.filter(u => u.id !== userId);
-        renderTable(allUsers);
-    } catch (err) {
-        console.error(err);
-        alert("Couldn't reach the server.");
-    }
-}
-
 </script>
 
 </body>
