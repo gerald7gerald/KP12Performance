@@ -654,11 +654,32 @@ async function loadAppointments() {
     const wrap = document.getElementById('appt-wrap');
     wrap.innerHTML = '<p class="emp-loading">Loading appointments...</p>';
     try {
-        const bookings = await fetch('/api/bookings').then(r => r.json());
+        const res = await fetch('/api/bookings');
+        const bookings = await res.json();
 
-        if (!bookings.length) {
+        // A failed request (expired session, server error, etc.) must never be
+        // mistaken for "nothing booked" — that silently hides real bookings.
+        if (!res.ok) {
+            wrap.innerHTML = `<p class="emp-loading" style="color:var(--training);">
+                Couldn't load this week's bookings${bookings && bookings.error ? ': ' + esc(bookings.error) : ''}.
+                Try refreshing the page.
+            </p>`;
+            return;
+        }
+
+        if (!Array.isArray(bookings) || !bookings.length) {
             wrap.innerHTML = '<p class="emp-loading">No bookings this week yet.</p>';
             return;
+        }
+
+        // Matches a day string against DAYS_ORDER regardless of stray whitespace
+        // or casing (e.g. "thursday " vs "Thursday") so a booking never silently
+        // disappears from the dashboard just because of a formatting mismatch.
+        function normalizeDay(day) {
+            if (!day) return null;
+            const clean = String(day).trim();
+            const match = DAYS_ORDER.find(d => d.toLowerCase() === clean.toLowerCase());
+            return match || null;
         }
 
         // Flatten: one row per slot per booking for easy day/time sorting
@@ -668,7 +689,11 @@ async function loadAppointments() {
             if (!slots.length) {
                 rows.push({ booking: b, day: '—', start: '—', end: '—' });
             } else {
-                slots.forEach(sl => rows.push({ booking: b, day: sl.day, start: sl.start, end: sl.end }));
+                slots.forEach(sl => {
+                    // Fall back to the raw (unmatched) day rather than dropping the
+                    // booking entirely — it still needs to be visible and actionable.
+                    rows.push({ booking: b, day: normalizeDay(sl.day) || sl.day || '—', start: sl.start, end: sl.end });
+                });
             }
         });
 
@@ -690,10 +715,13 @@ async function loadAppointments() {
             return timeToMins(a.start) - timeToMins(b.start);
         });
 
-        // Group by day for visual headers
+        // Group by day for visual headers. Every row lands somewhere, even one
+        // with no slot data or an unrecognized day string ('—' bucket) — a
+        // booking must never vanish from this list without being shown.
         const byDay = {};
         DAYS_ORDER.forEach(d => { byDay[d] = []; });
-        rows.forEach(r => { if (byDay[r.day]) byDay[r.day].push(r); else byDay['—'] ? byDay['—'].push(r) : null; });
+        byDay['—'] = [];
+        rows.forEach(r => { (byDay[r.day] || byDay['—']).push(r); });
 
         // Resets each render — guarantees a unique DOM id per card even though
         // several cards can share the same underlying booking id
@@ -707,7 +735,7 @@ async function loadAppointments() {
         }
 
         let html = '';
-        const daysWithRows = DAYS_ORDER.filter(d => byDay[d] && byDay[d].length);
+        const daysWithRows = [...DAYS_ORDER, '—'].filter(d => byDay[d] && byDay[d].length);
 
         if (!daysWithRows.length) {
             wrap.innerHTML = '<p class="emp-loading">No bookings this week yet.</p>';
@@ -715,10 +743,11 @@ async function loadAppointments() {
         }
 
         daysWithRows.forEach(day => {
+            const dayLabel = day === '—' ? 'NEEDS REVIEW — NO RECOGNIZED DAY' : day.toUpperCase();
             html += `
                 <div class="appt-day-group">
                     <div class="appt-day-header">
-                        <span class="appt-day-label">${day.toUpperCase()}</span>
+                        <span class="appt-day-label">${dayLabel}</span>
                         <span class="appt-day-count">${byDay[day].length} appointment${byDay[day].length !== 1 ? 's' : ''}</span>
                     </div>
                     <div class="appt-cards">`;
