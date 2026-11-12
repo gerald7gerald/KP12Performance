@@ -1501,10 +1501,14 @@ app.get('/api/bookings', requireAdmin, async (req, res) => {
        LEFT JOIN booking_slots bs ON bs.booking_id=b.id
        LEFT JOIN booking_decrements bd
          ON bd.booking_id = b.id
-        AND bd.decremented_date = b.week_of + CASE bs.day_of_week
-              WHEN 'Monday' THEN 0 WHEN 'Tuesday' THEN 1 WHEN 'Wednesday' THEN 2
-              WHEN 'Thursday' THEN 3 WHEN 'Friday' THEN 4 WHEN 'Saturday' THEN 5
-              ELSE 0 END
+        AND bd.decremented_date = b.week_of + CASE LOWER(TRIM(bs.day_of_week))
+          WHEN 'monday' THEN 0 
+          WHEN 'tuesday' THEN 1 
+          WHEN 'wednesday' THEN 2
+          WHEN 'thursday' THEN 3 
+          WHEN 'friday' THEN 4 
+          WHEN 'saturday' THEN 5
+          ELSE 0 END
        LEFT JOIN booking_athletes ba ON ba.booking_id=b.id
        WHERE b.week_of=$1 AND b.status='confirmed'
        GROUP BY b.id,u.username,u.email,u.phone,u.age,u.role ORDER BY b.created_at DESC`,
