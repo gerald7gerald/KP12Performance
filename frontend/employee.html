@@ -685,7 +685,7 @@ async function loadAppointments() {
         // Flatten: one row per slot per booking for easy day/time sorting
         const rows = [];
         bookings.forEach(b => {
-            const slots = Array.isArray(b.slots) ? b.slots : [];
+            const slots = (Array.isArray(b.slots) ? b.slots : []).filter(sl => !sl.completed);
             if (!slots.length) {
                 rows.push({ booking: b, day: '—', start: '—', end: '—' });
             } else {

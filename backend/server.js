@@ -1485,33 +1485,47 @@ app.get('/api/bookings/mine', async (req, res) => {
 app.get('/api/bookings', requireAdmin, async (req, res) => {
   try {
     const weekOf = currentWeekMonday();
-    // Exclude a slot's day from the returned list once that specific day has
-    // already been marked complete (via /complete-day or the auto-decrement job) —
-    // otherwise a finished Monday would keep reappearing in the dashboard even
-    // though only Friday is still outstanding on a Monday+Friday booking.
     const r = await pool.query(
-      `SELECT b.id,b.service_key,b.service_title,b.package_label,b.sessions_remaining,b.status,b.created_at,
+      `SELECT b.id, b.service_key, b.service_title, b.package_label,
+              b.sessions_remaining, b.status, b.created_at,
               u.username, u.email, u.phone, u.age, u.role,
-              COALESCE(json_agg(DISTINCT jsonb_build_object('day',bs.day_of_week,'start',bs.start_time,'end',bs.end_time))
-                FILTER (WHERE bs.id IS NOT NULL AND bd.id IS NULL),'[]') AS slots,
-              COALESCE(json_agg(DISTINCT jsonb_build_object('name',ba.athlete_name,'age',ba.athlete_age,'gender',ba.athlete_gender))
-                FILTER (WHERE ba.id IS NOT NULL),'[]') AS attending_athletes
+              COALESCE((
+                SELECT json_agg(jsonb_build_object(
+                  'day',   INITCAP(TRIM(bs.day_of_week)),
+                  'start', bs.start_time,
+                  'end',   bs.end_time,
+                  'completed', EXISTS (
+                    SELECT 1 FROM booking_decrements bd
+                    WHERE bd.booking_id = b.id
+                      AND bd.decremented_date = b.week_of::date + (
+                        CASE LOWER(TRIM(bs.day_of_week))
+                          WHEN 'monday'    THEN 0
+                          WHEN 'tuesday'   THEN 1
+                          WHEN 'wednesday' THEN 2
+                          WHEN 'thursday'  THEN 3
+                          WHEN 'friday'    THEN 4
+                          WHEN 'saturday'  THEN 5
+                          WHEN 'sunday'    THEN 6
+                          ELSE NULL
+                        END
+                      )
+                  )
+                ))
+                FROM booking_slots bs
+                WHERE bs.booking_id = b.id
+              ), '[]'::json) AS slots,
+              COALESCE((
+                SELECT json_agg(jsonb_build_object(
+                  'name', ba.athlete_name,
+                  'age',  ba.athlete_age,
+                  'gender', ba.athlete_gender))
+                FROM booking_athletes ba
+                WHERE ba.booking_id = b.id
+              ), '[]'::json) AS attending_athletes
        FROM bookings b
-       JOIN users u ON b.user_id=u.id
-       LEFT JOIN booking_slots bs ON bs.booking_id=b.id
-       LEFT JOIN booking_decrements bd
-         ON bd.booking_id = b.id
-        AND bd.decremented_date = b.week_of + CASE LOWER(TRIM(bs.day_of_week))
-          WHEN 'monday' THEN 0 
-          WHEN 'tuesday' THEN 1 
-          WHEN 'wednesday' THEN 2
-          WHEN 'thursday' THEN 3 
-          WHEN 'friday' THEN 4 
-          WHEN 'saturday' THEN 5
-          ELSE 0 END
-       LEFT JOIN booking_athletes ba ON ba.booking_id=b.id
-       WHERE b.week_of=$1 AND b.status='confirmed'
-       GROUP BY b.id,u.username,u.email,u.phone,u.age,u.role ORDER BY b.created_at DESC`,
+       JOIN users u ON b.user_id = u.id
+       WHERE b.week_of = $1 AND b.status = 'confirmed'
+       ORDER BY b.created_at DESC`,
       [weekOf]
     );
     res.json(r.rows);
