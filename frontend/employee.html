@@ -685,14 +685,18 @@ async function loadAppointments() {
         // Flatten: one row per slot per booking for easy day/time sorting
         const rows = [];
         bookings.forEach(b => {
-            const slots = (Array.isArray(b.slots) ? b.slots : []).filter(sl => !sl.completed);
+            const slots = Array.isArray(b.slots) ? b.slots : [];
             if (!slots.length) {
-                rows.push({ booking: b, day: '—', start: '—', end: '—' });
+                rows.push({ booking: b, day: '—', start: '—', end: '—', completed: false });
             } else {
                 slots.forEach(sl => {
-                    // Fall back to the raw (unmatched) day rather than dropping the
-                    // booking entirely — it still needs to be visible and actionable.
-                    rows.push({ booking: b, day: normalizeDay(sl.day) || sl.day || '—', start: sl.start, end: sl.end });
+                    rows.push({
+                        booking: b,
+                        day: normalizeDay(sl.day) || sl.day || '—',
+                        start: sl.start,
+                        end: sl.end,
+                        completed: !!sl.completed
+                    });
                 });
             }
         });
